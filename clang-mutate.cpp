@@ -14,9 +14,9 @@
 //===----------------------------------------------------------------------===//
 #include "ASTMutate.h"
 #include "clang/AST/ASTConsumer.h"
-#include "clang/Driver/OptTable.h"
 #include "clang/Driver/Options.h"
 #include "clang/Frontend/ASTConsumers.h"
+#include "clang/Frontend/FrontendActions.h"
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/Support/CommandLine.h"
@@ -25,6 +25,7 @@ using namespace clang::driver;
 using namespace clang::tooling;
 using namespace llvm;
 
+static cl::OptionCategory Mutator("AST mutation");
 static cl::extrahelp CommonHelp(CommonOptionsParser::HelpMessage);
 static cl::extrahelp MoreHelp(
     "Example Usage:\n"
@@ -99,10 +100,10 @@ public:
 }
 
 int main(int argc, const char **argv) {
-  ActionFactory Factory;
-  CommonOptionsParser OptionsParser(argc, argv);
+  CommonOptionsParser OptionsParser(argc, argv, Mutator);
   ClangTool Tool(OptionsParser.getCompilations(),
                  OptionsParser.getSourcePathList());
   outs() << Stmts << "\n";
-  return Tool.run(newFrontendActionFactory(&Factory));
+  ActionFactory Factory;
+  return Tool.run(newFrontendActionFactory<ActionFactory>().get());
 }
