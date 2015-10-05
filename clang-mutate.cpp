@@ -25,7 +25,6 @@ using namespace clang::driver;
 using namespace clang::tooling;
 using namespace llvm;
 
-static cl::OptionCategory Mutator("AST mutation");
 static cl::extrahelp CommonHelp(CommonOptionsParser::HelpMessage);
 static cl::extrahelp MoreHelp(
     "Example Usage:\n"
@@ -100,10 +99,10 @@ public:
 }
 
 int main(int argc, const char **argv) {
-  CommonOptionsParser OptionsParser(argc, argv, Mutator);
+  CommonOptionsParser OptionsParser(argc, argv);
   ClangTool Tool(OptionsParser.getCompilations(),
                  OptionsParser.getSourcePathList());
   outs() << Stmts << "\n";
   ActionFactory Factory;
-  return Tool.run(newFrontendActionFactory<ActionFactory>().get());
+  return Tool.run(newFrontendActionFactory<ActionFactory>(&Factory));
 }
