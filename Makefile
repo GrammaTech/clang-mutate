@@ -41,7 +41,7 @@ compile_commands.json:
 	echo -e "[\n\
 	  {\n\
 	    \"directory\": \"$$(pwd)\",\n\
-	    \"command\": \"$$(which clang) $$(pwd)/hello.c\",\n\
-	    \"file\": \"$$(pwd)/hello.c\"\n\
+	    \"command\": \"$$(which clang) $$(pwd)/etc/hello.c\",\n\
+	    \"file\": \"$$(pwd)/etc/hello.c\"\n\
 	  }\n\
 	]\n" > $@
