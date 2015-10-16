@@ -13,6 +13,7 @@
 //
 //===----------------------------------------------------------------------===//
 #include "ASTMutate.h"
+#include "ASTBinaryAddressLister.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/Driver/Options.h"
 #include "clang/Frontend/ASTConsumers.h"
@@ -57,6 +58,7 @@ static cl::opt<unsigned int> Stmt1 ("stmt1",        cl::desc("statement 1 for mu
 static cl::opt<unsigned int> Stmt2 ("stmt2",        cl::desc("statement 2 for mutation ops"));
 static cl::opt<std::string>  Value ("value",        cl::desc("string value for mutation ops"));
 static cl::opt<std::string>  Stmts ("stmts",        cl::desc("string of space-separated statement ids"));
+static cl::opt<std::string> Binary ("list-binary",  cl::desc("list every statement's id, class, range, and binary start/end addresses"));
 
 namespace {
 class ActionFactory {
@@ -82,6 +84,9 @@ public:
       return clang::CreateASTSetter(Stmt1, Value);
     if (InsertValue)
       return clang::CreateASTValueInserter(Stmt1, Value);
+    if ( !Binary.empty() )
+      return clang::CreateASTBinaryAddressLister(Binary);
+
     errs() << "Must supply one of;";
     errs() << "\tnumber\n";
     errs() << "\tids\n";
@@ -93,6 +98,7 @@ public:
     errs() << "\tget\n";
     errs() << "\tset\n";
     errs() << "\tinsert-value\n";
+    errs() << "\tlist-binary\n";
     exit(EXIT_FAILURE);
   }
 };
