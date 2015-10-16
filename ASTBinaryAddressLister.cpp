@@ -182,11 +182,13 @@ namespace {
       init( exec(cmd.c_str()) );
     }
 
-    // Retrieve the start and end addresses in the binary for a given line in a file.
-    typedef std::pair<unsigned long long, unsigned long long> StartEndAddressPair;
-    StartEndAddressPair getStartEndAddressesForLine( const std::string& filePath, 
+    // Retrieve the begin and end addresses in the binary for a given line in a file.
+    typedef std::pair<unsigned long long, unsigned long long> BeginEndAddressPair;
+    BeginEndAddressPair getBeginEndAddressesForLine( const std::string& filePath, 
                                                      long lineNum) {
-      StartEndAddressPair startEndAddresses;
+      BeginEndAddressPair beginEndAddresses;
+      beginEndAddresses.first  = (unsigned long long) -1;
+      beginEndAddresses.second = (unsigned long long) -1;
 
       // Iterate over each compilation unit
       for ( CompilationUnitMap::iterator compilationUnitMapIter = compilationUnitMap.begin();
@@ -203,15 +205,25 @@ namespace {
             // We found a match.  Return the starting and ending address for this line.
             LineNumsToAddressesMap::iterator lineNumsToAddressesMapIter = lineNumsToAddressesMap.find(lineNum);
 
-            startEndAddresses.first = lineNumsToAddressesMapIter->second;
+            beginEndAddresses.first = lineNumsToAddressesMapIter->second;
             lineNumsToAddressesMapIter++;
-            startEndAddresses.second = lineNumsToAddressesMapIter->second;
+            beginEndAddresses.second = lineNumsToAddressesMapIter->second;
             break;
           }     
         }
       }
 
-      return startEndAddresses;
+      return beginEndAddresses;
+    }
+
+    unsigned long long getBeginAddressForLine( const std::string& filePath,
+                                               long lineNum ) {
+      return getBeginEndAddressesForLine(filePath, lineNum ).first;
+    }
+
+    unsigned long long getEndAddressForLine( const std::string& filePath,
+                                             long lineNum ) {
+      return getBeginEndAddressesForLine(filePath, lineNum ).second;
     }
 
     std::ostream& dump(std::ostream& out) {
@@ -256,7 +268,10 @@ namespace {
 
       // Setup
       Counter=0;
+
       mainFileID=Context.getSourceManager().getMainFileID();
+      mainFileName = Context.getSourceManager().getFileEntryForID(mainFileID)->getName();
+
       Rewrite.setSourceMgr(Context.getSourceManager(),
                            Context.getLangOpts());
 
@@ -272,26 +287,29 @@ namespace {
 
     void ListStmt(Stmt *s)
     {
-      char label[9];
+      char msg[256];
       SourceManager &SM = Rewrite.getSourceMgr();
-      PresumedLoc PLoc;
+      PresumedLoc beginPLoc = SM.getPresumedLoc(s->getSourceRange().getBegin());
+      PresumedLoc endPLoc = SM.getPresumedLoc(s->getSourceRange().getEnd());
+      unsigned long long beginAddress = 
+        BinaryAddresses.getBeginAddressForLine( mainFileName, beginPLoc.getLine() );
+      unsigned long long endAddress = 
+        BinaryAddresses.getEndAddressForLine( mainFileName, endPLoc.getLine() );
 
-      sprintf(label, "%8d", Counter);
-      Out << label << " ";
-
-      PLoc = SM.getPresumedLoc(s->getSourceRange().getBegin());
-      sprintf(label, "%6d", PLoc.getLine());
-      Out << label << ":";
-      sprintf(label, "%-3d", PLoc.getColumn());
-      Out << label << " ";
-
-      PLoc = SM.getPresumedLoc(s->getSourceRange().getEnd());
-      sprintf(label, "%6d", PLoc.getLine());
-      Out << label << ":";
-      sprintf(label, "%-3d", PLoc.getColumn());
-      Out << label << " ";
-
-      Out << s->getStmtClassName() << "\n";
+      if ( beginAddress != ((unsigned long long) -1) &&
+           endAddress != ((unsigned long long) -1))
+      {
+        sprintf(msg, "%8d %6d:%-3d %6d:%-3d %#016x %#016x %s", 
+                      Counter,
+                      beginPLoc.getLine(),
+                      beginPLoc.getColumn(),
+                      endPLoc.getLine(),
+                      endPLoc.getColumn(),
+                      beginAddress,
+                      endAddress,
+                      s->getStmtClassName());
+        Out << msg << "\n";
+      }
     }
 
     bool VisitStmt(Stmt *s){
@@ -317,6 +335,7 @@ namespace {
     Rewriter Rewrite;
     unsigned int Counter;
     FileID mainFileID;
+    std::string mainFileName;
   };
 }
 
