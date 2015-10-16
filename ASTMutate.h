@@ -20,6 +20,7 @@ ASTConsumer *CreateASTSwapper(unsigned int Stmt1, unsigned int Stmt2);
 ASTConsumer *CreateASTGetter(unsigned int Stmt);
 ASTConsumer *CreateASTSetter(unsigned int Stmt, StringRef Value);
 ASTConsumer *CreateASTValueInserter(unsigned int Stmt, StringRef Value);
+ASTConsumer *CreateASTBinaryAddressLister(StringRef Binary);
 
 }
 
