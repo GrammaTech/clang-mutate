@@ -8,7 +8,7 @@ int main(int argc, char** argv){
       break;
     default: 
       printf("%s\n", "THREE");
-      pinttf("%s\n", "OR MORE");
+      printf("%s\n", "OR MORE");
       break;
   }
   return 0;
