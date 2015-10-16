@@ -12,6 +12,7 @@
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Rewrite/Frontend/Rewriters.h"
 #include "clang/Rewrite/Core/Rewriter.h"
+#include "clang/AST/ParentMap.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
@@ -174,12 +175,24 @@ namespace {
     
     public:
 
+    BinaryAddressMap() {
+    }
+
     // Initialize a BinaryAddressMap from an ELF executable.
     BinaryAddressMap(const std::string &binary) {
       char realpath_buffer[1024];
-      std::string binaryRealPath = realpath(binary.c_str(), realpath_buffer);
-      const std::string cmd("llvm-dwarfdump -debug-dump=line " + binaryRealPath);
-      init( exec(cmd.c_str()) );
+      std::string binaryRealPath = 
+        (realpath(binary.c_str(), realpath_buffer) == NULL) ? 
+        "" : realpath_buffer;
+   
+      if ( !binaryRealPath.empty() ) {
+        const std::string cmd("llvm-dwarfdump -debug-dump=line " + binaryRealPath);
+        init( exec(cmd.c_str()) );
+      }
+    }
+
+    bool isEmpty() { 
+      return compilationUnitMap.empty();
     }
 
     // Retrieve the begin and end addresses in the binary for a given line in a file.
@@ -261,7 +274,13 @@ namespace {
                            StringRef Binary = (StringRef) "")
       : Out(Out ? *Out : llvm::outs()),
         Binary(Binary),
-        BinaryAddresses(Binary) {}
+        BinaryAddresses(Binary),
+        PM(NULL) {}
+
+    ~ASTBinaryAddressLister(){
+      delete PM;
+      PM = NULL;
+    }
 
     virtual void HandleTranslationUnit(ASTContext &Context) {
       TranslationUnitDecl *D = Context.getTranslationUnitDecl();
@@ -269,8 +288,8 @@ namespace {
       // Setup
       Counter=0;
 
-      mainFileID=Context.getSourceManager().getMainFileID();
-      mainFileName = Context.getSourceManager().getFileEntryForID(mainFileID)->getName();
+      MainFileID=Context.getSourceManager().getMainFileID();
+      MainFileName = Context.getSourceManager().getFileEntryForID(MainFileID)->getName();
 
       Rewrite.setSourceMgr(Context.getSourceManager(),
                            Context.getLangOpts());
@@ -279,42 +298,108 @@ namespace {
       TraverseDecl(D);
     };
 
-    bool SelectRange(SourceRange r)
+    bool IsSourceRangeInMainFile(SourceRange r)
     {
       FullSourceLoc loc = FullSourceLoc(r.getEnd(), Rewrite.getSourceMgr());
-      return (loc.getFileID() == mainFileID);
+      return (loc.getFileID() == MainFileID);
     }
 
-    void ListStmt(Stmt *s)
+    // Return true if the clang::Expr is a statement in the C/C++ grammar.
+    // This is done by testing if the parent of the clang::Expr
+    // is an aggregation type.  The immediate children of an aggregation
+    // type are all valid statements in the C/C++ grammar.
+    bool IsCompleteCStatement(Stmt *ExpressionStmt)
     {
-      char msg[256];
-      SourceManager &SM = Rewrite.getSourceMgr();
-      PresumedLoc beginPLoc = SM.getPresumedLoc(s->getSourceRange().getBegin());
-      PresumedLoc endPLoc = SM.getPresumedLoc(s->getSourceRange().getEnd());
-      unsigned long long beginAddress = 
-        BinaryAddresses.getBeginAddressForLine( mainFileName, beginPLoc.getLine() );
-      unsigned long long endAddress = 
-        BinaryAddresses.getEndAddressForLine( mainFileName, endPLoc.getLine() );
+      Stmt* parent = PM->getParent(ExpressionStmt);
 
-      if ( beginAddress != ((unsigned long long) -1) &&
-           endAddress != ((unsigned long long) -1))
+      switch ( parent->getStmtClass() )
       {
-        sprintf(msg, "%8d %6d:%-3d %6d:%-3d %#016x %#016x %s", 
-                      Counter,
-                      beginPLoc.getLine(),
-                      beginPLoc.getColumn(),
-                      endPLoc.getLine(),
-                      endPLoc.getColumn(),
-                      beginAddress,
-                      endAddress,
-                      s->getStmtClassName());
-        Out << msg << "\n";
+      case Stmt::CapturedStmtClass:
+      case Stmt::CompoundStmtClass:
+      case Stmt::CXXCatchStmtClass:
+      case Stmt::CXXForRangeStmtClass:
+      case Stmt::CXXTryStmtClass:
+      case Stmt::DoStmtClass:
+      case Stmt::ForStmtClass:
+      case Stmt::IfStmtClass:
+      case Stmt::SwitchStmtClass:
+      case Stmt::WhileStmtClass: 
+        return true;
+      
+      default:
+        return false;
       }
     }
 
-    bool VisitStmt(Stmt *s){
-      SourceRange r;
-      switch (s->getStmtClass()){
+    void ListStmt(Stmt *S)
+    {
+      char Msg[256];
+      SourceManager &SM = Rewrite.getSourceMgr();
+      PresumedLoc BeginPLoc = SM.getPresumedLoc(S->getSourceRange().getBegin());
+      PresumedLoc EndPLoc = SM.getPresumedLoc(S->getSourceRange().getEnd());
+
+      if ( BinaryAddresses.isEmpty() ) // no binary information given
+      {
+        sprintf(Msg, "%8d %6d:%-3d %6d:%-3d %s",
+                     Counter,
+                     BeginPLoc.getLine(),
+                     BeginPLoc.getColumn(),
+                     EndPLoc.getLine(),
+                     EndPLoc.getColumn(),
+                     S->getStmtClassName());
+        Out << Msg << "\n";
+      }
+      else 
+      {
+        // binary information given
+        unsigned long long BeginAddress = 
+          BinaryAddresses.getBeginAddressForLine( MainFileName, BeginPLoc.getLine() );
+        unsigned long long EndAddress = 
+          BinaryAddresses.getEndAddressForLine( MainFileName, EndPLoc.getLine() );
+
+        if ( BeginAddress != ((unsigned long long) -1) &&
+             EndAddress != ((unsigned long long) -1))
+        {
+          // file, linenumber could be found in the binary's debug info
+          // print the begin/end address in the text segment
+          sprintf(Msg, "%8d %6d:%-3d %6d:%-3d %#016x %#016x %s", 
+                        Counter,
+                        BeginPLoc.getLine(),
+                        BeginPLoc.getColumn(),
+                        EndPLoc.getLine(),
+                        EndPLoc.getColumn(),
+                        BeginAddress,
+                        EndAddress,
+                        S->getStmtClassName());
+          Out << Msg << "\n";
+        }
+      }
+    }
+
+    virtual bool VisitDecl(Decl *D){
+      // Set a flag if we are in a new declaration
+      // section.  There is a tight coupling between
+      // this action and VisitStmt(Stmt* ).
+      if (D->getKind() == Decl::Function) {
+        IsNewFunctionDecl = true; 
+      }
+
+      return true;
+    }
+
+    virtual bool VisitStmt(Stmt *S){
+      SourceRange R;
+
+      // Test if we are in a new function
+      // declaration.  If so, update the parent
+      // map with the root of this function declaration.
+      if ( IsNewFunctionDecl ) {
+        delete PM;
+        PM = new ParentMap(S);
+        IsNewFunctionDecl = false;
+      }
+ 
+      switch (S->getStmtClass()){
 
       case Stmt::NoStmtClass:
         return true;
@@ -340,23 +425,22 @@ namespace {
       case Stmt::DefaultStmtClass: 
       case Stmt::CaseStmtClass: 
       case Stmt::WhileStmtClass:
-        r = s->getSourceRange();
-        if(SelectRange(r)){
-          ListStmt(s);
+        R = S->getSourceRange();
+        if(IsSourceRangeInMainFile(R)){
+          ListStmt(S);
         }
         break;
 
       // These expression may correspond
       // to one or more lines in a source file.
-      // @TODO: What if expr is part of a larger statement?
-      // (e.g. int i = foo();) - We should not visit foo.
       case Stmt::AtomicExprClass:
       case Stmt::CXXMemberCallExprClass:
       case Stmt::CXXOperatorCallExprClass:
-      case Stmt::UserDefinedLiteralClass:
-        r = s->getSourceRange();
-        if(SelectRange(r)){
-          ListStmt(s);
+      case Stmt::CallExprClass:
+        R = S->getSourceRange();
+        if(IsSourceRangeInMainFile(R) && 
+           IsCompleteCStatement(S)){
+          ListStmt(S);
         }
         break;
       default:
@@ -374,9 +458,11 @@ namespace {
     BinaryAddressMap BinaryAddresses;
 
     Rewriter Rewrite;
+    ParentMap* PM;
+    bool IsNewFunctionDecl;
     unsigned int Counter;
-    FileID mainFileID;
-    std::string mainFileName;
+    FileID MainFileID;
+    std::string MainFileName;
   };
 }
 
