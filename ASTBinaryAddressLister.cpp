@@ -313,6 +313,7 @@ namespace {
     }
 
     bool VisitStmt(Stmt *s){
+      SourceRange r;
       switch (s->getStmtClass()){
 
       case Stmt::NoStmtClass:
@@ -321,25 +322,25 @@ namespace {
       // These classes of statements
       // correspond to exactly 1 or more
       // lines in a source file.
-      case Stmt::BreakStmt:
-      case Stmt::CapturedStmt:
-      case Stmt::CompoundStmt:
-      case Stmt::ContinueStmt:
-      case Stmt::CXXCatchStmt:
-      case Stmt::CXXForRangeStmt:
-      case Stmt::CXXTryStmt:
-      case Stmt::DeclStmt:
-      case Stmt::DoStmt:
-      case Stmt::ForStmt:
-      case Stmt::GotoStmt:
-      case Stmt::IfStmt:
-      case Stmt::IndirectGotoStmt:
-      case Stmt::ReturnStmt:
-      case Stmt::SwitchStmt:
-      case Stmt::DefaultStmt: 
-      case Stmt::CaseStmt: 
-      case Stmt::WhileStmt:
-        SourceRange r = s->getSourceRange();
+      case Stmt::BreakStmtClass:
+      case Stmt::CapturedStmtClass:
+      case Stmt::CompoundStmtClass:
+      case Stmt::ContinueStmtClass:
+      case Stmt::CXXCatchStmtClass:
+      case Stmt::CXXForRangeStmtClass:
+      case Stmt::CXXTryStmtClass:
+      case Stmt::DeclStmtClass:
+      case Stmt::DoStmtClass:
+      case Stmt::ForStmtClass:
+      case Stmt::GotoStmtClass:
+      case Stmt::IfStmtClass:
+      case Stmt::IndirectGotoStmtClass:
+      case Stmt::ReturnStmtClass:
+      case Stmt::SwitchStmtClass:
+      case Stmt::DefaultStmtClass: 
+      case Stmt::CaseStmtClass: 
+      case Stmt::WhileStmtClass:
+        r = s->getSourceRange();
         if(SelectRange(r)){
           ListStmt(s);
         }
@@ -349,14 +350,17 @@ namespace {
       // to one or more lines in a source file.
       // @TODO: What if expr is part of a larger statement?
       // (e.g. int i = foo();) - We should not visit foo.
-      case Stmt::AtomicExpr:
-      case Stmt::CXXMemberCallExpr:
-      case Stmt::CXXOperatorCallExpr:
-      case Stmt::UserDefinedLiteral:
-        SourceRange r = s->getSourceRange();
+      case Stmt::AtomicExprClass:
+      case Stmt::CXXMemberCallExprClass:
+      case Stmt::CXXOperatorCallExprClass:
+      case Stmt::UserDefinedLiteralClass:
+        r = s->getSourceRange();
         if(SelectRange(r)){
           ListStmt(s);
         }
+        break;
+      default:
+        break;
       }
 
       Counter++;
