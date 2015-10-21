@@ -5,9 +5,9 @@
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/ASTContext.h"
 
-namespace clang {  
+namespace clang_mutate {  
 
-ASTConsumer *CreateASTBinaryAddressLister(StringRef Binary);
+clang::ASTConsumer *CreateASTBinaryAddressLister(clang::StringRef Binary);
 
 }
 

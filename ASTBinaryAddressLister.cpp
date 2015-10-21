@@ -466,6 +466,6 @@ namespace {
   };
 }
 
-ASTConsumer *clang::CreateASTBinaryAddressLister(StringRef Binary){
+clang::ASTConsumer *clang_mutate::CreateASTBinaryAddressLister(clang::StringRef Binary){
   return new ASTBinaryAddressLister(0, Binary);
 }

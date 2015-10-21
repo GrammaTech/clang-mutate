@@ -66,27 +66,27 @@ class ActionFactory {
 public:
   clang::ASTConsumer *newASTConsumer() {
     if (Number)
-      return clang::CreateASTNumberer();
+      return clang_mutate::CreateASTNumberer();
     if (Ids)
-      return clang::CreateASTIDS();
+      return clang_mutate::CreateASTIDS();
     if (Annotate)
-      return clang::CreateASTAnnotator();
+      return clang_mutate::CreateASTAnnotator();
     if (List)
-      return clang::CreateASTLister();
+      return clang_mutate::CreateASTLister();
     if (Cut)
-      return clang::CreateASTCuter(Stmt1);
+      return clang_mutate::CreateASTCuter(Stmt1);
     if (Insert)
-      return clang::CreateASTInserter(Stmt1, Stmt2);
+      return clang_mutate::CreateASTInserter(Stmt1, Stmt2);
     if (Swap)
-      return clang::CreateASTSwapper(Stmt1, Stmt2);
+      return clang_mutate::CreateASTSwapper(Stmt1, Stmt2);
     if (Get)
-      return clang::CreateASTGetter(Stmt1);
+      return clang_mutate::CreateASTGetter(Stmt1);
     if (Set)
-      return clang::CreateASTSetter(Stmt1, Value);
+      return clang_mutate::CreateASTSetter(Stmt1, Value);
     if (InsertValue)
-      return clang::CreateASTValueInserter(Stmt1, Value);
+      return clang_mutate::CreateASTValueInserter(Stmt1, Value);
     if ( ListCStmts )
-      return clang::CreateASTBinaryAddressLister(Binary);
+      return clang_mutate::CreateASTBinaryAddressLister(Binary);
 
     errs() << "Must supply one of;";
     errs() << "\tnumber\n";

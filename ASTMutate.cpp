@@ -24,9 +24,9 @@
 #define VISIT(func) \
   bool func { VisitRange(element->getSourceRange()); return true; }
 
-using namespace clang;
+namespace clang_mutate{
+  using namespace clang;
 
-namespace {
   class ASTMutator : public ASTConsumer,
                      public RecursiveASTVisitor<ASTMutator> {
     typedef RecursiveASTVisitor<ASTMutator> base;
@@ -282,42 +282,42 @@ namespace {
   };
 }
 
-ASTConsumer *clang::CreateASTNumberer(){
+clang::ASTConsumer *clang_mutate::CreateASTNumberer(){
   return new ASTMutator(0, NUMBER);
 }
 
-ASTConsumer *clang::CreateASTIDS(){
+clang::ASTConsumer *clang_mutate::CreateASTIDS(){
   return new ASTMutator(0, IDS);
 }
 
-ASTConsumer *clang::CreateASTAnnotator(){
+clang::ASTConsumer *clang_mutate::CreateASTAnnotator(){
   return new ASTMutator(0, ANNOTATOR);
 }
 
-ASTConsumer *clang::CreateASTLister(){
+clang::ASTConsumer *clang_mutate::CreateASTLister(){
   return new ASTMutator(0, LISTER);
 }
 
-ASTConsumer *clang::CreateASTCuter(unsigned int Stmt){
+clang::ASTConsumer *clang_mutate::CreateASTCuter(unsigned int Stmt){
   return new ASTMutator(0, CUT, Stmt);
 }
 
-ASTConsumer *clang::CreateASTInserter(unsigned int Stmt1, unsigned int Stmt2){
+clang::ASTConsumer *clang_mutate::CreateASTInserter(unsigned int Stmt1, unsigned int Stmt2){
   return new ASTMutator(0, INSERT, Stmt1, Stmt2);
 }
 
-ASTConsumer *clang::CreateASTSwapper(unsigned int Stmt1, unsigned int Stmt2){
+clang::ASTConsumer *clang_mutate::CreateASTSwapper(unsigned int Stmt1, unsigned int Stmt2){
   return new ASTMutator(0, SWAP, Stmt1, Stmt2);
 }
 
-ASTConsumer *clang::CreateASTGetter(unsigned int Stmt){
+clang::ASTConsumer *clang_mutate::CreateASTGetter(unsigned int Stmt){
   return new ASTMutator(0, GET, Stmt);
 }
 
-ASTConsumer *clang::CreateASTSetter(unsigned int Stmt, StringRef Value){
+clang::ASTConsumer *clang_mutate::CreateASTSetter(unsigned int Stmt, clang::StringRef Value){
   return new ASTMutator(0, SET, Stmt, -1, Value);
 }
 
-ASTConsumer *clang::CreateASTValueInserter(unsigned int Stmt, StringRef Value){
+clang::ASTConsumer *clang_mutate::CreateASTValueInserter(unsigned int Stmt, clang::StringRef Value){
   return new ASTMutator(0, VALUEINSERT, Stmt, -1, Value);
 }
