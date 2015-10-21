@@ -1,6 +1,7 @@
 CXX := clang++
 RTTIFLAG := -fno-rtti
-CXXFLAGS := $(shell llvm-config --cxxflags) $(RTTIFLAG)
+PICOJSON_INCS := -I third-party/picojson-1.3.0
+CXXFLAGS := $(shell llvm-config --cxxflags) $(RTTIFLAG) $(PICOJSON_INCS)
 LLVMLDFLAGS := $(shell llvm-config --ldflags --libs) -ldl
 
 SOURCES = clang-mutate.cpp
@@ -25,7 +26,7 @@ all: $(OBJECTS) $(EXES)
 .PHONY: clean install
 
 %: %.o
-	$(CXX) -o $@ $< $(CLANGLIBS) $(LLVMLDFLAGS)
+	$(CXX) -o $@ $< 
 
 clang-mutate: ASTMutate.o ASTBinaryAddressLister.o clang-mutate.o
 	$(CXX) -o $@ $^ $(CLANGLIBS) $(LLVMLDFLAGS)
