@@ -10,6 +10,8 @@
 
 #include "third-party/picojson-1.3.0/picojson.h"
 
+#include "llvm/Support/raw_ostream.h"
+
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -153,19 +155,37 @@ namespace clang_mutate
       return out;
     }
 
+    llvm::raw_ostream& toStream(llvm::raw_ostream& out)
+    {
+      std::stringstream ss;
+      toStream(ss);
+     
+      out << ss.str(); 
+      return out;
+    }
+
     std::ostream& toStreamJSON(std::ostream& out )
     {
       out << toJSON() << std::endl;
       return out;
     }
 
-    bool toStream(const std::string& outfilePath )
+    llvm::raw_ostream& toStreamJSON(llvm::raw_ostream& out)
+    {
+      std::stringstream ss;
+      toStreamJSON(ss);
+
+      out << ss.str();
+      return out;
+    }
+
+    bool toFile(const std::string& outfilePath )
     {
       std::ofstream outfile( outfilePath.c_str() );
       return toStream(outfile).good();
     }
 
-    bool toStreamJSON(const std::string& outfilePath )
+    bool toFileJSON(const std::string& outfilePath )
     {
       std::ofstream outfile( outfilePath.c_str() );
       return toStreamJSON(outfile).good();

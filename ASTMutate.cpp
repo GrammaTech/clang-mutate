@@ -125,30 +125,6 @@ namespace clang_mutate{
       if (Counter == Stmt1) Rewrite.InsertText(r.getBegin(), Value, false);
     }
 
-    void ListStmt(Stmt *s)
-    {
-      char label[9];
-      SourceManager &SM = Rewrite.getSourceMgr();
-      PresumedLoc PLoc;
-
-      sprintf(label, "%8d", Counter);
-      Out << label << " ";
-
-      PLoc = SM.getPresumedLoc(s->getSourceRange().getBegin());
-      sprintf(label, "%6d", PLoc.getLine());
-      Out << label << ":";
-      sprintf(label, "%-3d", PLoc.getColumn());
-      Out << label << " ";
-
-      PLoc = SM.getPresumedLoc(s->getSourceRange().getEnd());
-      sprintf(label, "%6d", PLoc.getLine());
-      Out << label << ":";
-      sprintf(label, "%-3d", PLoc.getColumn());
-      Out << label << " ";
-
-      Out << s->getStmtClassName() << "\n";
-    }
-
     void CutRange(SourceRange r)
     {
       char label[24];
@@ -216,7 +192,6 @@ namespace clang_mutate{
         if(SelectRange(r)){
           switch(Action){
           case ANNOTATOR: AnnotateStmt(s); break;
-          case LISTER:    ListStmt(s);     break;
           case NUMBER:    NumberRange(r);  break;
           case CUT:       CutRange(r);     break;
           case GET:       GetStmt(s);      break;
@@ -260,7 +235,6 @@ namespace clang_mutate{
       // output rewritten source code or ID count
       switch(Action){
       case IDS: Out << Counter << "\n";
-      case LISTER:
       case GET:
         break;
       default:
@@ -292,10 +266,6 @@ clang::ASTConsumer *clang_mutate::CreateASTIDS(){
 
 clang::ASTConsumer *clang_mutate::CreateASTAnnotator(){
   return new ASTMutator(0, ANNOTATOR);
-}
-
-clang::ASTConsumer *clang_mutate::CreateASTLister(){
-  return new ASTMutator(0, LISTER);
 }
 
 clang::ASTConsumer *clang_mutate::CreateASTCuter(unsigned int Stmt){

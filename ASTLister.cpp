@@ -1,5 +1,6 @@
-#include "ASTBinaryAddressLister.h"
+#include "ASTLister.h"
 #include "BinaryAddressMap.hpp"
+#include "ASTEntryList.hpp"
 
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/Diagnostic.h"
@@ -29,19 +30,21 @@
 namespace clang_mutate{
 using namespace clang;
 
-  class ASTBinaryAddressLister : public ASTConsumer,
-                                 public RecursiveASTVisitor<ASTBinaryAddressLister> {
-    typedef RecursiveASTVisitor<ASTBinaryAddressLister> base;
+  class ASTLister : public ASTConsumer,
+                    public RecursiveASTVisitor<ASTLister> {
+    typedef RecursiveASTVisitor<ASTLister> base;
 
   public:
-    ASTBinaryAddressLister(raw_ostream *Out = NULL,
-                           StringRef Binary = (StringRef) "")
+    ASTLister(raw_ostream *Out = NULL,
+              StringRef Binary = (StringRef) "",
+              bool OutputAsJSON = false)
       : Out(Out ? *Out : llvm::outs()),
         Binary(Binary),
         BinaryAddresses(Binary),
+        OutputAsJSON(OutputAsJSON),
         PM(NULL) {}
 
-    ~ASTBinaryAddressLister(){
+    ~ASTLister(){
       delete PM;
       PM = NULL;
     }
@@ -60,6 +63,12 @@ using namespace clang;
 
       // Run Recursive AST Visitor
       TraverseDecl(D);
+   
+      // Output the results   
+      if ( OutputAsJSON )
+        ASTEntries.toStreamJSON( Out );
+      else
+        ASTEntries.toStream( Out );
     };
 
     bool IsSourceRangeInMainFile(SourceRange r)
@@ -95,51 +104,6 @@ using namespace clang;
       }
     }
 
-    void ListStmt(Stmt *S)
-    {
-      char Msg[256];
-      SourceManager &SM = Rewrite.getSourceMgr();
-      PresumedLoc BeginPLoc = SM.getPresumedLoc(S->getSourceRange().getBegin());
-      PresumedLoc EndPLoc = SM.getPresumedLoc(S->getSourceRange().getEnd());
-
-      if ( BinaryAddresses.isEmpty() ) // no binary information given
-      {
-        sprintf(Msg, "%8d %6d:%-3d %6d:%-3d %s",
-                     Counter,
-                     BeginPLoc.getLine(),
-                     BeginPLoc.getColumn(),
-                     EndPLoc.getLine(),
-                     EndPLoc.getColumn(),
-                     S->getStmtClassName());
-        Out << Msg << "\n";
-      }
-      else 
-      {
-        // binary information given
-        unsigned long long BeginAddress = 
-          BinaryAddresses.getBeginAddressForLine( MainFileName, BeginPLoc.getLine() );
-        unsigned long long EndAddress = 
-          BinaryAddresses.getEndAddressForLine( MainFileName, EndPLoc.getLine() );
-
-        if ( BeginAddress != ((unsigned long long) -1) &&
-             EndAddress != ((unsigned long long) -1))
-        {
-          // file, linenumber could be found in the binary's debug info
-          // print the begin/end address in the text segment
-          sprintf(Msg, "%8d %6d:%-3d %6d:%-3d %#016x %#016x %s", 
-                        Counter,
-                        BeginPLoc.getLine(),
-                        BeginPLoc.getColumn(),
-                        EndPLoc.getLine(),
-                        EndPLoc.getColumn(),
-                        BeginAddress,
-                        EndAddress,
-                        S->getStmtClassName());
-          Out << Msg << "\n";
-        }
-      }
-    }
-
     virtual bool VisitDecl(Decl *D){
       // Set a flag if we are in a new declaration
       // section.  There is a tight coupling between
@@ -165,12 +129,14 @@ using namespace clang;
  
       switch (S->getStmtClass()){
 
+      // S is the NULL statement, so return.
       case Stmt::NoStmtClass:
         return true;
 
       // These classes of statements
       // correspond to exactly 1 or more
-      // lines in a source file.
+      // lines in a source file.  If applicable,
+      // associate them with binary source code.
       case Stmt::BreakStmtClass:
       case Stmt::CapturedStmtClass:
       case Stmt::CompoundStmtClass:
@@ -191,12 +157,17 @@ using namespace clang;
       case Stmt::WhileStmtClass:
         R = S->getSourceRange();
         if(IsSourceRangeInMainFile(R)){
-          ListStmt(S);
+          if ( BinaryAddresses.isEmpty() ) 
+            ASTEntries.addEntry( new ASTNonBinaryEntry(Counter, S, Rewrite) );
+          else
+            ASTEntries.addEntry( new ASTBinaryEntry(Counter, S, Rewrite, BinaryAddresses) );
         }
         break;
 
-      // These expression may correspond
+      // These classes of statements may correspond
       // to one or more lines in a source file.
+      // If applicable, associate them with binary
+      // source code.
       case Stmt::AtomicExprClass:
       case Stmt::CXXMemberCallExprClass:
       case Stmt::CXXOperatorCallExprClass:
@@ -204,10 +175,21 @@ using namespace clang;
         R = S->getSourceRange();
         if(IsSourceRangeInMainFile(R) && 
            IsCompleteCStatement(S)){
-          ListStmt(S);
+          if ( BinaryAddresses.isEmpty() )
+            ASTEntries.addEntry( new ASTNonBinaryEntry(Counter, S, Rewrite) );
+          else
+            ASTEntries.addEntry( new ASTBinaryEntry(Counter, S, Rewrite, BinaryAddresses) );
         }
         break;
+
       default:
+        // These classes of statements correspond
+        // to sub-expressions within a C/C++ statement.
+        // They are too granular to associate with binary
+        // source code. 
+        R = S->getSourceRange();
+        if (IsSourceRangeInMainFile(R))
+          ASTEntries.addEntry( new ASTNonBinaryEntry(Counter, S, Rewrite) );
         break;
       }
 
@@ -218,8 +200,10 @@ using namespace clang;
   private:
     raw_ostream &Out;
     StringRef Binary;
+    bool OutputAsJSON;
 
     BinaryAddressMap BinaryAddresses;
+    ASTEntryList ASTEntries;
 
     Rewriter Rewrite;
     ParentMap* PM;
@@ -230,6 +214,6 @@ using namespace clang;
   };
 }
 
-clang::ASTConsumer *clang_mutate::CreateASTBinaryAddressLister(clang::StringRef Binary){
-  return new ASTBinaryAddressLister(0, Binary);
+clang::ASTConsumer *clang_mutate::CreateASTLister(clang::StringRef Binary, bool OutputAsJSON){
+  return new ASTLister(0, Binary, OutputAsJSON);
 }

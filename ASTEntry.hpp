@@ -212,13 +212,13 @@ namespace clang_mutate
   {
   protected:
     ASTNonBinaryEntry m_astNonBinaryEntry;
-    std::string       m_binaryFileName;
+    std::string       m_binaryFilePath;
     unsigned long     m_beginAddress;
     unsigned long     m_endAddress;
   public:
     ASTBinaryEntry() :
       m_astNonBinaryEntry(),
-      m_binaryFileName(""),
+      m_binaryFilePath(""),
       m_beginAddress(0),
       m_endAddress(0)
     {
@@ -243,7 +243,7 @@ namespace clang_mutate
                            endSrcLine, 
                            endSrcCol, 
                            srcText ),
-      m_binaryFileName(binaryFileName),
+      m_binaryFilePath(binaryFileName),
       m_beginAddress(beginAddress),
       m_endAddress(endAddress)
     {
@@ -255,7 +255,7 @@ namespace clang_mutate
                     const BinaryAddressMap& binaryAddressMap ) :
       m_astNonBinaryEntry( counter, s, rewrite )
     {
-      m_binaryFileName = binaryAddressMap.getBinary();
+      m_binaryFilePath = binaryAddressMap.getBinaryPath();
       m_beginAddress = binaryAddressMap.getBeginAddressForLine(
                            m_astNonBinaryEntry.getSrcFileName(), 
                            m_astNonBinaryEntry.getBeginSrcLine());
@@ -269,7 +269,7 @@ namespace clang_mutate
     {
       if ( ASTBinaryEntry::jsonObjHasRequiredFields(jsonValue) )
       {
-        m_binaryFileName = jsonValue.get("binary_file_name").get<std::string>();
+        m_binaryFilePath = jsonValue.get("binary_file_path").get<std::string>();
         m_beginAddress   = jsonValue.get("begin_addr").get<int64_t>();
         m_endAddress     = jsonValue.get("end_addr").get<int64_t>();
       }
@@ -287,7 +287,7 @@ namespace clang_mutate
                                  m_astNonBinaryEntry.getEndSrcLine(),
                                  m_astNonBinaryEntry.getEndSrcCol(),
                                  m_astNonBinaryEntry.getSrcText(),
-                                 m_binaryFileName,
+                                 m_binaryFilePath,
                                  m_beginAddress,
                                  m_endAddress );
     }
@@ -301,15 +301,15 @@ namespace clang_mutate
     {
       char msg[256];
 
-      sprintf(msg, "%8d %6d:%-3d %6d:%-3d %#016x %#016x %s", 
+      sprintf(msg, "%8d %6d:%-3d %6d:%-3d %25s %#016x %#016x", 
                    m_astNonBinaryEntry.getCounter(),
                    m_astNonBinaryEntry.getBeginSrcLine(),
                    m_astNonBinaryEntry.getBeginSrcCol(),
                    m_astNonBinaryEntry.getEndSrcLine(),
                    m_astNonBinaryEntry.getEndSrcCol(),
+                   m_astNonBinaryEntry.getASTClass().c_str(),
                    m_beginAddress,
-                   m_endAddress,
-                   m_astNonBinaryEntry.getASTClass().c_str());
+                   m_endAddress);
 
       return std::string(msg);
     }
@@ -318,7 +318,7 @@ namespace clang_mutate
     {
       picojson::object jsonObj = m_astNonBinaryEntry.toJSON().get<picojson::object>();
       
-      jsonObj["binary_file_name"] = picojson::value(m_binaryFileName);
+      jsonObj["binary_file_path"] = picojson::value(m_binaryFilePath);
       jsonObj["begin_addr"] = picojson::value(static_cast<int64_t>(m_beginAddress));
       jsonObj["end_addr"] = picojson::value(static_cast<int64_t>(m_endAddress));
  
@@ -328,7 +328,7 @@ namespace clang_mutate
     static bool jsonObjHasRequiredFields( const picojson::value &jsonValue )
     {
       return ASTNonBinaryEntry::jsonObjHasRequiredFields( jsonValue ) &&
-             jsonValue.contains("binary_file_name") &&
+             jsonValue.contains("binary_file_path") &&
              jsonValue.contains("begin_addr") &&
              jsonValue.contains("end_addr");
     }

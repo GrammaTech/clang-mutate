@@ -29,7 +29,7 @@ all: $(OBJECTS) $(EXES)
 %: %.o
 	$(CXX) -o $@ $< 
 
-clang-mutate: ASTMutate.o ASTBinaryAddressLister.o clang-mutate.o
+clang-mutate: ASTMutate.o ASTLister.o clang-mutate.o
 	$(CXX) -o $@ $^ $(CLANGLIBS) $(LLVMLDFLAGS)
 
 clean:

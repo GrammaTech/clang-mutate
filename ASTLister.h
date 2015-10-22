@@ -1,5 +1,5 @@
-#ifndef DRIVER_ASTMUTATORS_H
-#define DRIVER_ASTMUTATORS_H
+#ifndef AST_LISTER_H
+#define AST_LISTER_H
 
 #include "clang/Basic/LLVM.h"
 #include "clang/AST/ASTConsumer.h"
@@ -7,7 +7,7 @@
 
 namespace clang_mutate {  
 
-clang::ASTConsumer *CreateASTBinaryAddressLister(clang::StringRef Binary);
+clang::ASTConsumer *CreateASTLister(clang::StringRef Binary, bool OutputAsJSON);
 
 }
 
