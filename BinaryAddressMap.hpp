@@ -165,7 +165,7 @@ namespace clang_mutate{
                      "" : realpath_buffer;
    
       if ( !m_binaryPath.empty() ) {
-        const std::string cmd("llvm-dwarfdump -debug-dump=line " + binaryRealPath);
+        const std::string cmd("llvm-dwarfdump -debug-dump=line " + m_binaryPath);
         init( exec(cmd.c_str()) );
       }
     }
