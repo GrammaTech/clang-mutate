@@ -19,13 +19,14 @@
 namespace clang_mutate{
   class BinaryAddressMap {
   private:
-    typedef std::pair<long, unsigned long long> LineNumAddressPair;
+    typedef std::pair<unsigned int, unsigned long> LineNumAddressPair;
     typedef std::pair<std::string, LineNumAddressPair> FilenameLineNumAddressPair;
-    typedef std::map<long, unsigned long long> LineNumsToAddressesMap;
+    typedef std::map<unsigned int, unsigned long> LineNumsToAddressesMap;
     typedef std::map<std::string, LineNumsToAddressesMap> FilesMap;
-    typedef std::map<unsigned, FilesMap> CompilationUnitMap;
+    typedef std::map<unsigned int, FilesMap> CompilationUnitMap;
 
-    CompilationUnitMap compilationUnitMap;
+    CompilationUnitMap m_compilationUnitMap;
+    std::string m_binary;
 
     // Parse a single line in the form "%0x     %d     %d     %d  %d  %s"
     //  %0x#1: Address in binary
@@ -36,9 +37,9 @@ namespace clang_mutate{
       // Regular expressions would be cool...
       std::stringstream lineEntriesStream( line );
       FilenameLineNumAddressPair filenameLineNumAddressPair;
-      unsigned long long address;
-      long lineNum;
-      unsigned tmp, fileIndex;
+      unsigned long address;
+      unsigned int lineNum;
+      unsigned int tmp, fileIndex;
     
       // Special: If end_sequence is present, this is the end address of the current
       // line number. We will just store it as the next line number.      
@@ -75,7 +76,7 @@ namespace clang_mutate{
     std::string parseFileLine( const std::string &line, const std::vector<std::string> &directories ) {
       // Regular expresssions would be cool...
       std::stringstream lineEntriesStream( line.substr( line.find_last_of(']')+1 ) );
-      unsigned directoryIndex;
+      unsigned int directoryIndex;
       std::string tmp1, tmp2, fileName;
 
       lineEntriesStream >> directoryIndex >> tmp1 >> tmp2 >> fileName;
@@ -122,14 +123,14 @@ namespace clang_mutate{
     // Parse the drawf-dump output lines.
     void init(const std::vector<std::string>& drawfDumpLines){
       std::string line;
-      unsigned compilationUnit = -1;
+      unsigned int compilationUnit = -1;
      
       for ( unsigned long long currentline = 0;
             currentline < drawfDumpLines.size();
             currentline++ ) {
         if ( drawfDumpLines[currentline].find(".debug_line contents") != std::string::npos ) {
           compilationUnit++;
-          compilationUnitMap[compilationUnit] = parseCompilationUnit( drawfDumpLines, currentline );
+          m_compilationUnitMap[compilationUnit] = parseCompilationUnit( drawfDumpLines, currentline );
         }
       }
     }
@@ -157,7 +158,9 @@ namespace clang_mutate{
     }
 
     // Initialize a BinaryAddressMap from an ELF executable.
-    BinaryAddressMap(const std::string &binary) {
+    BinaryAddressMap(const std::string &binary) :
+      m_binary(binary)
+    {
       char realpath_buffer[1024];
       std::string binaryRealPath = 
         (realpath(binary.c_str(), realpath_buffer) == NULL) ? 
@@ -169,21 +172,25 @@ namespace clang_mutate{
       }
     }
 
-    bool isEmpty() { 
-      return compilationUnitMap.empty();
+    bool isEmpty() const { 
+      return m_compilationUnitMap.empty();
+    }
+
+    std::string getBinary() const {
+      return m_binary;
     }
 
     // Retrieve the begin and end addresses in the binary for a given line in a file.
-    typedef std::pair<unsigned long long, unsigned long long> BeginEndAddressPair;
+    typedef std::pair<unsigned long, unsigned long> BeginEndAddressPair;
     BeginEndAddressPair getBeginEndAddressesForLine( const std::string& filePath, 
-                                                     long lineNum) {
+                                                     unsigned int lineNum) const {
       BeginEndAddressPair beginEndAddresses;
-      beginEndAddresses.first  = (unsigned long long) -1;
-      beginEndAddresses.second = (unsigned long long) -1;
+      beginEndAddresses.first  = (unsigned long) -1;
+      beginEndAddresses.second = (unsigned long) -1;
 
       // Iterate over each compilation unit
-      for ( CompilationUnitMap::iterator compilationUnitMapIter = compilationUnitMap.begin();
-            compilationUnitMapIter != compilationUnitMap.end();
+      for ( CompilationUnitMap::const_iterator compilationUnitMapIter = m_compilationUnitMap.begin();
+            compilationUnitMapIter != m_compilationUnitMap.end();
             compilationUnitMapIter++ ) {
         FilesMap filesMap = compilationUnitMapIter->second;
 
@@ -207,19 +214,19 @@ namespace clang_mutate{
       return beginEndAddresses;
     }
 
-    unsigned long long getBeginAddressForLine( const std::string& filePath,
-                                               long lineNum ) {
+    unsigned long getBeginAddressForLine( const std::string& filePath,
+                                          unsigned int lineNum ) const {
       return getBeginEndAddressesForLine(filePath, lineNum ).first;
     }
 
-    unsigned long long getEndAddressForLine( const std::string& filePath,
-                                             long lineNum ) {
+    unsigned long getEndAddressForLine( const std::string& filePath,
+                                        unsigned int lineNum ) const {
       return getBeginEndAddressesForLine(filePath, lineNum ).second;
     }
 
-    std::ostream& dump(std::ostream& out) {
-      for ( CompilationUnitMap::iterator compilationUnitMapIter = compilationUnitMap.begin();
-            compilationUnitMapIter != compilationUnitMap.end();
+    std::ostream& dump(std::ostream& out) const {
+      for ( CompilationUnitMap::const_iterator compilationUnitMapIter = m_compilationUnitMap.begin();
+            compilationUnitMapIter != m_compilationUnitMap.end();
             compilationUnitMapIter++ ) {
         FilesMap filesMap = compilationUnitMapIter->second;
         out << "CU: " << compilationUnitMapIter->first << std::endl;
