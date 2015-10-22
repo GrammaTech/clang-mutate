@@ -26,7 +26,7 @@ namespace clang_mutate{
     typedef std::map<unsigned int, FilesMap> CompilationUnitMap;
 
     CompilationUnitMap m_compilationUnitMap;
-    std::string m_binary;
+    std::string m_binaryPath;
 
     // Parse a single line in the form "%0x     %d     %d     %d  %d  %s"
     //  %0x#1: Address in binary
@@ -158,15 +158,13 @@ namespace clang_mutate{
     }
 
     // Initialize a BinaryAddressMap from an ELF executable.
-    BinaryAddressMap(const std::string &binary) :
-      m_binary(binary)
+    BinaryAddressMap(const std::string &binary)
     {
       char realpath_buffer[1024];
-      std::string binaryRealPath = 
-        (realpath(binary.c_str(), realpath_buffer) == NULL) ? 
-        "" : realpath_buffer;
+      m_binaryPath = (realpath(binary.c_str(), realpath_buffer) == NULL) ? 
+                     "" : realpath_buffer;
    
-      if ( !binaryRealPath.empty() ) {
+      if ( !m_binaryPath.empty() ) {
         const std::string cmd("llvm-dwarfdump -debug-dump=line " + binaryRealPath);
         init( exec(cmd.c_str()) );
       }
@@ -176,8 +174,8 @@ namespace clang_mutate{
       return m_compilationUnitMap.empty();
     }
 
-    std::string getBinary() const {
-      return m_binary;
+    std::string getBinaryPath() const {
+      return m_binaryPath;
     }
 
     // Retrieve the begin and end addresses in the binary for a given line in a file.
