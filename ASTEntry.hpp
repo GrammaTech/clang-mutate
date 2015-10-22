@@ -6,7 +6,7 @@
 #ifndef AST_ENTRY_HPP
 #define AST_ENTRY_HPP
 
-#include "BinaryAddressMap.hpp"
+#include "BinaryAddressMap.h"
 
 #include "clang/AST/AST.h"
 #include "clang/Basic/SourceManager.h"
