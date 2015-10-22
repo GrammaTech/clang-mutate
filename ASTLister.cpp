@@ -1,6 +1,6 @@
 #include "ASTLister.h"
 #include "BinaryAddressMap.h"
-#include "ASTEntryList.hpp"
+#include "ASTEntryList.h"
 
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/Diagnostic.h"

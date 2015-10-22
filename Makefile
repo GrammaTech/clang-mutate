@@ -5,7 +5,7 @@ PICOJSON_DEFINES := -D PICOJSON_USE_INT64
 CXXFLAGS := $(shell llvm-config --cxxflags) $(RTTIFLAG) $(PICOJSON_INCS) $(PICOJSON_DEFINES)
 LLVMLDFLAGS := $(shell llvm-config --ldflags --libs) -ldl
 
-SOURCES = ASTMutate.cpp ASTLister.cpp ASTEntry.cpp BinaryAddressMap.cpp clang-mutate.cpp
+SOURCES = ASTMutate.cpp ASTLister.cpp ASTEntry.cpp ASTEntryList.cpp BinaryAddressMap.cpp clang-mutate.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 EXES = clang-mutate
 CLANGLIBS = \
