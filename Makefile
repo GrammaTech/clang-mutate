@@ -5,9 +5,9 @@ PICOJSON_DEFINES := -D PICOJSON_USE_INT64
 CXXFLAGS := $(shell llvm-config --cxxflags) $(RTTIFLAG) $(PICOJSON_INCS) $(PICOJSON_DEFINES)
 LLVMLDFLAGS := $(shell llvm-config --ldflags --libs) -ldl
 
-SOURCES = clang-mutate.cpp
+SOURCES = ASTMutate.cpp ASTLister.cpp clang-mutate.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
-EXES = $(OBJECTS:.o=)
+EXES = clang-mutate
 CLANGLIBS = \
 	-lclangFrontend \
 	-lclangSerialization \
@@ -23,17 +23,17 @@ CLANGLIBS = \
 	-lclangRewriteCore \
 	-lclangRewriteFrontend
 
-all: $(OBJECTS) $(EXES)
+all: $(EXES)
 .PHONY: clean install
 
 %: %.o
 	$(CXX) -o $@ $< 
 
-clang-mutate: ASTMutate.o ASTLister.o clang-mutate.o
+clang-mutate: $(OBJECTS)
 	$(CXX) -o $@ $^ $(CLANGLIBS) $(LLVMLDFLAGS)
 
 clean:
-	-rm -f $(EXES) $(OBJECTS) ASTMutate.o compile_commands.json a.out etc/hello etc/loop *~
+	-rm -f $(EXES) $(OBJECTS) compile_commands.json a.out etc/hello etc/loop *~
 
 install: clang-mutate
 	cp $< $$(dirname $$(which clang))
