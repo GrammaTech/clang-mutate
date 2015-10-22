@@ -1,7 +1,8 @@
 CXX := clang++
 RTTIFLAG := -fno-rtti
 PICOJSON_INCS := -I third-party/picojson-1.3.0
-CXXFLAGS := $(shell llvm-config --cxxflags) $(RTTIFLAG) $(PICOJSON_INCS)
+PICOJSON_DEFINES := -D PICOJSON_USE_INT64
+CXXFLAGS := $(shell llvm-config --cxxflags) $(RTTIFLAG) $(PICOJSON_INCS) $(PICOJSON_DEFINES)
 LLVMLDFLAGS := $(shell llvm-config --ldflags --libs) -ldl
 
 SOURCES = clang-mutate.cpp
