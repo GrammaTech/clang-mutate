@@ -6,6 +6,7 @@
 
 #include <cstdlib>
 #include <cstdio>
+#include <iomanip>
 #include <map>
 #include <string>
 #include <sstream>
@@ -27,6 +28,97 @@ namespace clang_mutate{
     pclose(pipe);
     
     return lines;
+  }
+
+  // Splits a string into a vector of tokens using 'delim' as
+  // a delimiter.
+  std::vector<std::string> split(
+    const std::string &s, 
+    const std::string &delim)
+  {
+    size_t i = s.find_first_not_of(delim, 0);
+    size_t j = i;
+    std::vector<std::string> tokens;
+
+    while ( (j = s.find_first_of(delim, i)) != std::string::npos )
+    {
+      tokens.push_back( s.substr(i, j-i) );
+      i = s.find_first_not_of(delim, j+1);
+    }
+   
+    if ( i != std::string::npos ) 
+      tokens.push_back(s.substr(i));
+
+    return tokens;
+  }
+
+  std::vector<std::string> BinaryAddressMap::objdumpDisassemble(
+    unsigned long beginAddress,
+    unsigned long endAddress)
+  {
+    std::stringstream cmd;
+    
+    cmd << "objdump" << " "
+        << "-d" << " " 
+        << "--start-address=0x" << std::hex << beginAddress << std::dec << " "
+        << "--stop-address=0x"  << std::hex << endAddress << std::dec << " "
+        << getBinaryPath();
+
+    return exec( cmd.str().c_str() );
+  }
+
+  BinaryAddressMap::BinaryContentsMap BinaryAddressMap::parseObjdumpDisassembly( 
+    const std::vector<std::string> &objdumpLines )
+  {
+    BinaryContentsMap binaryContentsMap;
+
+    // Iterate over each line returned by objdump
+    for ( std::vector<std::string>::const_iterator iter = objdumpLines.begin();
+          iter != objdumpLines.end();
+          iter++ )
+    {
+      std::vector<std::string> tokens = split(*iter, " \t\r\n:");
+
+      unsigned long address = 0;
+      Bytes bytes;
+
+      if ( tokens.size() > 0 )
+      {
+        // The first token is the address in the binary (e.g. "4004f4")
+        address = strtoul( tokens.begin()->c_str(), NULL, 16 );
+
+        // The next tokens are a sequence of hex bytes (e.g. "48", "89", "e5")
+        // Iterate until we find a token which not a hex byte (e.g. "push" or "mov")
+        for ( std::vector<std::string>::const_iterator byteIter = tokens.begin() + 1;
+              byteIter != tokens.end() && 
+              byteIter->find_first_not_of("0123456789abcdef") == std::string::npos;
+              byteIter++ )
+        {
+          Byte byte = static_cast<Byte>( strtoul(byteIter->c_str(), NULL, 16) ); 
+          bytes.push_back( byte );
+        }
+
+        binaryContentsMap[address] = bytes;
+      }
+    }
+
+    return binaryContentsMap;
+  }
+
+  void BinaryAddressMap::fillBinaryContentsCache( 
+    unsigned long beginAddress,
+    unsigned long endAddress )
+  {
+    std::vector<std::string> objdumpLines = objdumpDisassemble( beginAddress, endAddress );
+    BinaryContentsMap binaryContentsMap = parseObjdumpDisassembly( objdumpLines );
+
+    // Update the binary contents cache with the objdump results
+    for ( BinaryContentsMap::iterator iter = binaryContentsMap.begin();
+          iter != binaryContentsMap.end();
+          iter++ )
+    {
+      m_binaryContentsCache[iter->first] = iter->second;
+    }
   }
 
   BinaryAddressMap::FilenameLineNumAddressPair BinaryAddressMap::parseAddressLine(
@@ -197,6 +289,57 @@ namespace clang_mutate{
     const std::string& filePath,
     unsigned int lineNum ) const {
     return getBeginEndAddressesForLine(filePath, lineNum ).second;
+  }
+
+  BinaryAddressMap::Bytes BinaryAddressMap::getBinaryContents( 
+    unsigned long beginAddress,
+    unsigned long endAddress )
+  {
+    BinaryContentsMap::const_iterator cacheIter;
+    Bytes bytes;
+
+    // Test if we could find the bytes for the range [beginAddress, endAddress)
+    // in the cache.  If not, fill it.
+    if ( m_binaryContentsCache.find(beginAddress) == m_binaryContentsCache.end() ||
+         m_binaryContentsCache.find(endAddress) == m_binaryContentsCache.end() )
+    {
+      fillBinaryContentsCache( beginAddress, endAddress );
+    }
+
+    // Push all bytes for the range [beginAddress, endAddress) into 
+    // the bytes vector.
+    for ( cacheIter = m_binaryContentsCache.lower_bound( beginAddress );
+          cacheIter != m_binaryContentsCache.upper_bound( endAddress );
+          cacheIter++ )
+    {
+      for ( Bytes::const_iterator byteIter = cacheIter->second.begin();
+            byteIter != cacheIter->second.end();
+            byteIter++ )
+      {
+        bytes.push_back( *byteIter );
+      }
+    }
+
+    return bytes;
+  }
+
+  std::string BinaryAddressMap::getBinaryContentsAsStr( 
+    unsigned long startAddress,
+    unsigned long endAddress)
+  {
+    std::stringstream ret;
+    Bytes bytes = getBinaryContents( startAddress, endAddress );
+
+    ret << std::hex << std::setfill('0');
+
+    for ( Bytes::const_iterator byteIter = bytes.begin();
+          byteIter != bytes.end();
+          byteIter++ )
+    {
+      ret << std::setw(2) << static_cast<int>(*byteIter) << " ";
+    }
+
+    return ret.str().substr(0, ret.str().length() - 1);
   }
 
   std::ostream& BinaryAddressMap::dump(std::ostream& out) const {

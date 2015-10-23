@@ -96,12 +96,13 @@ namespace clang_mutate
                     const std::string &srcText,
                     const std::string &binaryFileName,
                     const unsigned long beginAddress,
-                    const unsigned long endAddress );
+                    const unsigned long endAddress,
+                    const std::string &binaryContents );
 
     ASTBinaryEntry( const unsigned int counter,
                     clang::Stmt * s,
                     clang::Rewriter& rewrite,
-                    const BinaryAddressMap& binaryAddressMap );
+                    BinaryAddressMap& binaryAddressMap );
 
     ASTBinaryEntry( const picojson::value& jsonValue );
     virtual ~ASTBinaryEntry();
@@ -111,6 +112,7 @@ namespace clang_mutate
     virtual std::string getBinaryFilePath() const;
     virtual unsigned long getBeginAddress() const;
     virtual unsigned long getEndAddress() const;
+    virtual std::string getBinaryContents() const;
 
     virtual std::string toString() const;
     virtual picojson::value toJSON() const;
@@ -120,6 +122,7 @@ namespace clang_mutate
     std::string       m_binaryFilePath;
     unsigned long     m_beginAddress;
     unsigned long     m_endAddress;
+    std::string       m_binaryContents;
   };
 }
 
