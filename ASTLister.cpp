@@ -116,7 +116,8 @@ using namespace clang;
     }
 
     virtual bool VisitStmt(Stmt *S){
-      SourceRange R;
+      SourceRange R = S->getSourceRange();
+      ASTEntry* NewASTEntry = NULL;
 
       // Test if we are in a new function
       // declaration.  If so, update the parent
@@ -126,74 +127,70 @@ using namespace clang;
         PM = new ParentMap(S);
         IsNewFunctionDecl = false;
       }
- 
-      switch (S->getStmtClass()){
 
-      // S is the NULL statement, so return.
-      case Stmt::NoStmtClass:
-        return true;
+      if (S->getStmtClass() != Stmt::NoStmtClass &&
+          IsSourceRangeInMainFile(R))
+      { 
+        switch (S->getStmtClass()){
 
-      // These classes of statements
-      // correspond to exactly 1 or more
-      // lines in a source file.  If applicable,
-      // associate them with binary source code.
-      case Stmt::BreakStmtClass:
-      case Stmt::CapturedStmtClass:
-      case Stmt::CompoundStmtClass:
-      case Stmt::ContinueStmtClass:
-      case Stmt::CXXCatchStmtClass:
-      case Stmt::CXXForRangeStmtClass:
-      case Stmt::CXXTryStmtClass:
-      case Stmt::DeclStmtClass:
-      case Stmt::DoStmtClass:
-      case Stmt::ForStmtClass:
-      case Stmt::GotoStmtClass:
-      case Stmt::IfStmtClass:
-      case Stmt::IndirectGotoStmtClass:
-      case Stmt::ReturnStmtClass:
-      case Stmt::SwitchStmtClass:
-      case Stmt::DefaultStmtClass: 
-      case Stmt::CaseStmtClass: 
-      case Stmt::WhileStmtClass:
-        R = S->getSourceRange();
-        if(IsSourceRangeInMainFile(R)){
-            ASTEntry* NewASTEntry = 
-                ASTEntryFactory::make( Counter, S, Rewrite, BinaryAddresses );
+        // These classes of statements
+        // correspond to exactly 1 or more
+        // lines in a source file.  If applicable,
+        // associate them with binary source code.
+        case Stmt::BreakStmtClass:
+        case Stmt::CapturedStmtClass:
+        case Stmt::CompoundStmtClass:
+        case Stmt::ContinueStmtClass:
+        case Stmt::CXXCatchStmtClass:
+        case Stmt::CXXForRangeStmtClass:
+        case Stmt::CXXTryStmtClass:
+        case Stmt::DeclStmtClass:
+        case Stmt::DoStmtClass:
+        case Stmt::ForStmtClass:
+        case Stmt::GotoStmtClass:
+        case Stmt::IfStmtClass:
+        case Stmt::IndirectGotoStmtClass:
+        case Stmt::ReturnStmtClass:
+        case Stmt::SwitchStmtClass:
+        case Stmt::DefaultStmtClass: 
+        case Stmt::CaseStmtClass: 
+        case Stmt::WhileStmtClass:
+          NewASTEntry = 
+            ASTEntryFactory::make( Counter, S, Rewrite, BinaryAddresses );
 
-            ASTEntries.addEntry( NewASTEntry );
-        }
-        break;
+          ASTEntries.addEntry( NewASTEntry );
+          break;
 
-      // These classes of statements may correspond
-      // to one or more lines in a source file.
-      // If applicable, associate them with binary
-      // source code.
-      case Stmt::AtomicExprClass:
-      case Stmt::CXXMemberCallExprClass:
-      case Stmt::CXXOperatorCallExprClass:
-      case Stmt::CallExprClass:
-        R = S->getSourceRange();
-        if(IsSourceRangeInMainFile(R) && 
-           IsCompleteCStatement(S)){
-            ASTEntry* NewASTEntry = 
-                ASTEntryFactory::make( Counter, S, Rewrite, BinaryAddresses );
+        // These classes of statements may correspond
+        // to one or more lines in a source file.
+        // If applicable, associate them with binary
+        // source code.
+        case Stmt::AtomicExprClass:
+        case Stmt::CXXMemberCallExprClass:
+        case Stmt::CXXOperatorCallExprClass:
+        case Stmt::CallExprClass:
+          if(IsCompleteCStatement(S))
+          {
+            NewASTEntry = 
+              ASTEntryFactory::make( Counter, S, Rewrite, BinaryAddresses );
 
             ASTEntries.addEntry( NewASTEntry );
-        }
-        break;
+          }
+          break;
 
-      default:
         // These classes of statements correspond
         // to sub-expressions within a C/C++ statement.
         // They are too granular to associate with binary
         // source code. 
-        R = S->getSourceRange();
-        if (IsSourceRangeInMainFile(R))
-          ASTEntries.addEntry( new ASTNonBinaryEntry(Counter, S, Rewrite) );
-        break;
+        default:
+          NewASTEntry = new ASTNonBinaryEntry(Counter, S, Rewrite);
+          ASTEntries.addEntry( NewASTEntry );
+          break;
+        }
+
+        Counter++;
       }
 
-      Counter++;
       return true;
     }
 
