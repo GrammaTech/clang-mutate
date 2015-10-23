@@ -17,6 +17,40 @@
 
 namespace clang_mutate
 {
+  ASTEntry* ASTEntryFactory::make( const picojson::value &jsonValue )
+  {
+    if ( ASTBinaryEntry::jsonObjHasRequiredFields(jsonValue) )
+      return new ASTBinaryEntry(jsonValue);
+    else if ( ASTNonBinaryEntry::jsonObjHasRequiredFields(jsonValue) )
+      return new ASTNonBinaryEntry(jsonValue);
+    else
+      return NULL;
+  }
+
+  ASTEntry* ASTEntryFactory::make( const unsigned int counter,
+                                   clang::Stmt *s, 
+                                   clang::Rewriter& rewrite, 
+                                   BinaryAddressMap &binaryAddressMap )
+  {
+    clang::SourceManager &sm = rewrite.getSourceMgr();
+    clang::PresumedLoc beginLoc = sm.getPresumedLoc(s->getSourceRange().getBegin());
+    clang::PresumedLoc endLoc = sm.getPresumedLoc(s->getSourceRange().getEnd());
+
+    std::string srcFileName = sm.getFileEntryForID( sm.getMainFileID() )->getName();
+    unsigned int beginSrcLine = beginLoc.getLine();
+    unsigned int endSrcLine = endLoc.getLine();
+
+    if ( binaryAddressMap.canGetBeginAddressForLine( srcFileName, beginSrcLine) &&
+         binaryAddressMap.canGetEndAddressForLine( srcFileName, endSrcLine ) )
+    {
+      return new ASTBinaryEntry( counter, s, rewrite, binaryAddressMap );
+    }
+    else
+    {
+      return new ASTNonBinaryEntry( counter, s, rewrite );
+    }
+  }
+
   ASTNonBinaryEntry::ASTNonBinaryEntry() :
     m_counter(0),
     m_astClass(""),

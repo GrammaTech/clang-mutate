@@ -157,10 +157,10 @@ using namespace clang;
       case Stmt::WhileStmtClass:
         R = S->getSourceRange();
         if(IsSourceRangeInMainFile(R)){
-          if ( BinaryAddresses.isEmpty() ) 
-            ASTEntries.addEntry( new ASTNonBinaryEntry(Counter, S, Rewrite) );
-          else
-            ASTEntries.addEntry( new ASTBinaryEntry(Counter, S, Rewrite, BinaryAddresses) );
+            ASTEntry* NewASTEntry = 
+                ASTEntryFactory::make( Counter, S, Rewrite, BinaryAddresses );
+
+            ASTEntries.addEntry( NewASTEntry );
         }
         break;
 
@@ -175,10 +175,10 @@ using namespace clang;
         R = S->getSourceRange();
         if(IsSourceRangeInMainFile(R) && 
            IsCompleteCStatement(S)){
-          if ( BinaryAddresses.isEmpty() )
-            ASTEntries.addEntry( new ASTNonBinaryEntry(Counter, S, Rewrite) );
-          else
-            ASTEntries.addEntry( new ASTBinaryEntry(Counter, S, Rewrite, BinaryAddresses) );
+            ASTEntry* NewASTEntry = 
+                ASTEntryFactory::make( Counter, S, Rewrite, BinaryAddresses );
+
+            ASTEntries.addEntry( NewASTEntry );
         }
         break;
 

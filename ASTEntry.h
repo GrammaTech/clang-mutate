@@ -31,6 +31,18 @@ namespace clang_mutate
     virtual picojson::value toJSON() const = 0;
   };
 
+  class ASTEntryFactory
+  {
+  public:
+    static ASTEntry* make( const picojson::value &jsonValue );
+    static ASTEntry* make( const unsigned int counter,
+                           clang::Stmt *s, 
+                           clang::Rewriter& rewrite,
+                           BinaryAddressMap &binaryAddressMap );
+  private:
+    ASTEntryFactory() {}
+  };
+
   // AST entry without binary information
   class ASTNonBinaryEntry : public ASTEntry
   {

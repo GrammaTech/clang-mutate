@@ -39,14 +39,10 @@ namespace clang_mutate
             iter != array.end();
             iter++ )
       {
-        if ( ASTBinaryEntry::jsonObjHasRequiredFields( *iter ) )
-        {
-          m_astEntries.push_back( new ASTBinaryEntry( *iter ) );
-        }
-        else if ( ASTNonBinaryEntry::jsonObjHasRequiredFields( *iter ) )
-        {
-          m_astEntries.push_back( new ASTNonBinaryEntry( *iter ) );
-        }
+        ASTEntry* astEntry = ASTEntryFactory::make( json );
+
+        if ( astEntry != NULL )
+          m_astEntries.push_back(astEntry);
       }
     } 
   }

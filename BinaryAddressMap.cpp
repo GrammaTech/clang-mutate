@@ -244,6 +244,36 @@ namespace clang_mutate{
     return m_binaryPath;
   }
 
+  bool BinaryAddressMap::canGetBeginAddressForLine(
+    const std::string& filePath, 
+    unsigned int lineNum ) const
+  {
+    return getBeginAddressForLine( filePath, lineNum ) != 
+           static_cast<unsigned long>(-1);
+  }
+
+  bool BinaryAddressMap::canGetEndAddressForLine(
+    const std::string& filePath, 
+    unsigned int lineNum ) const
+  {
+    return getEndAddressForLine( filePath, lineNum ) != 
+           static_cast<unsigned long>(-1);
+  }
+
+  unsigned long BinaryAddressMap::getBeginAddressForLine( 
+    const std::string& filePath,
+    unsigned int lineNum ) const 
+  {
+    return getBeginEndAddressesForLine(filePath, lineNum ).first;
+  }
+
+  unsigned long BinaryAddressMap::getEndAddressForLine( 
+    const std::string& filePath,
+    unsigned int lineNum ) const 
+  {
+    return getBeginEndAddressesForLine(filePath, lineNum ).second;
+  }
+
   // Retrieve the begin and end addresses in the binary for a given line in a file.
   BinaryAddressMap::BeginEndAddressPair BinaryAddressMap::getBeginEndAddressesForLine( 
     const std::string& filePath, 
@@ -277,18 +307,6 @@ namespace clang_mutate{
     }
 
     return beginEndAddresses;
-  }
-
-  unsigned long BinaryAddressMap::getBeginAddressForLine( 
-    const std::string& filePath,
-    unsigned int lineNum ) const {
-    return getBeginEndAddressesForLine(filePath, lineNum ).first;
-  }
-
-  unsigned long BinaryAddressMap::getEndAddressForLine( 
-    const std::string& filePath,
-    unsigned int lineNum ) const {
-    return getBeginEndAddressesForLine(filePath, lineNum ).second;
   }
 
   BinaryAddressMap::Bytes BinaryAddressMap::getBinaryContents( 

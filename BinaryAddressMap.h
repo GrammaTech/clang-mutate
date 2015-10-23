@@ -39,10 +39,13 @@ namespace clang_mutate{
     // Return the path to the executable utilized to populate the map.
     std::string getBinaryPath() const;
 
-    // Retrieve the begin and end addresses in the binary for a given line in a file.
-    typedef std::pair<unsigned long, unsigned long> BeginEndAddressPair;
-    BeginEndAddressPair getBeginEndAddressesForLine( const std::string& filePath, 
-                                                     unsigned int lineNum) const;
+    // Return true if the begin address for a given line in a file can be found.
+    bool canGetBeginAddressForLine( const std::string& filePath,
+                                    unsigned int lineNum ) const;
+
+    // Return true if the end address for a given line in a file can be found.
+    bool canGetEndAddressForLine( const std::string& filePath,
+                                  unsigned int lineNum ) const;
 
     // Retrieve the begin address for a given line in a file.
     unsigned long getBeginAddressForLine( const std::string& filePath,
@@ -51,6 +54,11 @@ namespace clang_mutate{
     // Retrieve the end address for a given line in a file.
     unsigned long getEndAddressForLine( const std::string& filePath,
                                         unsigned int lineNum ) const;
+
+    // Retrieve the begin and end addresses in the binary for a given line in a file.
+    typedef std::pair<unsigned long, unsigned long> BeginEndAddressPair;
+    BeginEndAddressPair getBeginEndAddressesForLine( const std::string& filePath, 
+                                                     unsigned int lineNum) const;
 
     // Get the raw contents of a binary from [startAddress, endAddress)
     // as a sequence of hex digits.
