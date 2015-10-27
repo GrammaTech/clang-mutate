@@ -11,6 +11,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <iostream>
 
 namespace clang_mutate{
   // Executes a command a returns the output as a vector of strings
@@ -155,8 +156,35 @@ namespace clang_mutate{
     return realpath(directory.c_str(), buffer);
   }
 
+  std::string BinaryAddressMap::findFileOnSourcePath( 
+    const std::set<std::string>& sourcePaths,
+    const std::string& directory,
+    const std::string& fileName)
+  {
+    char buffer[1024] = { '\0' };
+
+    if ( realpath( (directory + "/" + fileName).c_str(), buffer) )
+    {
+      return std::string( buffer );
+    }
+    else 
+    {
+      for ( std::set<std::string>::const_iterator sourcePathIter = sourcePaths.begin();
+            sourcePathIter != sourcePaths.end();
+            sourcePathIter++ )
+      {
+        if ( realpath ((*sourcePathIter + "/" + directory + "/" + fileName).c_str(), 
+                        buffer) )
+          return std::string( buffer );
+      }
+    }
+
+    return ""; 
+  }
+
   std::string BinaryAddressMap::parseFileLine(
-    const std::string &line, 
+    const std::string &line,
+    const std::set<std::string>& sourcePaths,
     const std::vector<std::string> &directories ) {
 
     // Regular expresssions would be cool...
@@ -165,11 +193,15 @@ namespace clang_mutate{
     std::string tmp1, tmp2, fileName;
 
     lineEntriesStream >> directoryIndex >> tmp1 >> tmp2 >> fileName;
-    return directories[directoryIndex-1] + "/" + fileName;
+
+    return (directoryIndex > 0) ? 
+            findFileOnSourcePath( sourcePaths, directories[directoryIndex-1], fileName ) :
+            findFileOnSourcePath( sourcePaths, ".", fileName);
   }
 
   BinaryAddressMap::FilesMap BinaryAddressMap::parseCompilationUnit( 
-    const std::vector<std::string>& drawfDumpLines, 
+    const std::vector<std::string>& dwarfDumpDebugLine, 
+    const std::set<std::string>& sourcePaths,
     unsigned long long &currentline ) {
 
     FilesMap filesMap;
@@ -178,9 +210,9 @@ namespace clang_mutate{
 
     currentline++;
 
-    while ( currentline < drawfDumpLines.size() &&
-            drawfDumpLines[currentline].find(".debug_line contents") == std::string::npos ) {
-      std::string line = drawfDumpLines[currentline];
+    while ( currentline < dwarfDumpDebugLine.size() &&
+            dwarfDumpDebugLine[currentline].find(".debug_line contents") == std::string::npos ) {
+      std::string line = dwarfDumpDebugLine[currentline];
       std::string directory;
       std::string file;
 
@@ -190,7 +222,7 @@ namespace clang_mutate{
       }
 
       if ( line.find("file_names") == 0 ) {
-        file = parseFileLine( line, directories );
+        file = parseFileLine( line, sourcePaths, directories );
         files.push_back( file );
       }
 
@@ -205,20 +237,46 @@ namespace clang_mutate{
     return filesMap;
   }
 
-  void BinaryAddressMap::init(const std::vector<std::string>& drawfDumpLines){
+  std::set< std::string > BinaryAddressMap::getSourcePaths( 
+    const std::vector<std::string>& dwarfDumpDebugInfo)
+  {
+    std::set< std::string > sourcePaths;
+
+    sourcePaths.insert( "." );
+    for ( std::vector<std::string>::const_iterator lineIter = dwarfDumpDebugInfo.begin();
+          lineIter != dwarfDumpDebugInfo.end();
+          lineIter++ )
+    {
+      if ( lineIter->find("DW_AT_comp_dir") != std::string::npos )
+      {
+        size_t pathStart = lineIter->find_first_of("\"") + 1;
+        size_t pathEnd = lineIter->find_last_of("\"") - 1;
+        const std::string path = 
+          lineIter->substr( pathStart, pathEnd - pathStart + 1 );
+
+        sourcePaths.insert( path );
+      }
+    }
+
+    return sourcePaths;
+  }
+
+  void BinaryAddressMap::init(const std::vector<std::string>& dwarfDumpDebugLine,
+                              const std::set<std::string>& sourcePaths){
     std::string line;
     unsigned int compilationUnit = -1;
    
     for ( unsigned long long currentline = 0;
-          currentline < drawfDumpLines.size();
+          currentline < dwarfDumpDebugLine.size();
           currentline++ ) {
-      if ( drawfDumpLines[currentline].find(".debug_line contents") != std::string::npos ) {
+      if ( dwarfDumpDebugLine[currentline].find(".debug_line contents") != std::string::npos ) {
         compilationUnit++;
-        m_compilationUnitMap[compilationUnit] = parseCompilationUnit( drawfDumpLines, currentline );
+
+        m_compilationUnitMap[compilationUnit] = 
+          parseCompilationUnit( dwarfDumpDebugLine, sourcePaths, currentline );
       }
     }
   }
-
   
   BinaryAddressMap::BinaryAddressMap() {
   }
@@ -231,8 +289,17 @@ namespace clang_mutate{
                    "" : realpath_buffer;
  
     if ( !m_binaryPath.empty() ) {
-      const std::string cmd("llvm-dwarfdump -debug-dump=line " + m_binaryPath);
-      init( exec(cmd.c_str()) );
+      const std::string dwarfDumpDebugLineCmd = 
+        "llvm-dwarfdump -debug-dump=line " + m_binaryPath;
+      const std::string dwarfDumpDebugInfoCmd = 
+        "llvm-dwarfdump -debug-dump=info " + m_binaryPath;
+
+      std::vector<std::string> dwarfDumpDebugLine = 
+        exec( dwarfDumpDebugLineCmd.c_str() );
+      std::vector<std::string> dwarfDumpDebugInfo = 
+        exec( dwarfDumpDebugInfoCmd.c_str() );
+
+      init( dwarfDumpDebugLine, getSourcePaths( dwarfDumpDebugInfo ) );
     }
   }
 
