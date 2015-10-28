@@ -15,6 +15,44 @@
 
 #include <string>
 
+std::string escape_for_json(const std::string & s)
+{
+  std::string ans;
+  for (size_t i = 0; i < s.size(); ++i) {
+    switch (s[i]) {
+    case '\n':
+      ans.append("\\n");
+      break;
+    case '\"':
+      ans.append("\\\"");
+      break;
+    case '\\':
+      ans.append("\\\\");
+      break;
+    default:
+      ans.push_back(s[i]);
+    }
+  }
+  return ans;
+}
+
+std::string unescape_from_json(const std::string & s)
+{
+  std::string ans;
+  for (size_t i = 0; i < s.size(); ++i) {
+    if (s[i] == '\\' && i != s.size() - 1) {
+      char c = s[++i];
+      if (c == 'n')
+	ans.push_back('\n');
+      else
+	ans.push_back(c);
+      continue;
+    }
+    ans.push_back(s[i]);
+  }
+  return ans;
+}
+
 namespace clang_mutate
 {
   ASTEntry* ASTEntryFactory::make( const picojson::value &jsonValue )
@@ -114,7 +152,8 @@ namespace clang_mutate
       m_beginSrcCol  = jsonValue.get("begin_src_col").get<int64_t>();
       m_endSrcLine   = jsonValue.get("end_src_line").get<int64_t>();
       m_endSrcCol    = jsonValue.get("end_src_col").get<int64_t>();
-      m_srcText      = jsonValue.get("src_text").get<std::string>();
+      m_srcText      = unescape_from_json(
+			  jsonValue.get("src_text").get<std::string>());
     }
   }
 
@@ -198,7 +237,7 @@ namespace clang_mutate
     jsonObj["begin_src_col"] = picojson::value(static_cast<int64_t>(m_beginSrcCol));
     jsonObj["end_src_line"] = picojson::value(static_cast<int64_t>(m_endSrcLine));
     jsonObj["end_src_col"] = picojson::value(static_cast<int64_t>(m_endSrcCol));
-    jsonObj["src_text"] = picojson::value(m_srcText);
+    jsonObj["src_text"] = picojson::value(escape_for_json(m_srcText));
 
     return picojson::value(jsonObj);
   }
