@@ -32,16 +32,6 @@ bool BindingCtx::is_bound(const std::string & name) const
   return lookup(name) != NULL;
 }
   
-void GetBindingCtx::HandleTranslationUnit(ASTContext & astCtx)
-{
-  TranslationUnitDecl * decl = astCtx.getTranslationUnitDecl();
-  
-  rewrite.setSourceMgr(astCtx.getSourceManager(),
-		       astCtx.getLangOpts());
-  TraverseDecl(decl);
-}
-  
-  
 bool GetBindingCtx::TraverseVarDecl(VarDecl * decl)
 {
   std::string name = decl->getQualifiedNameAsString();

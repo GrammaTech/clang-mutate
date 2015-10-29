@@ -8,7 +8,6 @@
 #include "clang/AST/RecursiveASTVisitor.h"
 #include "clang/Rewrite/Frontend/Rewriters.h"
 #include "clang/Rewrite/Core/Rewriter.h"
-#include "clang/AST/PrettyPrinter.h"
 
 #include <string>
 #include <stack>
@@ -51,8 +50,6 @@ public:
 
   GetBindingCtx(const GetBindingCtx & b) : ctx(b.ctx) {}
   
-  void HandleTranslationUnit(clang::ASTContext & astCtx);
-
   bool TraverseVarDecl(clang::VarDecl * decl);
 
   bool VisitStmt(clang::Stmt * expr);
@@ -64,8 +61,6 @@ public:
   
 private:
   BindingCtx ctx;
-  clang::StringRef binary;
-  clang::Rewriter rewrite;
   std::set<BindingCtx::Binding> unbound_v, unbound_f;
 };
 
