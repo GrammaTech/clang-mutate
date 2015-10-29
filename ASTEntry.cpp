@@ -457,7 +457,7 @@ namespace clang_mutate
   {
     char msg[256];
 
-    sprintf(msg, "%8d %6d:%-3d %6d:%-3d %-25s %#016x %#016x", 
+    sprintf(msg, "%8d %6d:%-3d %6d:%-3d %-25s %#016lx %#016lx", 
                  getCounter(),
                  getBeginSrcLine(),
                  getBeginSrcCol(),
