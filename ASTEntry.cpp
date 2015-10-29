@@ -43,12 +43,44 @@ std::string unescape_from_json(const std::string & s)
     if (s[i] == '\\' && i != s.size() - 1) {
       char c = s[++i];
       if (c == 'n')
-	ans.push_back('\n');
+        ans.push_back('\n');
       else
-	ans.push_back(c);
+        ans.push_back(c);
       continue;
     }
     ans.push_back(s[i]);
+  }
+  return ans;
+}
+
+template <typename T>
+picojson::value vector_to_json_array(const std::vector<T> & vals)
+{
+  std::vector<picojson::value> ans;
+  for (typename std::vector<T>::const_iterator it = vals.begin();
+       it != vals.end();
+       ++it)
+  {
+    ans.push_back(picojson::value(*it));
+  }
+  return picojson::value(ans);
+}
+
+template <typename T>
+std::vector<T> json_array_to_vector(const picojson::value & jv)
+{
+  std::vector<T> ans;
+  if (!jv.is<picojson::array>()) {
+    assert (!"expected a json array");
+    return ans;
+  }
+
+  std::vector<picojson::value> vals = jv.get<picojson::array>();
+  for (std::vector<picojson::value>::iterator it = vals.begin();
+       it != vals.end();
+       ++it)
+  {
+    ans.push_back(it->get<T>());
   }
   return ans;
 }
@@ -65,10 +97,13 @@ namespace clang_mutate
       return NULL;
   }
 
-  ASTEntry* ASTEntryFactory::make( const unsigned int counter,
-                                   clang::Stmt *s, 
-                                   clang::Rewriter& rewrite, 
-                                   BinaryAddressMap &binaryAddressMap )
+  ASTEntry* ASTEntryFactory::make(
+      const unsigned int counter,
+      clang::Stmt *s,
+      clang::Rewriter& rewrite,
+      BinaryAddressMap &binaryAddressMap,
+      const std::vector<std::string> & unbound_vals,
+      const std::vector<std::string> & unbound_funs)
   {
     clang::SourceManager &sm = rewrite.getSourceMgr();
     clang::PresumedLoc beginLoc = sm.getPresumedLoc(s->getSourceRange().getBegin());
@@ -81,11 +116,20 @@ namespace clang_mutate
     if ( binaryAddressMap.canGetBeginAddressForLine( srcFileName, beginSrcLine) &&
          binaryAddressMap.canGetEndAddressForLine( srcFileName, endSrcLine ) )
     {
-      return new ASTBinaryEntry( counter, s, rewrite, binaryAddressMap );
+      return new ASTBinaryEntry( counter,
+                                 s,
+                                 rewrite,
+                                 binaryAddressMap,
+                                 unbound_vals,
+                                 unbound_funs);
     }
     else
     {
-      return new ASTNonBinaryEntry( counter, s, rewrite );
+      return new ASTNonBinaryEntry( counter,
+                                    s,
+                                    rewrite,
+                                    unbound_vals,
+                                    unbound_funs);
     }
   }
 
@@ -97,7 +141,9 @@ namespace clang_mutate
     m_beginSrcCol(0),
     m_endSrcLine(0),
     m_endSrcCol(0),
-    m_srcText("")
+    m_srcText(""),
+    m_unbound_vals(),
+    m_unbound_funs()
   {
   }
 
@@ -109,7 +155,9 @@ namespace clang_mutate
     const unsigned int beginSrcCol,
     const unsigned int endSrcLine,
     const unsigned int endSrcCol,
-    const std::string &srcText ) :
+    const std::string &srcText,
+    const std::vector<std::string> & unbound_vals,
+    const std::vector<std::string> & unbound_funs) :
 
     m_counter(counter),
     m_astClass(astClass),
@@ -118,14 +166,21 @@ namespace clang_mutate
     m_beginSrcCol(beginSrcCol),
     m_endSrcLine(endSrcLine),
     m_endSrcCol(endSrcCol),
-    m_srcText(srcText)
+    m_srcText(srcText),
+    m_unbound_vals(unbound_vals),
+    m_unbound_funs(unbound_funs)
   {
   }
 
   ASTNonBinaryEntry::ASTNonBinaryEntry( 
     const int counter,
     clang::Stmt * s,
-    clang::Rewriter& rewrite )
+    clang::Rewriter& rewrite,
+    const std::vector<std::string> & unbound_vals,
+    const std::vector<std::string> & unbound_funs) :
+
+    m_unbound_vals(unbound_vals),
+    m_unbound_funs(unbound_funs)
   {
     clang::SourceManager &sm = rewrite.getSourceMgr();
     clang::PresumedLoc beginLoc = sm.getPresumedLoc(s->getSourceRange().getBegin());
@@ -153,7 +208,11 @@ namespace clang_mutate
       m_endSrcLine   = jsonValue.get("end_src_line").get<int64_t>();
       m_endSrcCol    = jsonValue.get("end_src_col").get<int64_t>();
       m_srcText      = unescape_from_json(
-			  jsonValue.get("src_text").get<std::string>());
+                          jsonValue.get("src_text").get<std::string>());
+      m_unbound_vals = json_array_to_vector<std::string>(
+                           jsonValue.get("unbound_vals"));
+      m_unbound_funs = json_array_to_vector<std::string>(
+                           jsonValue.get("unbound_funs"));
     }
   }
 
@@ -168,7 +227,9 @@ namespace clang_mutate
                                   m_beginSrcCol,
                                   m_endSrcLine,
                                   m_endSrcCol,
-                                  m_srcText );
+                                  m_srcText,
+                                  m_unbound_vals,
+                                  m_unbound_funs );
   }
 
   unsigned int ASTNonBinaryEntry::getCounter() const
@@ -211,6 +272,16 @@ namespace clang_mutate
     return m_srcText;
   }
 
+  std::vector<std::string> ASTNonBinaryEntry::getUnboundVals() const
+  {
+    return m_unbound_vals;
+  }
+    
+  std::vector<std::string> ASTNonBinaryEntry::getUnboundFuns() const
+  {
+    return m_unbound_funs;
+  }
+    
   std::string ASTNonBinaryEntry::toString() const
   {
     char msg[256];
@@ -238,6 +309,8 @@ namespace clang_mutate
     jsonObj["end_src_line"] = picojson::value(static_cast<int64_t>(m_endSrcLine));
     jsonObj["end_src_col"] = picojson::value(static_cast<int64_t>(m_endSrcCol));
     jsonObj["src_text"] = picojson::value(escape_for_json(m_srcText));
+    jsonObj["unbound_vals"] = vector_to_json_array(m_unbound_vals);
+    jsonObj["unbound_funs"] = vector_to_json_array(m_unbound_funs);
 
     return picojson::value(jsonObj);
   }
@@ -253,7 +326,9 @@ namespace clang_mutate
            jsonValue.contains("begin_src_col") &&
            jsonValue.contains("end_src_line") &&
            jsonValue.contains("end_src_col") &&
-           jsonValue.contains("src_text");
+           jsonValue.contains("src_text") &&
+           jsonValue.contains("unbound_vals") &&
+           jsonValue.contains("unbound_funs");
   }
 
   ASTBinaryEntry::ASTBinaryEntry() :
@@ -273,6 +348,8 @@ namespace clang_mutate
     const unsigned int endSrcLine,
     const unsigned int endSrcCol,
     const std::string &srcText,
+    const std::vector<std::string> & unbound_vals,
+    const std::vector<std::string> & unbound_funs,
     const std::string &binaryFileName,
     const unsigned long beginAddress,
     const unsigned long endAddress,
@@ -285,7 +362,9 @@ namespace clang_mutate
                        beginSrcCol, 
                        endSrcLine, 
                        endSrcCol, 
-                       srcText ),
+                       srcText,
+                       unbound_vals,
+                       unbound_funs),
     m_binaryFilePath(binaryFileName),
     m_beginAddress(beginAddress),
     m_endAddress(endAddress),
@@ -297,9 +376,15 @@ namespace clang_mutate
     const unsigned int counter,
     clang::Stmt * s,
     clang::Rewriter& rewrite,
-    BinaryAddressMap& binaryAddressMap ) :
+    BinaryAddressMap& binaryAddressMap,
+    const std::vector<std::string> & unbound_vals,
+    const std::vector<std::string> & unbound_funs) :
 
-    ASTNonBinaryEntry( counter, s, rewrite )
+    ASTNonBinaryEntry( counter,
+                       s,
+                       rewrite,
+                       unbound_vals,
+                       unbound_funs )
   {
     m_binaryFilePath = binaryAddressMap.getBinaryPath();
     m_beginAddress = 
@@ -340,6 +425,8 @@ namespace clang_mutate
                                getEndSrcLine(),
                                getEndSrcCol(),
                                getSrcText(),
+                               getUnboundVals(),
+                               getUnboundFuns(),
                                m_binaryFilePath,
                                m_beginAddress,
                                m_endAddress,
@@ -382,7 +469,7 @@ namespace clang_mutate
 
     return std::string(msg);
   }
-
+  
   picojson::value ASTBinaryEntry::toJSON() const
   {
     picojson::object jsonObj = ASTNonBinaryEntry::toJSON().get<picojson::object>();

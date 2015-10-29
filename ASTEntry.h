@@ -38,7 +38,9 @@ namespace clang_mutate
     static ASTEntry* make( const unsigned int counter,
                            clang::Stmt *s, 
                            clang::Rewriter& rewrite,
-                           BinaryAddressMap &binaryAddressMap );
+                           BinaryAddressMap &binaryAddressMap,
+                           const std::vector<std::string> & unbound_vals,
+                           const std::vector<std::string> & unbound_funs );
   private:
     ASTEntryFactory() {}
   };
@@ -56,11 +58,15 @@ namespace clang_mutate
                        const unsigned int beginSrcCol,
                        const unsigned int endSrcLine,
                        const unsigned int endSrcCol,
-                       const std::string &srcText );
+                       const std::string &srcText,
+                       const std::vector<std::string> & unbound_vals,
+                       const std::vector<std::string> & unbound_funs);
 
     ASTNonBinaryEntry( const int counter,
                        clang::Stmt * s,
-                       clang::Rewriter& rewrite );
+                       clang::Rewriter& rewrite,
+                       const std::vector<std::string> & unbound_vals,
+                       const std::vector<std::string> & unbound_funs);
 
     ASTNonBinaryEntry( const picojson::value &jsonValue );
 
@@ -76,10 +82,12 @@ namespace clang_mutate
     virtual unsigned int getEndSrcLine() const;
     virtual unsigned int getEndSrcCol() const;
     virtual std::string getSrcText() const;
-
+    virtual std::vector<std::string> getUnboundVals() const;
+    virtual std::vector<std::string> getUnboundFuns() const;
+    
     virtual std::string toString() const;
     virtual picojson::value toJSON() const;
-
+    
     static bool jsonObjHasRequiredFields( const picojson::value& jsonValue );
   private:
     unsigned int m_counter;
@@ -90,6 +98,8 @@ namespace clang_mutate
     unsigned int m_endSrcLine;
     unsigned int m_endSrcCol;
     std::string  m_srcText;
+    std::vector<std::string> m_unbound_vals;
+    std::vector<std::string> m_unbound_funs;
   };
 
   // AST entry with binary information
@@ -106,6 +116,8 @@ namespace clang_mutate
                     const unsigned int endSrcLine,
                     const unsigned int endSrcCol,
                     const std::string &srcText,
+                    const std::vector<std::string> & unbound_vals,
+                    const std::vector<std::string> & unbound_funs,
                     const std::string &binaryFileName,
                     const unsigned long beginAddress,
                     const unsigned long endAddress,
@@ -114,7 +126,9 @@ namespace clang_mutate
     ASTBinaryEntry( const unsigned int counter,
                     clang::Stmt * s,
                     clang::Rewriter& rewrite,
-                    BinaryAddressMap& binaryAddressMap );
+                    BinaryAddressMap& binaryAddressMap,
+                    const std::vector<std::string> & unbound_vals,
+                    const std::vector<std::string> & unbound_funs);
 
     ASTBinaryEntry( const picojson::value& jsonValue );
     virtual ~ASTBinaryEntry();
@@ -128,7 +142,7 @@ namespace clang_mutate
 
     virtual std::string toString() const;
     virtual picojson::value toJSON() const;
-
+    
     static bool jsonObjHasRequiredFields( const picojson::value &jsonValue );
   private:
     std::string       m_binaryFilePath;
