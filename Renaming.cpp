@@ -14,13 +14,13 @@ Renames make_renames(const std::set<IdentifierInfo*> & free_vars,
     std::set<IdentifierInfo*>::const_iterator it;
     for (it = free_vars.begin(); it != free_vars.end(); ++it) {
         std::ostringstream oss;
-        oss << "«" << next_id++ << "»";
+        oss << "(|" << next_id++ << "|)";
         ans.insert(RenameDatum(*it, oss.str(), VariableRename));
     }
     for (it = free_funs.begin(); it != free_funs.end(); ++it) {
 #ifdef ALLOW_FREE_FUNCTIONS
         std::ostringstream oss;
-        oss << "«" << next_id++ << "»";
+        oss << "(|" << next_id++ << "|)";
         ans.insert(RenameDatum(*it, oss.str(), FunctionRename));
 #else
         ans.insert(RenameDatum(*it, (*it)->getName().str(), FunctionRename));
