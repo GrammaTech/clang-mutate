@@ -118,7 +118,7 @@ using namespace clang;
 
       return true;
     }
-
+    
     virtual bool VisitStmt(Stmt *S){
 
       SaveAndRestore<GetBindingCtx> sr(get_bindings);

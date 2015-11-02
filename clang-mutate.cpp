@@ -44,22 +44,23 @@ static cl::extrahelp MoreHelp(
     "\n"
 );
 
-static cl::opt<bool>         Number ("number",       cl::desc("number all statements"));
-static cl::opt<bool>            Ids ("ids",          cl::desc("print count of statement ids"));
-static cl::opt<bool>       Annotate ("annotate",     cl::desc("annotate each statement with its class"));
-static cl::opt<bool>           List ("list",         cl::desc("list every statement's id, class and range"));
-static cl::opt<bool>            Cut ("cut",          cl::desc("cut stmt1"));
-static cl::opt<bool>         Insert ("insert",       cl::desc("copy stmt1 to after stmt2"));
-static cl::opt<bool>           Swap ("swap",         cl::desc("Swap stmt1 and stmt2"));
-static cl::opt<bool>            Get ("get",          cl::desc("Return the text of stmt1"));
-static cl::opt<bool>            Set ("set",          cl::desc("Set the text of stmt1 to value"));
-static cl::opt<bool>    InsertValue ("insert-value", cl::desc("insert value before stmt1"));
-static cl::opt<unsigned int>  Stmt1 ("stmt1",        cl::desc("statement 1 for mutation ops"));
-static cl::opt<unsigned int>  Stmt2 ("stmt2",        cl::desc("statement 2 for mutation ops"));
-static cl::opt<std::string>   Value ("value",        cl::desc("string value for mutation ops"));
-static cl::opt<std::string>   Stmts ("stmts",        cl::desc("string of space-separated statement ids"));
-static cl::opt<std::string>  Binary ("binary",       cl::desc("binary with DWARF information for line->address mapping"));
-static cl::opt<bool>        JSONOut ("json",         cl::desc("output results in JSON (-list only)"));
+static cl::opt<bool>           Number ("number",       cl::desc("number all statements"));
+static cl::opt<bool>              Ids ("ids",          cl::desc("print count of statement ids"));
+static cl::opt<bool>         Annotate ("annotate",     cl::desc("annotate each statement with its class"));
+static cl::opt<bool>             List ("list",         cl::desc("list every statement's id, class and range"));
+static cl::opt<bool>              Cut ("cut",          cl::desc("cut stmt1"));
+static cl::opt<bool>           Insert ("insert",       cl::desc("copy stmt1 to after stmt2"));
+static cl::opt<bool>             Swap ("swap",         cl::desc("Swap stmt1 and stmt2"));
+static cl::opt<bool>              Get ("get",          cl::desc("Return the text of stmt1"));
+static cl::opt<bool>              Set ("set",          cl::desc("Set the text of stmt1 to value"));
+static cl::opt<unsigned int> GetScope ("get-scope",    cl::desc("Get the first n variables in scope at stmt1"));
+static cl::opt<bool>      InsertValue ("insert-value", cl::desc("insert value before stmt1"));
+static cl::opt<unsigned int>    Stmt1 ("stmt1",        cl::desc("statement 1 for mutation ops"));
+static cl::opt<unsigned int>    Stmt2 ("stmt2",        cl::desc("statement 2 for mutation ops"));
+static cl::opt<std::string>     Value ("value",        cl::desc("string value for mutation ops"));
+static cl::opt<std::string>     Stmts ("stmts",        cl::desc("string of space-separated statement ids"));
+static cl::opt<std::string>    Binary ("binary",       cl::desc("binary with DWARF information for line->address mapping"));
+static cl::opt<bool>          JSONOut ("json",         cl::desc("output results in JSON (-list only)"));
 
 namespace {
 class ActionFactory {
@@ -85,7 +86,9 @@ public:
       return clang_mutate::CreateASTSetter(Stmt1, Value);
     if (InsertValue)
       return clang_mutate::CreateASTValueInserter(Stmt1, Value);
-
+    if (GetScope)
+        return clang_mutate::CreateASTScopeGetter(Stmt1, GetScope);
+    
     errs() << "Must supply one of;";
     errs() << "\tnumber\n";
     errs() << "\tids\n";
@@ -97,6 +100,7 @@ public:
     errs() << "\tget\n";
     errs() << "\tset\n";
     errs() << "\tinsert-value\n";
+    errs() << "\tget-scope\n";
     exit(EXIT_FAILURE);
   }
 };
