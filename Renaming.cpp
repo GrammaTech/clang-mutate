@@ -18,9 +18,13 @@ Renames make_renames(const std::set<IdentifierInfo*> & free_vars,
         ans.insert(RenameDatum(*it, oss.str(), VariableRename));
     }
     for (it = free_funs.begin(); it != free_funs.end(); ++it) {
+#ifdef ALLOW_FREE_FUNCTIONS
         std::ostringstream oss;
         oss << "«" << next_id++ << "»";
         ans.insert(RenameDatum(*it, oss.str(), FunctionRename));
+#else
+        ans.insert(RenameDatum(*it, (*it)->getName().str(), FunctionRename));
+#endif
     }
     return ans;
 }
@@ -96,7 +100,6 @@ bool RenameFreeVar::VisitStmt(Stmt * stmt)
       const char * ptr = sm.getCharacterData(sr.getBegin());
       std::string old_str = rewriter.ConvertToString(stmt);
       std::string new_str = name;
-      std::cerr << "\"" << old_str << "\" => \"" << new_str << "\"" << std::endl;
       rewrites[ptr] = std::make_pair(old_str.size(), new_str);
     }
   }

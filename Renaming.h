@@ -13,6 +13,12 @@
 #include <set>
 #include <map>
 
+// Enable the following macro to rewrite free function
+// names; without this macro, function names will just
+// be "rewritten" to themselves, making it hard to
+// do substitution.
+//#define ALLOW_FREE_FUNCTIONS
+
 enum RenameKind
 {
     FunctionRename,
