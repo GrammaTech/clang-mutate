@@ -7,6 +7,7 @@
 #define AST_ENTRY_HPP
 
 #include "BinaryAddressMap.h"
+#include "Renaming.h"
 
 #include "clang/AST/AST.h"
 #include "clang/Basic/SourceManager.h"
@@ -39,8 +40,7 @@ namespace clang_mutate
                            clang::Stmt *s, 
                            clang::Rewriter& rewrite,
                            BinaryAddressMap &binaryAddressMap,
-                           const std::vector<std::string> & unbound_vals,
-                           const std::vector<std::string> & unbound_funs );
+                           const Renames & renames);
   private:
     ASTEntryFactory() {}
   };
@@ -59,14 +59,12 @@ namespace clang_mutate
                        const unsigned int endSrcLine,
                        const unsigned int endSrcCol,
                        const std::string &srcText,
-                       const std::vector<std::string> & unbound_vals,
-                       const std::vector<std::string> & unbound_funs);
+                       const Renames & renames);
 
     ASTNonBinaryEntry( const int counter,
                        clang::Stmt * s,
                        clang::Rewriter& rewrite,
-                       const std::vector<std::string> & unbound_vals,
-                       const std::vector<std::string> & unbound_funs);
+                       const Renames & renames);
 
     ASTNonBinaryEntry( const picojson::value &jsonValue );
 
@@ -82,8 +80,7 @@ namespace clang_mutate
     virtual unsigned int getEndSrcLine() const;
     virtual unsigned int getEndSrcCol() const;
     virtual std::string getSrcText() const;
-    virtual std::vector<std::string> getUnboundVals() const;
-    virtual std::vector<std::string> getUnboundFuns() const;
+    virtual Renames getRenames() const;
     
     virtual std::string toString() const;
     virtual picojson::value toJSON() const;
@@ -98,8 +95,7 @@ namespace clang_mutate
     unsigned int m_endSrcLine;
     unsigned int m_endSrcCol;
     std::string  m_srcText;
-    std::vector<std::string> m_unbound_vals;
-    std::vector<std::string> m_unbound_funs;
+    Renames m_renames;
   };
 
   // AST entry with binary information
@@ -116,8 +112,7 @@ namespace clang_mutate
                     const unsigned int endSrcLine,
                     const unsigned int endSrcCol,
                     const std::string &srcText,
-                    const std::vector<std::string> & unbound_vals,
-                    const std::vector<std::string> & unbound_funs,
+                    const Renames & renames,
                     const std::string &binaryFileName,
                     const unsigned long beginAddress,
                     const unsigned long endAddress,
@@ -127,8 +122,7 @@ namespace clang_mutate
                     clang::Stmt * s,
                     clang::Rewriter& rewrite,
                     BinaryAddressMap& binaryAddressMap,
-                    const std::vector<std::string> & unbound_vals,
-                    const std::vector<std::string> & unbound_funs);
+                    const Renames & renames);
 
     ASTBinaryEntry( const picojson::value& jsonValue );
     virtual ~ASTBinaryEntry();

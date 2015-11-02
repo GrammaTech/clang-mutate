@@ -82,29 +82,28 @@ void GetBindingCtx::dump() const
   print_unbound(unbound_f);
 }
 
-std::vector<std::string> GetBindingCtx::free_values() const
+std::set<IdentifierInfo*> GetBindingCtx::free_values() const
 {
-  std::vector<std::string> ans;
-  for (std::set<BindingCtx::Binding>::const_iterator it = unbound_v.begin();
-       it != unbound_v.end();
-       ++it)
-  {
-    ans.push_back(it->first);
-  }
-  return ans;
+    std::set<IdentifierInfo*> ans;
+    for (std::set<BindingCtx::Binding>::const_iterator it = unbound_v.begin();
+         it != unbound_v.end();
+         ++it)
+    {
+        ans.insert(it->second);
+    }
+    return ans;
 }
-  
-std::vector<std::string> GetBindingCtx::free_functions() const
-{
-  std::vector<std::string> ans;
-  for (std::set<BindingCtx::Binding>::const_iterator it = unbound_f.begin();
-       it != unbound_f.end();
-       ++it)
-  {
-    ans.push_back(it->first);
-  }
-  return ans;
-}
-  
 
+std::set<IdentifierInfo*> GetBindingCtx::free_functions() const
+{
+    std::set<IdentifierInfo*> ans;
+    for (std::set<BindingCtx::Binding>::const_iterator it = unbound_f.begin();
+         it != unbound_f.end();
+         ++it)
+    {
+        ans.insert(it->second);
+    }
+    return ans;
+}
+  
 } // end namespace clang_mutate

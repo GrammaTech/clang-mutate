@@ -165,12 +165,13 @@ using namespace clang;
 
 	  get_bindings.TraverseStmt(S);
           NewASTEntry = 
-            ASTEntryFactory::make( Counter,
-				   S,
-				   Rewrite,
-				   BinaryAddresses,
-				   get_bindings.free_values(),
-				   get_bindings.free_functions() );
+            ASTEntryFactory::make(
+               Counter,
+               S,
+               Rewrite,
+               BinaryAddresses,
+               make_renames(get_bindings.free_values(),
+                            get_bindings.free_functions()) );
 
           ASTEntries.addEntry( NewASTEntry );
           break;
@@ -187,12 +188,13 @@ using namespace clang;
           {
 	    get_bindings.TraverseStmt(S);
             NewASTEntry = 
-              ASTEntryFactory::make( Counter,
-				     S,
-				     Rewrite,
-				     BinaryAddresses,
-				     get_bindings.free_values(),
-				     get_bindings.free_functions() );
+              ASTEntryFactory::make(
+                 Counter,
+                 S,
+                 Rewrite,
+                 BinaryAddresses,
+                 make_renames(get_bindings.free_values(),
+                              get_bindings.free_functions()) );
 
             ASTEntries.addEntry( NewASTEntry );
           }
@@ -205,11 +207,12 @@ using namespace clang;
         default:
 	  get_bindings.TraverseStmt(S);
 
-          NewASTEntry = new ASTNonBinaryEntry(Counter,
-					      S,
-					      Rewrite,
-					      get_bindings.free_values(),
-					      get_bindings.free_functions() );
+          NewASTEntry = new ASTNonBinaryEntry(
+                                Counter,
+                                S,
+                                Rewrite,
+                                make_renames(get_bindings.free_values(),
+                                             get_bindings.free_functions()) );
 
           ASTEntries.addEntry( NewASTEntry );
           break;

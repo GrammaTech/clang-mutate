@@ -52,10 +52,10 @@ public:
   
   bool TraverseVarDecl(clang::VarDecl * decl);
 
-  bool VisitStmt(clang::Stmt * expr);
+  bool VisitStmt(clang::Stmt * stmt);
 
-  std::vector<std::string> free_values() const;
-  std::vector<std::string> free_functions() const;
+  std::set<clang::IdentifierInfo*> free_values() const;
+  std::set<clang::IdentifierInfo*> free_functions() const;
   
   void dump() const;
   
@@ -63,8 +63,7 @@ private:
   BindingCtx ctx;
   std::set<BindingCtx::Binding> unbound_v, unbound_f;
 };
-
-  
+ 
 } // end namespace clang_mutate
 
 #endif

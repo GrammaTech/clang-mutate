@@ -5,11 +5,13 @@
 #include "ASTEntry.h"
 
 #include "BinaryAddressMap.h"
+#include "Renaming.h"
 
 #include "clang/AST/AST.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Rewrite/Frontend/Rewriters.h"
 #include "clang/Rewrite/Core/Rewriter.h"
+#include "llvm/Support/SaveAndRestore.h"
 
 #include "third-party/picojson-1.3.0/picojson.h"
 
@@ -53,26 +55,27 @@ std::string unescape_from_json(const std::string & s)
   return ans;
 }
 
-template <typename T>
-picojson::value vector_to_json_array(const std::vector<T> & vals)
+picojson::value renames_to_json(const Renames & renames, RenameKind k)
 {
   std::vector<picojson::value> ans;
-  for (typename std::vector<T>::const_iterator it = vals.begin();
-       it != vals.end();
+  for (Renames::const_iterator it = renames.begin();
+       it != renames.end();
        ++it)
   {
-    ans.push_back(picojson::value(*it));
+      if (it->kind == k) {
+          ans.push_back(picojson::value(it->name));
+      }
   }
   return picojson::value(ans);
 }
 
-template <typename T>
-std::vector<T> json_array_to_vector(const picojson::value & jv)
+void json_to_renames(const picojson::value & jv,
+                     RenameKind k,
+                     Renames & renames)
 {
-  std::vector<T> ans;
   if (!jv.is<picojson::array>()) {
     assert (!"expected a json array");
-    return ans;
+    return;
   }
 
   std::vector<picojson::value> vals = jv.get<picojson::array>();
@@ -80,9 +83,8 @@ std::vector<T> json_array_to_vector(const picojson::value & jv)
        it != vals.end();
        ++it)
   {
-    ans.push_back(it->get<T>());
+      renames.insert(RenameDatum(NULL, it->get<std::string>(), k));
   }
-  return ans;
 }
 
 namespace clang_mutate
@@ -102,8 +104,7 @@ namespace clang_mutate
       clang::Stmt *s,
       clang::Rewriter& rewrite,
       BinaryAddressMap &binaryAddressMap,
-      const std::vector<std::string> & unbound_vals,
-      const std::vector<std::string> & unbound_funs)
+      const Renames & renames)
   {
     clang::SourceManager &sm = rewrite.getSourceMgr();
     clang::PresumedLoc beginLoc = sm.getPresumedLoc(s->getSourceRange().getBegin());
@@ -120,16 +121,14 @@ namespace clang_mutate
                                  s,
                                  rewrite,
                                  binaryAddressMap,
-                                 unbound_vals,
-                                 unbound_funs);
+                                 renames);
     }
     else
     {
       return new ASTNonBinaryEntry( counter,
                                     s,
                                     rewrite,
-                                    unbound_vals,
-                                    unbound_funs);
+                                    renames);
     }
   }
 
@@ -142,8 +141,7 @@ namespace clang_mutate
     m_endSrcLine(0),
     m_endSrcCol(0),
     m_srcText(""),
-    m_unbound_vals(),
-    m_unbound_funs()
+    m_renames()
   {
   }
 
@@ -156,8 +154,7 @@ namespace clang_mutate
     const unsigned int endSrcLine,
     const unsigned int endSrcCol,
     const std::string &srcText,
-    const std::vector<std::string> & unbound_vals,
-    const std::vector<std::string> & unbound_funs) :
+    const Renames & renames) :
 
     m_counter(counter),
     m_astClass(astClass),
@@ -167,8 +164,7 @@ namespace clang_mutate
     m_endSrcLine(endSrcLine),
     m_endSrcCol(endSrcCol),
     m_srcText(srcText),
-    m_unbound_vals(unbound_vals),
-    m_unbound_funs(unbound_funs)
+    m_renames(renames)
   {
   }
 
@@ -176,24 +172,25 @@ namespace clang_mutate
     const int counter,
     clang::Stmt * s,
     clang::Rewriter& rewrite,
-    const std::vector<std::string> & unbound_vals,
-    const std::vector<std::string> & unbound_funs) :
-
-    m_unbound_vals(unbound_vals),
-    m_unbound_funs(unbound_funs)
+    const Renames & renames)
   {
     clang::SourceManager &sm = rewrite.getSourceMgr();
     clang::PresumedLoc beginLoc = sm.getPresumedLoc(s->getSourceRange().getBegin());
     clang::PresumedLoc endLoc = sm.getPresumedLoc(s->getSourceRange().getEnd());
 
+    clang::FileID main_id = sm.getMainFileID();
+    
     m_counter = counter;
     m_astClass = s->getStmtClassName();
-    m_srcFileName = sm.getFileEntryForID( sm.getMainFileID() )->getName();
+    m_srcFileName = sm.getFileEntryForID(main_id)->getName();
     m_beginSrcLine = beginLoc.getLine();
     m_beginSrcCol = beginLoc.getColumn();
     m_endSrcLine = endLoc.getLine();
     m_endSrcCol = endLoc.getColumn();
-    m_srcText = rewrite.ConvertToString(s);
+    m_renames = renames;
+    
+    RenameFreeVar renamer(s, rewrite, renames);
+    m_srcText = renamer.getRewrittenString();
   }
 
   ASTNonBinaryEntry::ASTNonBinaryEntry( const picojson::value &jsonValue )
@@ -209,10 +206,8 @@ namespace clang_mutate
       m_endSrcCol    = jsonValue.get("end_src_col").get<int64_t>();
       m_srcText      = unescape_from_json(
                           jsonValue.get("src_text").get<std::string>());
-      m_unbound_vals = json_array_to_vector<std::string>(
-                           jsonValue.get("unbound_vals"));
-      m_unbound_funs = json_array_to_vector<std::string>(
-                           jsonValue.get("unbound_funs"));
+      json_to_renames(jsonValue.get("unbound_vals"), VariableRename, m_renames);
+      json_to_renames(jsonValue.get("unbound_funs"), FunctionRename, m_renames);
     }
   }
 
@@ -228,8 +223,7 @@ namespace clang_mutate
                                   m_endSrcLine,
                                   m_endSrcCol,
                                   m_srcText,
-                                  m_unbound_vals,
-                                  m_unbound_funs );
+                                  m_renames );
   }
 
   unsigned int ASTNonBinaryEntry::getCounter() const
@@ -272,14 +266,9 @@ namespace clang_mutate
     return m_srcText;
   }
 
-  std::vector<std::string> ASTNonBinaryEntry::getUnboundVals() const
+  Renames ASTNonBinaryEntry::getRenames() const
   {
-    return m_unbound_vals;
-  }
-    
-  std::vector<std::string> ASTNonBinaryEntry::getUnboundFuns() const
-  {
-    return m_unbound_funs;
+      return m_renames;
   }
     
   std::string ASTNonBinaryEntry::toString() const
@@ -309,8 +298,8 @@ namespace clang_mutate
     jsonObj["end_src_line"] = picojson::value(static_cast<int64_t>(m_endSrcLine));
     jsonObj["end_src_col"] = picojson::value(static_cast<int64_t>(m_endSrcCol));
     jsonObj["src_text"] = picojson::value(escape_for_json(m_srcText));
-    jsonObj["unbound_vals"] = vector_to_json_array(m_unbound_vals);
-    jsonObj["unbound_funs"] = vector_to_json_array(m_unbound_funs);
+    jsonObj["unbound_vals"] = renames_to_json(m_renames, VariableRename);
+    jsonObj["unbound_funs"] = renames_to_json(m_renames, FunctionRename);
 
     return picojson::value(jsonObj);
   }
@@ -348,8 +337,7 @@ namespace clang_mutate
     const unsigned int endSrcLine,
     const unsigned int endSrcCol,
     const std::string &srcText,
-    const std::vector<std::string> & unbound_vals,
-    const std::vector<std::string> & unbound_funs,
+    const Renames & renames,
     const std::string &binaryFileName,
     const unsigned long beginAddress,
     const unsigned long endAddress,
@@ -363,8 +351,7 @@ namespace clang_mutate
                        endSrcLine, 
                        endSrcCol, 
                        srcText,
-                       unbound_vals,
-                       unbound_funs),
+                       renames),
     m_binaryFilePath(binaryFileName),
     m_beginAddress(beginAddress),
     m_endAddress(endAddress),
@@ -377,14 +364,12 @@ namespace clang_mutate
     clang::Stmt * s,
     clang::Rewriter& rewrite,
     BinaryAddressMap& binaryAddressMap,
-    const std::vector<std::string> & unbound_vals,
-    const std::vector<std::string> & unbound_funs) :
+    const Renames & renames) :
 
     ASTNonBinaryEntry( counter,
                        s,
                        rewrite,
-                       unbound_vals,
-                       unbound_funs )
+                       renames )
   {
     m_binaryFilePath = binaryAddressMap.getBinaryPath();
     m_beginAddress = 
@@ -425,8 +410,7 @@ namespace clang_mutate
                                getEndSrcLine(),
                                getEndSrcCol(),
                                getSrcText(),
-                               getUnboundVals(),
-                               getUnboundFuns(),
+                               getRenames(),
                                m_binaryFilePath,
                                m_beginAddress,
                                m_endAddress,
