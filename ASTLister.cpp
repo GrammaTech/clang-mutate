@@ -1,5 +1,6 @@
 #include "ASTLister.h"
 #include "BinaryAddressMap.h"
+#include "Bindings.h"
 #include "ASTEntryList.h"
 
 #include "clang/Basic/FileManager.h"
@@ -19,6 +20,7 @@
 #include "llvm/Support/Path.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/Timer.h"
+#include "llvm/Support/SaveAndRestore.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -42,7 +44,9 @@ using namespace clang;
         Binary(Binary),
         BinaryAddresses(Binary),
         OutputAsJSON(OutputAsJSON),
-        PM(NULL) {}
+        PM(NULL),
+	get_bindings()
+    {}
 
     ~ASTLister(){
       delete PM;
@@ -114,8 +118,11 @@ using namespace clang;
 
       return true;
     }
-
+    
     virtual bool VisitStmt(Stmt *S){
+
+      SaveAndRestore<GetBindingCtx> sr(get_bindings);
+      
       SourceRange R = S->getSourceRange();
       ASTEntry* NewASTEntry = NULL;
 
@@ -155,8 +162,16 @@ using namespace clang;
         case Stmt::DefaultStmtClass: 
         case Stmt::CaseStmtClass: 
         case Stmt::WhileStmtClass:
+
+	  get_bindings.TraverseStmt(S);
           NewASTEntry = 
-            ASTEntryFactory::make( Counter, S, Rewrite, BinaryAddresses );
+            ASTEntryFactory::make(
+               Counter,
+               S,
+               Rewrite,
+               BinaryAddresses,
+               make_renames(get_bindings.free_values(),
+                            get_bindings.free_functions()) );
 
           ASTEntries.addEntry( NewASTEntry );
           break;
@@ -171,8 +186,15 @@ using namespace clang;
         case Stmt::CallExprClass:
           if(IsCompleteCStatement(S))
           {
+	    get_bindings.TraverseStmt(S);
             NewASTEntry = 
-              ASTEntryFactory::make( Counter, S, Rewrite, BinaryAddresses );
+              ASTEntryFactory::make(
+                 Counter,
+                 S,
+                 Rewrite,
+                 BinaryAddresses,
+                 make_renames(get_bindings.free_values(),
+                              get_bindings.free_functions()) );
 
             ASTEntries.addEntry( NewASTEntry );
           }
@@ -183,7 +205,15 @@ using namespace clang;
         // They are too granular to associate with binary
         // source code. 
         default:
-          NewASTEntry = new ASTNonBinaryEntry(Counter, S, Rewrite);
+	  get_bindings.TraverseStmt(S);
+
+          NewASTEntry = new ASTNonBinaryEntry(
+                                Counter,
+                                S,
+                                Rewrite,
+                                make_renames(get_bindings.free_values(),
+                                             get_bindings.free_functions()) );
+
           ASTEntries.addEntry( NewASTEntry );
           break;
         }
@@ -208,6 +238,8 @@ using namespace clang;
     unsigned int Counter;
     FileID MainFileID;
     std::string MainFileName;
+
+    GetBindingCtx get_bindings;
   };
 }
 

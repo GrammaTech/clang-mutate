@@ -8,7 +8,17 @@
 
 namespace clang_mutate {  
 
-enum ACTION { NUMBER, IDS, ANNOTATOR, CUT, INSERT, SWAP, GET, SET, VALUEINSERT };
+enum ACTION { NUMBER
+            , IDS
+            , ANNOTATOR
+            , CUT
+            , INSERT
+            , SWAP
+            , GET
+            , SET
+            , VALUEINSERT
+            , GETSCOPE
+            };
 
 clang::ASTConsumer *CreateASTNumberer();
 clang::ASTConsumer *CreateASTIDS();
@@ -19,6 +29,7 @@ clang::ASTConsumer *CreateASTSwapper(unsigned int Stmt1, unsigned int Stmt2);
 clang::ASTConsumer *CreateASTGetter(unsigned int Stmt);
 clang::ASTConsumer *CreateASTSetter(unsigned int Stmt, clang::StringRef Value);
 clang::ASTConsumer *CreateASTValueInserter(unsigned int Stmt, clang::StringRef Value);
+clang::ASTConsumer *CreateASTScopeGetter(unsigned int Stmt, unsigned int Depth);
 
 }
 

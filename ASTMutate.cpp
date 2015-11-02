@@ -1,5 +1,7 @@
 // Copyright (C) 2012 Eric Schulte
 #include "ASTMutate.h"
+#include "Scopes.h"
+
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/Basic/SourceManager.h"
@@ -35,10 +37,11 @@ namespace clang_mutate{
     ASTMutator(raw_ostream *Out = NULL,
                ACTION Action = NUMBER,
                unsigned int Stmt1 = 0, unsigned int Stmt2 = 0,
-               StringRef Value = (StringRef)"")
+               StringRef Value = (StringRef)"",
+               unsigned int Depth = 0)
       : Out(Out ? *Out : llvm::outs()),
         Action(Action), Stmt1(Stmt1), Stmt2(Stmt2),
-        Value(Value) {}
+        Value(Value), Depth(Depth) {}
 
     virtual void HandleTranslationUnit(ASTContext &Context) {
       TranslationUnitDecl *D = Context.getTranslationUnitDecl();
@@ -140,6 +143,19 @@ namespace clang_mutate{
       if (Counter == Stmt2) Range2 = r;
     }
 
+    void GetScope()
+    {
+        if (Counter != Stmt1)
+            return;
+        std::vector<std::string> names = scopes.get_names_in_scope(Depth);
+        for (std::vector<std::string>::iterator it = names.begin();
+             it != names.end();
+             ++it)
+        {
+            printf("%s\n", it->c_str());
+        }
+    }
+      
     // This function adapted from clang/lib/ARCMigrate/Transforms.cpp
     SourceLocation findSemiAfterLocation(SourceLocation loc) {
       SourceManager &SM = Rewrite.getSourceMgr();
@@ -200,6 +216,7 @@ namespace clang_mutate{
           case INSERT:
           case SWAP:      SaveRange(r);    break;
           case IDS:                        break;
+          case GETSCOPE:  GetScope();      break;
           }
           Counter++;
         }
@@ -207,6 +224,24 @@ namespace clang_mutate{
       return true;
     }
 
+    bool TraverseStmt(Stmt * s) {
+        if (Action == GETSCOPE && begins_scope(s)) {
+            scopes.enter_scope();
+            bool keep_going = base::TraverseStmt(s);
+            scopes.exit_scope();
+            return keep_going;
+        }
+        else {
+            return base::TraverseStmt(s);
+        }
+    }
+
+    bool TraverseVarDecl(VarDecl * decl) {
+        if (Action == GETSCOPE)
+            scopes.declare(decl->getIdentifier());
+        return base::TraverseVarDecl(decl);
+    }
+      
     //// from AST/EvaluatedExprVisitor.h
     // VISIT(VisitDeclRefExpr(DeclRefExpr *element));
     // VISIT(VisitOffsetOfExpr(OffsetOfExpr *element));
@@ -236,6 +271,7 @@ namespace clang_mutate{
       switch(Action){
       case IDS: Out << Counter << "\n";
       case GET:
+      case GETSCOPE:
         break;
       default:
         const RewriteBuffer *RewriteBuf = 
@@ -249,10 +285,12 @@ namespace clang_mutate{
     ACTION Action;
     unsigned int Stmt1, Stmt2;
     StringRef Value;
+    unsigned int Depth;
     unsigned int Counter;
     FileID mainFileID;
     SourceRange Range1, Range2;
     std::string Rewritten1, Rewritten2;
+    DeclScope scopes;
   };
 }
 
@@ -291,3 +329,10 @@ clang::ASTConsumer *clang_mutate::CreateASTSetter(unsigned int Stmt, clang::Stri
 clang::ASTConsumer *clang_mutate::CreateASTValueInserter(unsigned int Stmt, clang::StringRef Value){
   return new ASTMutator(0, VALUEINSERT, Stmt, -1, Value);
 }
+
+clang::ASTConsumer *clang_mutate::CreateASTScopeGetter(unsigned int Stmt,
+                                                       unsigned int Depth)
+{
+    return new ASTMutator(0, GETSCOPE, Stmt, -1, "", Depth);
+}
+
