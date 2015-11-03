@@ -87,7 +87,7 @@ public:
     if (InsertValue)
       return clang_mutate::CreateASTValueInserter(Stmt1, Value);
     if (GetScope)
-        return clang_mutate::CreateASTScopeGetter(Stmt1, GetScope);
+      return clang_mutate::CreateASTScopeGetter(Stmt1, GetScope);
     
     errs() << "Must supply one of;";
     errs() << "\tnumber\n";
