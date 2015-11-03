@@ -152,7 +152,7 @@ namespace clang_mutate{
              it != names.end();
              ++it)
         {
-            printf("%s\n", it->c_str());
+            Out << *it << "\n";
         }
     }
       
