@@ -211,7 +211,7 @@ namespace clang_mutate{
     currentline++;
 
     while ( currentline < dwarfDumpDebugLine.size() &&
-            dwarfDumpDebugLine[currentline].find(".debug_line contents") == std::string::npos ) {
+            dwarfDumpDebugLine[currentline].find("Line table prologue:") == std::string::npos ) {
       std::string line = dwarfDumpDebugLine[currentline];
       std::string directory;
       std::string file;
@@ -233,6 +233,8 @@ namespace clang_mutate{
 
       currentline++;
     }
+
+    currentline--;
 
     return filesMap;
   }
@@ -269,7 +271,7 @@ namespace clang_mutate{
     for ( unsigned long long currentline = 0;
           currentline < dwarfDumpDebugLine.size();
           currentline++ ) {
-      if ( dwarfDumpDebugLine[currentline].find(".debug_line contents") != std::string::npos ) {
+      if ( dwarfDumpDebugLine[currentline].find("Line table prologue:") != std::string::npos ) {
         compilationUnit++;
 
         m_compilationUnitMap[compilationUnit] = 
