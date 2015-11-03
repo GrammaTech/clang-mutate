@@ -375,6 +375,13 @@ namespace clang_mutate{
       }
     }
 
+    // @TODO: Fixme
+    if ( beginEndAddresses.first >= beginEndAddresses.second )
+    {
+      beginEndAddresses.first = (unsigned long) -1;
+      beginEndAddresses.second = (unsigned long) -1;
+    }
+
     return beginEndAddresses;
   }
 
