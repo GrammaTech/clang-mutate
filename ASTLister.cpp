@@ -112,7 +112,7 @@ using namespace clang;
       // Set a flag if we are in a new declaration
       // section.  There is a tight coupling between
       // this action and VisitStmt(Stmt* ).
-      if (D->getKind() == Decl::Function) {
+      if (isa<FunctionDecl>(D)) {
         IsNewFunctionDecl = true; 
       }
 
@@ -163,7 +163,7 @@ using namespace clang;
         case Stmt::CaseStmtClass: 
         case Stmt::WhileStmtClass:
 
-	  get_bindings.TraverseStmt(S);
+          get_bindings.TraverseStmt(S);
           NewASTEntry = 
             ASTEntryFactory::make(
                Counter,
@@ -186,7 +186,7 @@ using namespace clang;
         case Stmt::CallExprClass:
           if(IsCompleteCStatement(S))
           {
-	    get_bindings.TraverseStmt(S);
+            get_bindings.TraverseStmt(S);
             NewASTEntry = 
               ASTEntryFactory::make(
                  Counter,
@@ -205,7 +205,7 @@ using namespace clang;
         // They are too granular to associate with binary
         // source code. 
         default:
-	  get_bindings.TraverseStmt(S);
+          get_bindings.TraverseStmt(S);
 
           NewASTEntry = new ASTNonBinaryEntry(
                                 Counter,
