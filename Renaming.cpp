@@ -1,5 +1,6 @@
 
 #include "Renaming.h"
+#include "clang/Lex/Lexer.h"
 
 #include <sstream>
 #include <iostream>
@@ -29,13 +30,6 @@ Renames make_renames(const std::set<IdentifierInfo*> & free_vars,
     return ans;
 }
 
-static int stmt_offset_correction(Stmt * stmt)
-{
-    // This is really just guesswork based on what I've seen in
-    // code snippets so far.
-    return isa<Expr>(stmt) ? 1 : 2;
-}
-
 RenameFreeVar::RenameFreeVar(
     Stmt * the_stmt,
     Rewriter & r,
@@ -48,25 +42,9 @@ RenameFreeVar::RenameFreeVar(
     const SourceLocation & e = the_stmt->getSourceRange().getEnd();
     
     begin = sm.getCharacterData(b);
-
-    // This is very awkward, but it seems to work as expected.
-    // The problem is that some Stmts give an empty SourceRange,
-    // so we can reliably figure out where they start but not
-    // where they end (in particular, DeclRefStmt does this by
-    // design, for reasons I really am not clear about).  So we
-    // also require the caller to pass us the pretty-printed
-    // length of the Stmt.  But *that* isn't always correct either,
-    // since pretty printing will do its own formatting of things.
-    // The hope is that there is nothing in the intersection of
-    // empty-source-range Stmts with wrong-pretty-printed-length
-    // Stmts.  This appears to at least be true for DeclRefStmt
-    // nodes, as far as I can tell.
-    //
-    // Ugh.
-    //
-    end   = (b == e)
-            ? begin + rewriter.ConvertToString(the_stmt).size()
-        : sm.getCharacterData(e) + stmt_offset_correction(the_stmt);
+    end = sm.getCharacterData(e);
+    // Point end at the end of the last token, not the beginning.
+    end += Lexer::MeasureTokenLength(e, sm, rewriter.getLangOpts());
     
     TraverseStmt(the_stmt);
 }
