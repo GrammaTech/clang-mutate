@@ -87,33 +87,42 @@ using namespace clang;
     // type are all valid statements in the C/C++ grammar.
     bool IsCompleteCStatement(Stmt *ExpressionStmt)
     {
-      Stmt* parent = PM->getParent(ExpressionStmt);
+      Stmt* parent = (PM != NULL ) ? 
+                     PM->getParent(ExpressionStmt) :
+                     NULL;
 
-      switch ( parent->getStmtClass() )
+      if ( parent != NULL ) 
       {
-      case Stmt::CapturedStmtClass:
-      case Stmt::CompoundStmtClass:
-      case Stmt::CXXCatchStmtClass:
-      case Stmt::CXXForRangeStmtClass:
-      case Stmt::CXXTryStmtClass:
-      case Stmt::DoStmtClass:
-      case Stmt::ForStmtClass:
-      case Stmt::IfStmtClass:
-      case Stmt::SwitchStmtClass:
-      case Stmt::WhileStmtClass: 
-        return true;
+        switch ( parent->getStmtClass() )
+        {
+        case Stmt::CapturedStmtClass:
+        case Stmt::CompoundStmtClass:
+        case Stmt::CXXCatchStmtClass:
+        case Stmt::CXXForRangeStmtClass:
+        case Stmt::CXXTryStmtClass:
+        case Stmt::DoStmtClass:
+        case Stmt::ForStmtClass:
+        case Stmt::IfStmtClass:
+        case Stmt::SwitchStmtClass:
+        case Stmt::WhileStmtClass: 
+          return true;
       
-      default:
-        return false;
+        default:
+          return false;
+        }
       }
+
+      return false;
     }
 
     virtual bool VisitDecl(Decl *D){
-      // Set a flag if we are in a new declaration
-      // section.  There is a tight coupling between
-      // this action and VisitStmt(Stmt* ).
+      // Delete the ParentMap if we are in a new
+      // function declaration.  There is a tight 
+      // coupling between this action and VisitStmt(Stmt* ).
+
       if (isa<FunctionDecl>(D)) {
-        IsNewFunctionDecl = true; 
+        delete PM;
+        PM = NULL;
       }
 
       return true;
@@ -128,13 +137,11 @@ using namespace clang;
 
       // Test if we are in a new function
       // declaration.  If so, update the parent
-      // map with the root of this function declaration.
-      if ( IsNewFunctionDecl ) {
-        delete PM;
+      // map with the root statement of this function declaration.
+      if ( PM == NULL && S->getStmtClass() == Stmt::CompoundStmtClass ) {
         PM = new ParentMap(S);
-        IsNewFunctionDecl = false;
       }
-
+      
       if (S->getStmtClass() != Stmt::NoStmtClass &&
           IsSourceRangeInMainFile(R))
       { 
@@ -234,7 +241,6 @@ using namespace clang;
 
     Rewriter Rewrite;
     ParentMap* PM;
-    bool IsNewFunctionDecl;
     unsigned int Counter;
     FileID MainFileID;
     std::string MainFileName;
