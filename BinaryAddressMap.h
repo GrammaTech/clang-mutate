@@ -104,8 +104,10 @@ namespace clang_mutate{
     // from the output of llvm-dwarfdump
     //  %d#1: Directory index (1..n)
     //  %s#1: File name
-    // This will return the directory name (%s) normalized by realpath.
-    std::string parseDirectoryLine( const std::string &line );
+    // This will return the directory name (%s) 
+    // expanded to the full absolute path.
+    std::string parseDirectoryLine( const std::string &line,
+                                    const std::set<std::string>& sourcePaths );
 
     // Return the absolute path to filename by testing for the 
     // existance of directory/fileName and then each sourcepath/directory/fileName
@@ -113,9 +115,9 @@ namespace clang_mutate{
     // source files.  
     // See sourceware.org/gdb/onlinedocs/gdb/Source-Path.html for more
     // information.
-    std::string findFileOnSourcePath( const std::set<std::string>& sourcePaths,
-                                      const std::string& directory,
-                                      const std::string& fileName);
+    std::string findOnSourcePath( const std::set<std::string>& sourcePaths,
+                                  const std::string& directory,
+                                  const std::string& fileName = "");
 
     // Parse a single line in the form "file_names[ %d]   %d %0x %0x %s"
     // from the output of llvm-dwarfdump

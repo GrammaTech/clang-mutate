@@ -146,17 +146,19 @@ namespace clang_mutate{
     return filenameLineNumAddressPair;
   }
 
-  std::string BinaryAddressMap::parseDirectoryLine( const std::string &line ) {
+  std::string BinaryAddressMap::parseDirectoryLine( 
+    const std::string &line,
+    const std::set<std::string>& sourcePaths ) {
     // Regular expressions would be cool...
     size_t startquote = line.find_first_of('\'') + 1;
     size_t endquote = line.find_last_of('\'') - 1;
     std::string directory = line.substr( startquote, endquote - startquote + 1);
     char buffer[1024];
-      
-    return realpath(directory.c_str(), buffer);
+     
+    return findOnSourcePath(sourcePaths, directory.c_str());
   }
 
-  std::string BinaryAddressMap::findFileOnSourcePath( 
+  std::string BinaryAddressMap::findOnSourcePath( 
     const std::set<std::string>& sourcePaths,
     const std::string& directory,
     const std::string& fileName)
@@ -195,8 +197,8 @@ namespace clang_mutate{
     lineEntriesStream >> directoryIndex >> tmp1 >> tmp2 >> fileName;
 
     return (directoryIndex > 0) ? 
-            findFileOnSourcePath( sourcePaths, directories[directoryIndex-1], fileName ) :
-            findFileOnSourcePath( sourcePaths, ".", fileName);
+            findOnSourcePath( sourcePaths, directories[directoryIndex-1], fileName ) :
+            findOnSourcePath( sourcePaths, ".", fileName);
   }
 
   BinaryAddressMap::FilesMap BinaryAddressMap::parseCompilationUnit( 
@@ -217,7 +219,7 @@ namespace clang_mutate{
       std::string file;
 
       if ( line.find("include_directories") == 0 ) {
-        directory = parseDirectoryLine( line );
+        directory = parseDirectoryLine( line, sourcePaths );
         directories.push_back( directory );
       }
 
