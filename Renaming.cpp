@@ -37,15 +37,10 @@ RenameFreeVar::RenameFreeVar(
     : rewriter(r)
     , renames(rn)
 {
-    SourceManager & sm = rewriter.getSourceMgr();
-    const SourceLocation & b = the_stmt->getSourceRange().getBegin();
-    const SourceLocation & e = the_stmt->getSourceRange().getEnd();
-    
-    begin = sm.getCharacterData(b);
-    end = sm.getCharacterData(e);
-    // Point end at the end of the last token, not the beginning.
-    end += Lexer::MeasureTokenLength(e, sm, rewriter.getLangOpts());
-    
+    begin = the_stmt->getSourceRange().getBegin();
+    end = Lexer::getLocForEndOfToken(the_stmt->getSourceRange().getEnd(), 0,
+                                     rewriter.getSourceMgr(),
+                                     rewriter.getLangOpts());
     TraverseStmt(the_stmt);
 }
 
@@ -75,10 +70,17 @@ bool RenameFreeVar::VisitStmt(Stmt * stmt)
     if (id != NULL && find_identifier(renames, id, name)) {
       SourceRange sr = stmt->getSourceRange();
       SourceManager & sm = rewriter.getSourceMgr();
-      const char * ptr = sm.getCharacterData(sr.getBegin());
+
+      // Not very efficient, but I didn't see a better way to
+      // get the size in characters of a CharSourceRange.
+      size_t offset = Lexer::getSourceText(
+          CharSourceRange::getCharRange(begin, sr.getBegin()),
+          rewriter.getSourceMgr(),
+          rewriter.getLangOpts(),
+          NULL).size();
       std::string old_str = rewriter.ConvertToString(stmt);
       std::string new_str = name;
-      rewrites[ptr] = std::make_pair(old_str.size(), new_str);
+      rewrites[offset] = std::make_pair(old_str.size(), new_str);
     }
   }
   return true;
@@ -86,17 +88,21 @@ bool RenameFreeVar::VisitStmt(Stmt * stmt)
 
 std::string RenameFreeVar::getRewrittenString() const
 {
+    std::string orig = Lexer::getSourceText(
+        CharSourceRange::getCharRange(begin, end),
+        rewriter.getSourceMgr(),
+        rewriter.getLangOpts(),
+        NULL);
     std::string ans;
-    std::map<const char*, std::pair<size_t, std::string> >::const_iterator it;
-    it = rewrites.begin();
-    for (const char * p = begin; p < end; ++p) {
+    RewriteMap::const_iterator it = rewrites.begin();
+    for (size_t p = 0; p < orig.size(); ++p) {
         if (it != rewrites.end() && p == it->first) {
             p += it->second.first - 1; // - 1 compensates ++p
             ans.append(it->second.second);
             ++it;
             continue;
         }
-        ans.push_back(*p);
+        ans.push_back(orig[p]);
     }
     return ans;
 }

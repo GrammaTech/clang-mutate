@@ -71,9 +71,10 @@ public:
 private:
   clang::Rewriter & rewriter;
   const Renames & renames;
-  const char * begin;
-  const char * end;
-  std::map<const char*, std::pair<size_t, std::string> > rewrites;
+  clang::SourceLocation begin;
+  clang::SourceLocation end;
+  typedef std::map<size_t, std::pair<size_t, std::string> > RewriteMap;
+  RewriteMap rewrites;
 };
 
 #endif
