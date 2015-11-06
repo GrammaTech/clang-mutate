@@ -100,7 +100,11 @@ namespace clang_mutate
     }
 
     return NULL;
-  } 
+  }
+
+  bool ASTEntryList::isEmpty() const { 
+    return m_astEntries.size() == 0;
+  }
 
   std::string ASTEntryList::toString() const 
   {

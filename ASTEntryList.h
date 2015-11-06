@@ -31,6 +31,8 @@ namespace clang_mutate
     void addEntry(ASTEntry *astEntry);
     ASTEntry* getEntry(unsigned int counter);
 
+    bool isEmpty() const;
+
     std::string toString() const;
     picojson::value toJSON() const;
 

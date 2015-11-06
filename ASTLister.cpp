@@ -68,10 +68,13 @@ using namespace clang;
       TraverseDecl(D);
    
       // Output the results   
-      if ( OutputAsJSON )
-        ASTEntries.toStreamJSON( Out );
-      else
-        ASTEntries.toStream( Out );
+      if ( !ASTEntries.isEmpty() )
+      {
+        if ( OutputAsJSON )
+          ASTEntries.toStreamJSON( Out );
+        else
+          ASTEntries.toStream( Out );
+      }
     };
 
     bool IsSourceRangeInMainFile(SourceRange r)
