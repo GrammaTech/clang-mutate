@@ -60,7 +60,6 @@ using namespace clang;
       Counter=0;
 
       MainFileID=Context.getSourceManager().getMainFileID();
-      MainFileName = Context.getSourceManager().getFileEntryForID(MainFileID)->getName();
 
       Rewrite.setSourceMgr(Context.getSourceManager(),
                            Context.getLangOpts());
@@ -243,7 +242,6 @@ using namespace clang;
     ParentMap* PM;
     unsigned int Counter;
     FileID MainFileID;
-    std::string MainFileName;
 
     GetBindingCtx get_bindings;
   };

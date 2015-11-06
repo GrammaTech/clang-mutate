@@ -377,7 +377,11 @@ namespace clang_mutate{
       }
     }
 
-    // @TODO: Fixme
+    // When compiled with optimization turned on, there is no longer
+    // a one-to-one correspondence of line of C/C++ source code ->
+    // address range in the binary due to inlining of function calls
+    // and other techniques.  If this is the case, we cannot really
+    // ascertain which bits to associate, so return the default.
     if ( beginEndAddresses.first >= beginEndAddresses.second )
     {
       beginEndAddresses.first = (unsigned long) -1;
@@ -454,8 +458,8 @@ namespace clang_mutate{
         for ( LineNumsToAddressesMap::iterator lineNumsToAddressesMapIter = lineNumsToAddressesMap.begin();
               lineNumsToAddressesMapIter != lineNumsToAddressesMap.end();
               lineNumsToAddressesMapIter++ ) {
-          out << "\t\t" << std::hex << lineNumsToAddressesMapIter->first 
-              << ", " << lineNumsToAddressesMapIter->second << std::endl;
+          out << "\t\t" << std::dec << lineNumsToAddressesMapIter->first 
+              << ", " << std::hex << lineNumsToAddressesMapIter->second << std::endl;
         }
       }
     }

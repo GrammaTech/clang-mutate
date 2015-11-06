@@ -110,7 +110,10 @@ namespace clang_mutate
     clang::PresumedLoc beginLoc = sm.getPresumedLoc(s->getSourceRange().getBegin());
     clang::PresumedLoc endLoc = sm.getPresumedLoc(s->getSourceRange().getEnd());
 
-    std::string srcFileName = sm.getFileEntryForID( sm.getMainFileID() )->getName();
+    std::string srcFileName = 
+        realpath( 
+            sm.getFileEntryForID( sm.getMainFileID() )->getName(),
+            NULL);
     unsigned int beginSrcLine = beginLoc.getLine();
     unsigned int endSrcLine = endLoc.getLine();
 
@@ -182,7 +185,10 @@ namespace clang_mutate
     
     m_counter = counter;
     m_astClass = s->getStmtClassName();
-    m_srcFileName = sm.getFileEntryForID(main_id)->getName();
+    m_srcFileName = 
+        realpath( 
+            sm.getFileEntryForID( sm.getMainFileID() )->getName(),
+            NULL);
     m_beginSrcLine = beginLoc.getLine();
     m_beginSrcCol = beginLoc.getColumn();
     m_endSrcLine = endLoc.getLine();
