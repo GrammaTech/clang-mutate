@@ -143,6 +143,16 @@ namespace clang_mutate{
       if (Counter == Stmt2) Range2 = r;
     }
 
+    void GetInfo(Stmt * s)
+    {
+        if (Counter == Stmt1) {
+            Out << s->getStmtClassName() << "\n";
+            SourceLocation e = findSemiAfterLocation(
+                s->getSourceRange().getEnd(), -1);
+            Out << (e.isInvalid() ? "no-semi" : "has-semi") << "\n";
+        }
+    }
+
     void GetScope()
     {
         if (Counter != Stmt1)
@@ -157,14 +167,14 @@ namespace clang_mutate{
     }
       
     // This function adapted from clang/lib/ARCMigrate/Transforms.cpp
-    SourceLocation findSemiAfterLocation(SourceLocation loc) {
+    SourceLocation findSemiAfterLocation(SourceLocation loc, int Offset = 0) {
       SourceManager &SM = Rewrite.getSourceMgr();
       if (loc.isMacroID()) {
         if (!Lexer::isAtEndOfMacroExpansion(loc, SM,
                                             Rewrite.getLangOpts(), &loc))
           return SourceLocation();
       }
-      loc = Lexer::getLocForEndOfToken(loc, /*Offset=*/0, SM,
+      loc = Lexer::getLocForEndOfToken(loc, Offset, SM,
                                        Rewrite.getLangOpts());
 
       // Break down the source location.
@@ -186,7 +196,6 @@ namespace clang_mutate{
       lexer.LexFromRawLexer(tok);
       if (tok.isNot(tok::semi))
         return SourceLocation();
-
       return tok.getLocation();
     }
 
@@ -216,6 +225,7 @@ namespace clang_mutate{
           case INSERT:
           case SWAP:      SaveRange(r);    break;
           case IDS:                        break;
+          case GETINFO:   GetInfo(s);      break;
           case GETSCOPE:  GetScope();      break;
           }
           Counter++;
@@ -271,6 +281,7 @@ namespace clang_mutate{
       switch(Action){
       case IDS: Out << Counter << "\n";
       case GET:
+      case GETINFO:
       case GETSCOPE:
         break;
       default:
@@ -329,6 +340,12 @@ clang::ASTConsumer *clang_mutate::CreateASTSetter(unsigned int Stmt, clang::Stri
 clang::ASTConsumer *clang_mutate::CreateASTValueInserter(unsigned int Stmt, clang::StringRef Value){
   return new ASTMutator(0, VALUEINSERT, Stmt, -1, Value);
 }
+
+clang::ASTConsumer *clang_mutate::CreateASTInfoGetter(unsigned int Stmt)
+{
+    return new ASTMutator(0, GETINFO, Stmt);
+}
+
 
 clang::ASTConsumer *clang_mutate::CreateASTScopeGetter(unsigned int Stmt,
                                                        unsigned int Depth)
