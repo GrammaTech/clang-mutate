@@ -17,6 +17,7 @@ enum ACTION { NUMBER
             , GET
             , SET
             , VALUEINSERT
+            , GETINFO
             , GETSCOPE
             };
 
@@ -29,6 +30,7 @@ clang::ASTConsumer *CreateASTSwapper(unsigned int Stmt1, unsigned int Stmt2);
 clang::ASTConsumer *CreateASTGetter(unsigned int Stmt);
 clang::ASTConsumer *CreateASTSetter(unsigned int Stmt, clang::StringRef Value);
 clang::ASTConsumer *CreateASTValueInserter(unsigned int Stmt, clang::StringRef Value);
+clang::ASTConsumer *CreateASTInfoGetter(unsigned int Stmt);
 clang::ASTConsumer *CreateASTScopeGetter(unsigned int Stmt, unsigned int Depth);
 
 }
