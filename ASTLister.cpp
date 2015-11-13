@@ -147,6 +147,8 @@ using namespace clang;
       if (S->getStmtClass() != Stmt::NoStmtClass &&
           IsSourceRangeInMainFile(R))
       { 
+        get_bindings.TraverseStmt(S);
+
         switch (S->getStmtClass()){
 
         // These classes of statements
@@ -172,7 +174,6 @@ using namespace clang;
         case Stmt::CaseStmtClass: 
         case Stmt::WhileStmtClass:
 
-          get_bindings.TraverseStmt(S);
           NewASTEntry = 
             ASTEntryFactory::make(
                Counter,
@@ -195,7 +196,6 @@ using namespace clang;
         case Stmt::CallExprClass:
           if(IsCompleteCStatement(S))
           {
-            get_bindings.TraverseStmt(S);
             NewASTEntry = 
               ASTEntryFactory::make(
                  Counter,
@@ -207,6 +207,19 @@ using namespace clang;
 
             ASTEntries.addEntry( NewASTEntry );
           }
+          else
+          {
+            NewASTEntry = 
+              new ASTNonBinaryEntry(
+                Counter,
+                S,
+                Rewrite,
+                make_renames(get_bindings.free_values(),
+                             get_bindings.free_functions()) );
+              
+            ASTEntries.addEntry( NewASTEntry );
+          }
+
           break;
 
         // These classes of statements correspond
@@ -214,8 +227,6 @@ using namespace clang;
         // They are too granular to associate with binary
         // source code. 
         default:
-          get_bindings.TraverseStmt(S);
-
           NewASTEntry = new ASTNonBinaryEntry(
                                 Counter,
                                 S,
