@@ -73,14 +73,22 @@ bool RenameFreeVar::VisitStmt(Stmt * stmt)
 
       // Not very efficient, but I didn't see a better way to
       // get the size in characters of a CharSourceRange.
+      CharSourceRange srcRange = CharSourceRange::getCharRange(begin,
+                                                               sr.getBegin());
       size_t offset = Lexer::getSourceText(
-          CharSourceRange::getCharRange(begin, sr.getBegin()),
+          srcRange,
           rewriter.getSourceMgr(),
           rewriter.getLangOpts(),
           NULL).size();
       std::string old_str = rewriter.ConvertToString(stmt);
       std::string new_str = name;
-      rewrites[offset] = std::make_pair(old_str.size(), new_str);
+
+      if (rewriter.getRangeSize(srcRange) != -1) {
+          // The srcRange will have size -1 when the statement is
+          // part of a macro expansion; in that case, we want to
+          // skip the rewriting.
+          rewrites[offset] = std::make_pair(old_str.size(), new_str);
+      }
     }
   }
   return true;
