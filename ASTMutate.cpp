@@ -143,14 +143,21 @@ namespace clang_mutate{
       if (Counter == Stmt2) Range2 = r;
     }
 
-    Stmt * getEnclosingFullStmt() const
+    Stmt * getEnclosingFullStmt(unsigned int * counter = NULL) const
     {
         // Walk back up to the first ancestor of this
         // statement that is a child of a block.
-        std::vector<Stmt*>::const_reverse_iterator it = spine.rbegin();
-        Stmt * s = *it;
-        while (it != spine.rend() && *it != scopes.current_scope())
-            s = *it++;
+        std::vector<std::pair<Stmt*, unsigned int> >
+            ::const_reverse_iterator it = spine.rbegin();
+        Stmt * s = it->first;
+        unsigned int c = it->second;
+        while (it != spine.rend() && it->first != scopes.current_scope()) {           
+            s = it->first;
+            c = it->second;
+            ++it;
+        }
+        if (counter != NULL)
+            *counter = c;
         return s;
     }
       
@@ -182,6 +189,9 @@ namespace clang_mutate{
             SourceLocation e = findSemiAfterLocation(
                 s->getSourceRange().getEnd(), -1);
             Out << (e.isInvalid() ? "no-semi" : "has-semi") << "\n";
+            unsigned int ec;
+            (void) getEnclosingFullStmt(&ec);
+            Out << ec << "\n";
         }
     }
 
@@ -270,7 +280,7 @@ namespace clang_mutate{
 
     bool TraverseStmt(Stmt * s) {
         bool keep_going;
-        spine.push_back(s);
+        spine.push_back(std::make_pair(s, Counter));
         if (begins_scope(s)) {
             scopes.enter_scope(s);
             keep_going = base::TraverseStmt(s);
@@ -338,7 +348,7 @@ namespace clang_mutate{
     SourceRange Range1, Range2;
     std::string Rewritten1, Rewritten2;
     DeclScope scopes;
-    std::vector<Stmt*> spine;
+    std::vector<std::pair<Stmt*, unsigned int> > spine;
   };
 }
 
