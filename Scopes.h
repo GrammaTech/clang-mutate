@@ -16,13 +16,17 @@ namespace clang_mutate {
 
       void declare(const clang::IdentifierInfo* id);
 
-      void enter_scope();
+      void enter_scope(clang::Stmt * stmt);
       void exit_scope();
+
+      clang::Stmt * current_scope() const;
 
       std::vector<std::string> get_names_in_scope(size_t length) const;
     
   private:
-      std::vector<std::vector<const clang::IdentifierInfo*> > scopes;
+    typedef std::pair<clang::Stmt*,
+                      std::vector<const clang::IdentifierInfo*> > BlockScope;
+     std::vector<BlockScope> scopes;
   };
 
   bool begins_scope(clang::Stmt * stmt);

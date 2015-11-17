@@ -143,6 +143,22 @@ namespace clang_mutate{
       if (Counter == Stmt2) Range2 = r;
     }
 
+    void PreInsert()
+    {
+        if (Counter == Stmt1) {
+            // Walk back up to the first ancestor of this
+            // statement that is a child of a block; do the
+            // insertion just before this statement.
+            std::vector<Stmt*>::reverse_iterator it = spine.rbegin();
+            Stmt * s = *it;
+            while (it != spine.rend() && *it != scopes.current_scope())
+                s = *it++;
+
+            SourceRange r = expandRange(s->getSourceRange());
+            Rewrite.InsertText(r.getBegin(), Value, false);
+        }
+    }
+      
     void GetInfo(Stmt * s)
     {
         if (Counter == Stmt1) {
@@ -216,17 +232,18 @@ namespace clang_mutate{
         SourceRange r = expandRange(s->getSourceRange());
         if(SelectRange(r)){
           switch(Action){
-          case ANNOTATOR: AnnotateStmt(s); break;
-          case NUMBER:    NumberRange(r);  break;
-          case CUT:       CutRange(r);     break;
-          case GET:       GetStmt(s);      break;
-          case SET:       SetRange(r);     break;
-          case VALUEINSERT: InsertRange(r); break;
+          case ANNOTATOR:   AnnotateStmt(s); break;
+          case NUMBER:      NumberRange(r);  break;
+          case CUT:         CutRange(r);     break;
+          case GET:         GetStmt(s);      break;
+          case SET:         SetRange(r);     break;
+          case VALUEINSERT: InsertRange(r);  break;
           case INSERT:
-          case SWAP:      SaveRange(r);    break;
-          case IDS:                        break;
-          case GETINFO:   GetInfo(s);      break;
-          case GETSCOPE:  GetScope();      break;
+          case SWAP:        SaveRange(r);    break;
+          case PREINSERT:   PreInsert();     break;
+          case IDS:                          break;
+          case GETINFO:     GetInfo(s);      break;
+          case GETSCOPE:    GetScope();      break;
           }
           Counter++;
         }
@@ -235,20 +252,22 @@ namespace clang_mutate{
     }
 
     bool TraverseStmt(Stmt * s) {
-        if (Action == GETSCOPE && begins_scope(s)) {
-            scopes.enter_scope();
-            bool keep_going = base::TraverseStmt(s);
+        bool keep_going;
+        spine.push_back(s);
+        if (begins_scope(s)) {
+            scopes.enter_scope(s);
+            keep_going = base::TraverseStmt(s);
             scopes.exit_scope();
-            return keep_going;
         }
         else {
-            return base::TraverseStmt(s);
+            keep_going = base::TraverseStmt(s);
         }
+        spine.pop_back();
+        return keep_going;
     }
 
     bool TraverseVarDecl(VarDecl * decl) {
-        if (Action == GETSCOPE)
-            scopes.declare(decl->getIdentifier());
+        scopes.declare(decl->getIdentifier());
         return base::TraverseVarDecl(decl);
     }
       
@@ -302,6 +321,7 @@ namespace clang_mutate{
     SourceRange Range1, Range2;
     std::string Rewritten1, Rewritten2;
     DeclScope scopes;
+    std::vector<Stmt*> spine;
   };
 }
 
@@ -338,7 +358,11 @@ clang::ASTConsumer *clang_mutate::CreateASTSetter(unsigned int Stmt, clang::Stri
 }
 
 clang::ASTConsumer *clang_mutate::CreateASTValueInserter(unsigned int Stmt, clang::StringRef Value){
-  return new ASTMutator(0, VALUEINSERT, Stmt, -1, Value);
+    return new ASTMutator(0, VALUEINSERT, Stmt, -1, Value);
+}
+
+clang::ASTConsumer *clang_mutate::CreateASTValuePreInserter(unsigned int Stmt, clang::StringRef Value){
+    return new ASTMutator(0, PREINSERT, Stmt, -1, Value);
 }
 
 clang::ASTConsumer *clang_mutate::CreateASTInfoGetter(unsigned int Stmt)

@@ -54,8 +54,9 @@ static cl::opt<bool>             Swap ("swap",         cl::desc("Swap stmt1 and 
 static cl::opt<bool>              Get ("get",          cl::desc("Return the text of stmt1"));
 static cl::opt<bool>              Set ("set",          cl::desc("Set the text of stmt1 to value"));
 static cl::opt<unsigned int> GetScope ("get-scope",    cl::desc("Get the first n variables in scope at stmt1"));
-static cl::opt<bool>          GetInfo ("get-info",     cl::desc("Get information about stmt1"));
-static cl::opt<bool>      InsertValue ("insert-value", cl::desc("insert value before stmt1"));
+static cl::opt<bool>          GetInfo  ("get-info",      cl::desc("Get information about stmt1"));
+static cl::opt<bool>      InsertValue  ("insert-value",  cl::desc("insert value before stmt1"));
+static cl::opt<bool>      InsertBefore ("insert-before", cl::desc("insert value before the complete statement enclosing stmt1"));
 static cl::opt<unsigned int>    Stmt1 ("stmt1",        cl::desc("statement 1 for mutation ops"));
 static cl::opt<unsigned int>    Stmt2 ("stmt2",        cl::desc("statement 2 for mutation ops"));
 static cl::opt<std::string>     Value ("value",        cl::desc("string value for mutation ops"));
@@ -87,6 +88,8 @@ public:
       return clang_mutate::CreateASTSetter(Stmt1, Value);
     if (InsertValue)
       return clang_mutate::CreateASTValueInserter(Stmt1, Value);
+    if (InsertBefore)
+      return clang_mutate::CreateASTValuePreInserter(Stmt1, Value);
     if (GetInfo)
       return clang_mutate::CreateASTInfoGetter(Stmt1);
     if (GetScope)
@@ -103,6 +106,7 @@ public:
     errs() << "\tget\n";
     errs() << "\tset\n";
     errs() << "\tinsert-value\n";
+    errs() << "\tinsert-before\n";
     errs() << "\tget-info\n";
     errs() << "\tget-scope\n";
     exit(EXIT_FAILURE);
