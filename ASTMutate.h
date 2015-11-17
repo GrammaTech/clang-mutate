@@ -12,6 +12,7 @@ enum ACTION { NUMBER
             , IDS
             , ANNOTATOR
             , CUT
+            , CUTENCLOSING
             , INSERT
             , SWAP
             , GET
@@ -25,7 +26,8 @@ enum ACTION { NUMBER
 clang::ASTConsumer *CreateASTNumberer();
 clang::ASTConsumer *CreateASTIDS();
 clang::ASTConsumer *CreateASTAnnotator();
-clang::ASTConsumer *CreateASTCuter(unsigned int Stmt);
+clang::ASTConsumer *CreateASTCutter(unsigned int Stmt);
+clang::ASTConsumer *CreateASTEnclosingCutter(unsigned int Stmt);
 clang::ASTConsumer *CreateASTInserter(unsigned int Stmt1, unsigned int Stmt2);
 clang::ASTConsumer *CreateASTSwapper(unsigned int Stmt1, unsigned int Stmt2);
 clang::ASTConsumer *CreateASTGetter(unsigned int Stmt);

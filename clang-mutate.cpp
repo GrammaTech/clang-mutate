@@ -48,7 +48,8 @@ static cl::opt<bool>           Number ("number",       cl::desc("number all stat
 static cl::opt<bool>              Ids ("ids",          cl::desc("print count of statement ids"));
 static cl::opt<bool>         Annotate ("annotate",     cl::desc("annotate each statement with its class"));
 static cl::opt<bool>             List ("list",         cl::desc("list every statement's id, class and range"));
-static cl::opt<bool>              Cut ("cut",          cl::desc("cut stmt1"));
+static cl::opt<bool>              Cut ("cut",           cl::desc("cut stmt1"));
+static cl::opt<bool>     CutEnclosing ("cut-enclosing", cl::desc("cut complete statement containing stmt1"));
 static cl::opt<bool>           Insert ("insert",       cl::desc("copy stmt1 to after stmt2"));
 static cl::opt<bool>             Swap ("swap",         cl::desc("Swap stmt1 and stmt2"));
 static cl::opt<bool>              Get ("get",          cl::desc("Return the text of stmt1"));
@@ -77,7 +78,9 @@ public:
     if (List)
       return clang_mutate::CreateASTLister(Binary, JSONOut);
     if (Cut)
-      return clang_mutate::CreateASTCuter(Stmt1);
+      return clang_mutate::CreateASTCutter(Stmt1);
+    if (CutEnclosing)
+      return clang_mutate::CreateASTEnclosingCutter(Stmt1);
     if (Insert)
       return clang_mutate::CreateASTInserter(Stmt1, Stmt2);
     if (Swap)
@@ -107,6 +110,7 @@ public:
     errs() << "\tset\n";
     errs() << "\tinsert-value\n";
     errs() << "\tinsert-before\n";
+    errs() << "\tcut-enclosing\n";
     errs() << "\tget-info\n";
     errs() << "\tget-scope\n";
     exit(EXIT_FAILURE);

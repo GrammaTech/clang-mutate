@@ -143,22 +143,38 @@ namespace clang_mutate{
       if (Counter == Stmt2) Range2 = r;
     }
 
+    Stmt * getEnclosingFullStmt() const
+    {
+        // Walk back up to the first ancestor of this
+        // statement that is a child of a block.
+        std::vector<Stmt*>::const_reverse_iterator it = spine.rbegin();
+        Stmt * s = *it;
+        while (it != spine.rend() && *it != scopes.current_scope())
+            s = *it++;
+        return s;
+    }
+      
     void PreInsert()
     {
         if (Counter == Stmt1) {
-            // Walk back up to the first ancestor of this
-            // statement that is a child of a block; do the
-            // insertion just before this statement.
-            std::vector<Stmt*>::reverse_iterator it = spine.rbegin();
-            Stmt * s = *it;
-            while (it != spine.rend() && *it != scopes.current_scope())
-                s = *it++;
-
+            Stmt * s = getEnclosingFullStmt();
             SourceRange r = expandRange(s->getSourceRange());
             Rewrite.InsertText(r.getBegin(), Value, false);
         }
     }
-      
+
+    void CutEnclosing()
+    {
+        if (Counter == Stmt1) {
+            Stmt * s = getEnclosingFullStmt();
+            SourceRange r = expandRange(s->getSourceRange());
+
+            char label[24];
+            sprintf(label, "/* cut-enclosing: %d */", Counter);
+            Rewrite.ReplaceText(r, label);
+        }
+    }
+          
     void GetInfo(Stmt * s)
     {
         if (Counter == Stmt1) {
@@ -232,18 +248,19 @@ namespace clang_mutate{
         SourceRange r = expandRange(s->getSourceRange());
         if(SelectRange(r)){
           switch(Action){
-          case ANNOTATOR:   AnnotateStmt(s); break;
-          case NUMBER:      NumberRange(r);  break;
-          case CUT:         CutRange(r);     break;
-          case GET:         GetStmt(s);      break;
-          case SET:         SetRange(r);     break;
-          case VALUEINSERT: InsertRange(r);  break;
+          case ANNOTATOR:    AnnotateStmt(s); break;
+          case NUMBER:       NumberRange(r);  break;
+          case CUT:          CutRange(r);     break;
+          case CUTENCLOSING: CutEnclosing();  break;
+          case GET:          GetStmt(s);      break;
+          case SET:          SetRange(r);     break;
+          case VALUEINSERT:  InsertRange(r);  break;
           case INSERT:
-          case SWAP:        SaveRange(r);    break;
-          case PREINSERT:   PreInsert();     break;
+          case SWAP:         SaveRange(r);    break;
+          case PREINSERT:    PreInsert();     break;
           case IDS:                          break;
-          case GETINFO:     GetInfo(s);      break;
-          case GETSCOPE:    GetScope();      break;
+          case GETINFO:      GetInfo(s);      break;
+          case GETSCOPE:     GetScope();      break;
           }
           Counter++;
         }
@@ -337,8 +354,12 @@ clang::ASTConsumer *clang_mutate::CreateASTAnnotator(){
   return new ASTMutator(0, ANNOTATOR);
 }
 
-clang::ASTConsumer *clang_mutate::CreateASTCuter(unsigned int Stmt){
+clang::ASTConsumer *clang_mutate::CreateASTCutter(unsigned int Stmt){
   return new ASTMutator(0, CUT, Stmt);
+}
+
+clang::ASTConsumer *clang_mutate::CreateASTEnclosingCutter(unsigned int Stmt){
+  return new ASTMutator(0, CUTENCLOSING, Stmt);
 }
 
 clang::ASTConsumer *clang_mutate::CreateASTInserter(unsigned int Stmt1, unsigned int Stmt2){
