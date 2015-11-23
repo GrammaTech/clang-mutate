@@ -4,7 +4,7 @@
  in those compilation units, and the mapping file line number -> address
  in binary.
 
- @FUTURE: Use libdrawf on the raw binary to get this data.
+ @FUTURE: Use libdwarf on the raw binary to get this data.
 */
 
 #ifndef BINARY_ADDRESS_MAP_HPP
@@ -18,9 +18,10 @@
 namespace clang_mutate{
   class BinaryAddressMap {
   public:
-    typedef std::pair<unsigned int, unsigned long> LineNumAddressPair;
+    typedef std::pair<unsigned long, unsigned long> BeginEndAddressPair;
+    typedef std::pair<unsigned int, BeginEndAddressPair> LineNumAddressPair;
     typedef std::pair<std::string, LineNumAddressPair> FilenameLineNumAddressPair;
-    typedef std::map<unsigned int, unsigned long> LineNumsToAddressesMap;
+    typedef std::map<unsigned int, BeginEndAddressPair> LineNumsToAddressesMap;
     typedef std::map<std::string, LineNumsToAddressesMap> FilesMap;
     typedef std::map<unsigned int, FilesMap> CompilationUnitMap;
 
@@ -57,7 +58,6 @@ namespace clang_mutate{
                                         unsigned int lineNum ) const;
 
     // Retrieve the begin and end addresses in the binary for a given line in a file.
-    typedef std::pair<unsigned long, unsigned long> BeginEndAddressPair;
     BeginEndAddressPair getBeginEndAddressesForLine( const std::string& filePath, 
                                                      unsigned int lineNum) const;
 
@@ -92,12 +92,13 @@ namespace clang_mutate{
     // using objdump to disassemble from [beginAddress, endAddress)
     void fillBinaryContentsCache( unsigned long beginAddress, unsigned long endAddress );
 
-    // Parse a single line in the form "%0x     %d     %d     %d  %d  %s"
+    // Parse two contiguous lines in the form "%0x     %d     %d     %d  %d  %s"
     // from the output of llvm-dwarfdump
     //  %0x#1: Address in binary
     //  %d#1: Line number in source
     //  %d#3: File index
     FilenameLineNumAddressPair parseAddressLine( const std::string &line, 
+                                                 const std::string &nextLine,
                                                  const std::vector<std::string> &files );
 
     // Parse a single line in the form "include_directories[ %d] = '%s'"

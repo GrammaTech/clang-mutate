@@ -124,12 +124,14 @@ namespace clang_mutate{
 
   BinaryAddressMap::FilenameLineNumAddressPair BinaryAddressMap::parseAddressLine(
     const std::string &line, 
+    const std::string &nextLine,
     const std::vector<std::string> &files ) {
 
     // Regular expressions would be cool...
-    std::stringstream lineEntriesStream( line );
+    std::stringstream lineEntriesStream;
     FilenameLineNumAddressPair filenameLineNumAddressPair;
-    unsigned long address;
+    unsigned long beginAddress;
+    unsigned long endAddress;
     unsigned int lineNum;
     unsigned int tmp, fileIndex;
   
@@ -137,11 +139,15 @@ namespace clang_mutate{
     // line number. We will just store it as the next line number.      
     bool endSequence = line.find("end_sequence") != std::string::npos;
 
-    lineEntriesStream >> std::hex >> address >> std::dec >> lineNum >> tmp >> fileIndex;
+    lineEntriesStream.str( line );
+    lineEntriesStream >> std::hex >> beginAddress >> std::dec >> lineNum >> tmp >> fileIndex;
+    lineEntriesStream.str( nextLine );
+    lineEntriesStream >> std::hex >> endAddress;
 
     filenameLineNumAddressPair.first = files[fileIndex-1];
     filenameLineNumAddressPair.second.first = (endSequence) ? lineNum+1 : lineNum;
-    filenameLineNumAddressPair.second.second = address;
+    filenameLineNumAddressPair.second.second.first  = beginAddress;
+    filenameLineNumAddressPair.second.second.second = endAddress;
 
     return filenameLineNumAddressPair;
   }
@@ -228,8 +234,12 @@ namespace clang_mutate{
         files.push_back( file );
       }
 
-      if ( line.find("0x") == 0) {
-        FilenameLineNumAddressPair fileNameLineNumAddressPair = parseAddressLine( line, files );
+      if ( line.find("0x") == 0 && 
+           currentline+1 < dwarfDumpDebugLine.size() &&
+           dwarfDumpDebugLine[currentline+1].find("0x") == 0 ) {
+        std::string nextLine = dwarfDumpDebugLine[currentline+1];
+        FilenameLineNumAddressPair fileNameLineNumAddressPair = 
+            parseAddressLine( line, nextLine, files );
         filesMap[ fileNameLineNumAddressPair.first ].insert( fileNameLineNumAddressPair.second );
       }
 
@@ -369,23 +379,11 @@ namespace clang_mutate{
           // We found a match.  Return the starting and ending address for this line.
           LineNumsToAddressesMap::iterator lineNumsToAddressesMapIter = lineNumsToAddressesMap.find(lineNum);
 
-          beginEndAddresses.first = lineNumsToAddressesMapIter->second;
-          lineNumsToAddressesMapIter++;
-          beginEndAddresses.second = lineNumsToAddressesMapIter->second;
+          beginEndAddresses.first = lineNumsToAddressesMapIter->second.first;
+          beginEndAddresses.second = lineNumsToAddressesMapIter->second.second;
           break;
         }     
       }
-    }
-
-    // When compiled with optimization turned on, there is no longer
-    // a one-to-one correspondence of line of C/C++ source code ->
-    // address range in the binary due to inlining of function calls
-    // and other techniques.  If this is the case, we cannot really
-    // ascertain which bits to associate, so return the default.
-    if ( beginEndAddresses.first >= beginEndAddresses.second )
-    {
-      beginEndAddresses.first = (unsigned long) -1;
-      beginEndAddresses.second = (unsigned long) -1;
     }
 
     return beginEndAddresses;
@@ -398,25 +396,33 @@ namespace clang_mutate{
     BinaryContentsMap::const_iterator cacheIter;
     Bytes bytes;
 
-    // Test if we could find the bytes for the range [beginAddress, endAddress)
-    // in the cache.  If not, fill it.
-    if ( m_binaryContentsCache.find(beginAddress) == m_binaryContentsCache.end() ||
-         m_binaryContentsCache.find(endAddress) == m_binaryContentsCache.end() )
+    // Note: When compiled with optimization turned on, there is no longer
+    // a one-to-one correspondence of line of C/C++ source code ->
+    // address range in the binary due to inlining of function calls
+    // and other techniques. Additionally, the ordering of function calls in 
+    // the compiled binary may not match the ordering in source.
+    if ( beginAddress < endAddress )
     {
-      fillBinaryContentsCache( beginAddress, endAddress );
-    }
-
-    // Push all bytes for the range [beginAddress, endAddress) into 
-    // the bytes vector.
-    for ( cacheIter = m_binaryContentsCache.lower_bound( beginAddress );
-          cacheIter != m_binaryContentsCache.upper_bound( endAddress );
-          cacheIter++ )
-    {
-      for ( Bytes::const_iterator byteIter = cacheIter->second.begin();
-            byteIter != cacheIter->second.end();
-            byteIter++ )
+      // Test if we could find the bytes for the range [beginAddress, endAddress)
+      // in the cache.  If not, fill it.
+      if ( m_binaryContentsCache.find(beginAddress) == m_binaryContentsCache.end() ||
+           m_binaryContentsCache.find(endAddress) == m_binaryContentsCache.end() )
       {
-        bytes.push_back( *byteIter );
+        fillBinaryContentsCache( beginAddress, endAddress );
+      }
+
+      // Push all bytes for the range [beginAddress, endAddress) into 
+      // the bytes vector.
+      for ( cacheIter = m_binaryContentsCache.lower_bound( beginAddress );
+            cacheIter != m_binaryContentsCache.upper_bound( endAddress );
+            cacheIter++ )
+      {
+        for ( Bytes::const_iterator byteIter = cacheIter->second.begin();
+              byteIter != cacheIter->second.end();
+              byteIter++ )
+        {
+          bytes.push_back( *byteIter );
+        }
       }
     }
 
@@ -439,7 +445,9 @@ namespace clang_mutate{
       ret << std::setw(2) << static_cast<int>(*byteIter) << " ";
     }
 
-    return ret.str().substr(0, ret.str().length() - 1);
+    return ret.str().empty() ? 
+           ret.str() :
+           ret.str().substr(0, ret.str().length() - 1);
   }
 
   std::ostream& BinaryAddressMap::dump(std::ostream& out) const {
@@ -459,7 +467,9 @@ namespace clang_mutate{
               lineNumsToAddressesMapIter != lineNumsToAddressesMap.end();
               lineNumsToAddressesMapIter++ ) {
           out << "\t\t" << std::dec << lineNumsToAddressesMapIter->first 
-              << ", " << std::hex << lineNumsToAddressesMapIter->second << std::endl;
+              << ": " << std::hex << lineNumsToAddressesMapIter->second.first
+              << ", " << std::hex << lineNumsToAddressesMapIter->second.second
+              << std::endl;
         }
       }
     }
