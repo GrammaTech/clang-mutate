@@ -59,10 +59,28 @@ namespace clang_mutate{
         Rewrite.InsertText(Range1.getBegin(), (Rewritten2+" "), true);
         break;
       case SWAP:
-        Rewritten1 = Rewrite.getRewrittenText(Range1);
-        Rewritten2 = Rewrite.getRewrittenText(Range2);
-        Rewrite.ReplaceText(Range1, Rewritten2);
-        Rewrite.ReplaceText(Range2, Rewritten1);
+        {
+            SourceManager & sm = Context.getSourceManager();
+            unsigned r1_lo = sm.getFileOffset(Range1.getBegin());
+            unsigned r1_hi = sm.getFileOffset(Range1.getEnd());
+            unsigned r2_lo = sm.getFileOffset(Range2.getBegin());
+            unsigned r2_hi = sm.getFileOffset(Range2.getEnd());
+            if (r1_lo > r2_hi || r2_lo > r1_hi) {
+                Rewritten1 = Rewrite.getRewrittenText(Range1);
+                Rewritten2 = Rewrite.getRewrittenText(Range2);
+                Rewrite.ReplaceText(Range1, Rewritten2);
+                Rewrite.ReplaceText(Range2, Rewritten1);
+            }
+            else {
+                // Error? Warning? What should we do if the user
+                // asks us to swap two overlapping ranges?
+                llvm::errs() << "ERROR: overlapping ranges "
+                             << "[" << r1_lo << ".." << r1_hi << "], "
+                             << "[" << r2_lo << ".." << r2_hi << "] "
+                             << "in a swap.\n";
+                exit(EXIT_FAILURE);
+            }
+        }
         break;
       default: break;
       }
@@ -268,7 +286,7 @@ namespace clang_mutate{
           case INSERT:
           case SWAP:         SaveRange(r);    break;
           case PREINSERT:    PreInsert();     break;
-          case IDS:                          break;
+          case IDS:                           break;
           case GETINFO:      GetInfo(s);      break;
           case GETSCOPE:     GetScope();      break;
           }
