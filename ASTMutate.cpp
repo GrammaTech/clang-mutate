@@ -135,7 +135,11 @@ namespace clang_mutate{
     }
 
     void GetStmt(Stmt *s){
-      if (Counter == Stmt1) Out << Rewrite.ConvertToString(s) << "\n";
+        if (Counter == Stmt1) {
+            s->printPretty(Out, 0, PrintingPolicy(Rewrite.getLangOpts()));
+                           //Out << Rewrite.ConvertToString(s) ;
+            Out << "\n";
+        }
     }
 
     void SetRange(SourceRange r){
@@ -370,59 +374,59 @@ namespace clang_mutate{
   };
 }
 
-clang::ASTConsumer *clang_mutate::CreateASTNumberer(){
-  return new ASTMutator(0, NUMBER);
+std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTNumberer(){
+    return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, NUMBER));
 }
 
-clang::ASTConsumer *clang_mutate::CreateASTIDS(){
-  return new ASTMutator(0, IDS);
+std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTIDS(){
+    return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, IDS));
 }
 
-clang::ASTConsumer *clang_mutate::CreateASTAnnotator(){
-  return new ASTMutator(0, ANNOTATOR);
+std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTAnnotator(){
+    return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, ANNOTATOR));
 }
 
-clang::ASTConsumer *clang_mutate::CreateASTCutter(unsigned int Stmt){
-  return new ASTMutator(0, CUT, Stmt);
+std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTCutter(unsigned int Stmt){
+      return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, CUT, Stmt));
 }
 
-clang::ASTConsumer *clang_mutate::CreateASTEnclosingCutter(unsigned int Stmt){
-  return new ASTMutator(0, CUTENCLOSING, Stmt);
+std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTEnclosingCutter(unsigned int Stmt){
+      return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, CUTENCLOSING, Stmt));
 }
 
-clang::ASTConsumer *clang_mutate::CreateASTInserter(unsigned int Stmt1, unsigned int Stmt2){
-  return new ASTMutator(0, INSERT, Stmt1, Stmt2);
+std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTInserter(unsigned int Stmt1, unsigned int Stmt2){
+      return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, INSERT, Stmt1, Stmt2));
 }
 
-clang::ASTConsumer *clang_mutate::CreateASTSwapper(unsigned int Stmt1, unsigned int Stmt2){
-  return new ASTMutator(0, SWAP, Stmt1, Stmt2);
+std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTSwapper(unsigned int Stmt1, unsigned int Stmt2){
+      return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, SWAP, Stmt1, Stmt2));
 }
 
-clang::ASTConsumer *clang_mutate::CreateASTGetter(unsigned int Stmt){
-  return new ASTMutator(0, GET, Stmt);
+std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTGetter(unsigned int Stmt){
+      return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, GET, Stmt));
 }
 
-clang::ASTConsumer *clang_mutate::CreateASTSetter(unsigned int Stmt, clang::StringRef Value){
-  return new ASTMutator(0, SET, Stmt, -1, Value);
+std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTSetter(unsigned int Stmt, clang::StringRef Value){
+      return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, SET, Stmt, -1, Value));
 }
 
-clang::ASTConsumer *clang_mutate::CreateASTValueInserter(unsigned int Stmt, clang::StringRef Value){
-    return new ASTMutator(0, VALUEINSERT, Stmt, -1, Value);
+std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTValueInserter(unsigned int Stmt, clang::StringRef Value){
+      return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, VALUEINSERT, Stmt, -1, Value));
 }
 
-clang::ASTConsumer *clang_mutate::CreateASTValuePreInserter(unsigned int Stmt, clang::StringRef Value){
-    return new ASTMutator(0, PREINSERT, Stmt, -1, Value);
+std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTValuePreInserter(unsigned int Stmt, clang::StringRef Value){
+        return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, PREINSERT, Stmt, -1, Value));
 }
 
-clang::ASTConsumer *clang_mutate::CreateASTInfoGetter(unsigned int Stmt)
+std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTInfoGetter(unsigned int Stmt)
 {
-    return new ASTMutator(0, GETINFO, Stmt);
+    return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, GETINFO, Stmt));
 }
 
 
-clang::ASTConsumer *clang_mutate::CreateASTScopeGetter(unsigned int Stmt,
+std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTScopeGetter(unsigned int Stmt,
                                                        unsigned int Depth)
 {
-    return new ASTMutator(0, GETSCOPE, Stmt, -1, "", Depth);
+    return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, GETSCOPE, Stmt, -1, "", Depth));
 }
 

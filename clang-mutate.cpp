@@ -26,6 +26,7 @@ using namespace clang::driver;
 using namespace clang::tooling;
 using namespace llvm;
 
+static cl::OptionCategory ToolCategory("clang-mutate options");
 static cl::extrahelp CommonHelp(CommonOptionsParser::HelpMessage);
 static cl::extrahelp MoreHelp(
     "Example Usage:\n"
@@ -66,9 +67,17 @@ static cl::opt<std::string>    Binary ("binary",       cl::desc("binary with DWA
 static cl::opt<bool>          JSONOut ("json",         cl::desc("output results in JSON (-list only)"));
 
 namespace {
-class ActionFactory {
+class ActionFactory : public SourceFileCallbacks {
 public:
-  clang::ASTConsumer *newASTConsumer() {
+
+    virtual bool handleBeginSource(clang::CompilerInstance & CIref,
+                                   StringRef Filename)
+    {
+        CI = &CIref;
+        return SourceFileCallbacks::handleBeginSource(CIref, Filename);
+    }
+
+    std::unique_ptr<clang::ASTConsumer> newASTConsumer() {
     if (Number)
       return clang_mutate::CreateASTNumberer();
     if (Ids)
@@ -76,7 +85,7 @@ public:
     if (Annotate)
       return clang_mutate::CreateASTAnnotator();
     if (List)
-      return clang_mutate::CreateASTLister(Binary, JSONOut);
+      return clang_mutate::CreateASTLister(Binary, JSONOut, CI);
     if (Cut)
       return clang_mutate::CreateASTCutter(Stmt1);
     if (CutEnclosing)
@@ -115,14 +124,16 @@ public:
     errs() << "\tget-scope\n";
     exit(EXIT_FAILURE);
   }
+
+  clang::CompilerInstance * CI;
 };
 }
 
 int main(int argc, const char **argv) {
-  CommonOptionsParser OptionsParser(argc, argv);
+  CommonOptionsParser OptionsParser(argc, argv, ToolCategory);
   ClangTool Tool(OptionsParser.getCompilations(),
                  OptionsParser.getSourcePathList());
   outs() << Stmts << "\n";
   ActionFactory Factory;
-  return Tool.run(newFrontendActionFactory<ActionFactory>(&Factory));
+  return Tool.run(newFrontendActionFactory<ActionFactory>(&Factory, &Factory).get());
 }

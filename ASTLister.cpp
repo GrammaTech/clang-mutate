@@ -2,6 +2,7 @@
 #include "BinaryAddressMap.h"
 #include "Bindings.h"
 #include "ASTEntryList.h"
+#include "Macros.h"
 
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/Diagnostic.h"
@@ -39,13 +40,15 @@ using namespace clang;
   public:
     ASTLister(raw_ostream *Out = NULL,
               StringRef Binary = (StringRef) "",
-              bool OutputAsJSON = false)
+              bool OutputAsJSON = false,
+              CompilerInstance * _CI = NULL)
       : Out(Out ? *Out : llvm::outs()),
         Binary(Binary),
         BinaryAddresses(Binary),
         OutputAsJSON(OutputAsJSON),
         PM(NULL),
-	get_bindings()
+        get_bindings(),
+        CI(_CI)
     {}
 
     ~ASTLister(){
@@ -133,9 +136,14 @@ using namespace clang;
     virtual bool VisitStmt(Stmt *S){
 
       SaveAndRestore<GetBindingCtx> sr(get_bindings);
-      
+
       SourceRange R = S->getSourceRange();
       ASTEntry* NewASTEntry = NULL;
+
+      GetMacros get_macros(Rewrite.getSourceMgr(),
+                           Rewrite.getLangOpts(),
+                           CI);
+      get_macros.TraverseStmt(S);
 
       // Test if we are in a new function
       // declaration.  If so, update the parent
@@ -145,7 +153,7 @@ using namespace clang;
       }
       
       if (S->getStmtClass() != Stmt::NoStmtClass &&
-          IsSourceRangeInMainFile(R))
+          !get_macros.toplevel_is_macro())
       { 
         get_bindings.TraverseStmt(S);
 
@@ -181,7 +189,8 @@ using namespace clang;
                Rewrite,
                BinaryAddresses,
                make_renames(get_bindings.free_values(),
-                            get_bindings.free_functions()) );
+                            get_bindings.free_functions()),
+               get_macros.result() );
 
           ASTEntries.addEntry( NewASTEntry );
           break;
@@ -203,7 +212,8 @@ using namespace clang;
                  Rewrite,
                  BinaryAddresses,
                  make_renames(get_bindings.free_values(),
-                              get_bindings.free_functions()) );
+                              get_bindings.free_functions()),
+                 get_macros.result() );
 
             ASTEntries.addEntry( NewASTEntry );
           }
@@ -215,7 +225,8 @@ using namespace clang;
                 S,
                 Rewrite,
                 make_renames(get_bindings.free_values(),
-                             get_bindings.free_functions()) );
+                             get_bindings.free_functions()),
+                get_macros.result() );
               
             ASTEntries.addEntry( NewASTEntry );
           }
@@ -232,7 +243,8 @@ using namespace clang;
                                 S,
                                 Rewrite,
                                 make_renames(get_bindings.free_values(),
-                                             get_bindings.free_functions()) );
+                                             get_bindings.free_functions()),
+                                get_macros.result() );
 
           ASTEntries.addEntry( NewASTEntry );
           break;
@@ -258,9 +270,13 @@ using namespace clang;
     FileID MainFileID;
 
     GetBindingCtx get_bindings;
+    CompilerInstance * CI;
   };
 }
 
-clang::ASTConsumer *clang_mutate::CreateASTLister(clang::StringRef Binary, bool OutputAsJSON){
-  return new ASTLister(0, Binary, OutputAsJSON);
+std::unique_ptr<clang::ASTConsumer>
+clang_mutate::CreateASTLister(clang::StringRef Binary,
+                              bool OutputAsJSON,
+                              clang::CompilerInstance * CI){
+    return std::unique_ptr<clang::ASTConsumer>(new ASTLister(0, Binary, OutputAsJSON, CI));
 }

@@ -9,6 +9,7 @@
 
 #include "clang/AST/AST.h"
 #include "clang/Basic/SourceManager.h"
+#include "clang/Lex/Lexer.h"
 #include "clang/Rewrite/Frontend/Rewriters.h"
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/SaveAndRestore.h"
@@ -16,6 +17,9 @@
 #include "third-party/picojson-1.3.0/picojson.h"
 
 #include <string>
+
+namespace clang_mutate
+{
 
 std::string escape_for_json(const std::string & s)
 {
@@ -87,8 +91,45 @@ void json_to_renames(const picojson::value & jv,
   }
 }
 
-namespace clang_mutate
+picojson::value macros_to_json(const Macros & macros)
 {
+    std::vector<picojson::value> ans;
+    for (Macros::const_iterator it = macros.begin(); it != macros.end(); ++it)
+    {
+        std::vector<picojson::value> item;
+        item.push_back(picojson::value(it->name()));
+        item.push_back(picojson::value(it->body()));
+        ans.push_back(picojson::value(item));
+    }
+    return picojson::value(ans);
+}
+
+void json_to_macros(const picojson::value & jv, Macros & macros)
+{
+    if (!jv.is<picojson::array>()) {
+        assert (!"expected a json array");
+        return;
+    }
+
+    std::vector<picojson::value> vals = jv.get<picojson::array>();
+    for (std::vector<picojson::value>::iterator it = vals.begin();
+         it != vals.end();
+         ++it)
+    {
+        if (!it->is<picojson::array>()) {
+            assert (!"expected a json array with two elements");
+            return;
+        }
+        std::vector<picojson::value> item = it->get<picojson::array>();
+        assert (item.size() == 2);
+        assert (item[0].is<std::string>);
+        assert (item[1].is<std::string>);
+
+        macros.insert(Macro(item[0].get<std::string>(),
+                            item[1].get<std::string>()));
+    }
+}
+
   ASTEntry* ASTEntryFactory::make( const picojson::value &jsonValue )
   {
     if ( ASTBinaryEntry::jsonObjHasRequiredFields(jsonValue) )
@@ -104,7 +145,8 @@ namespace clang_mutate
       clang::Stmt *s,
       clang::Rewriter& rewrite,
       BinaryAddressMap &binaryAddressMap,
-      const Renames & renames)
+      const Renames & renames,
+      const Macros & macros )
   {
     clang::SourceManager &sm = rewrite.getSourceMgr();
     clang::PresumedLoc beginLoc = sm.getPresumedLoc(s->getSourceRange().getBegin());
@@ -124,14 +166,16 @@ namespace clang_mutate
                                  s,
                                  rewrite,
                                  binaryAddressMap,
-                                 renames);
+                                 renames,
+                                 macros);
     }
     else
     {
       return new ASTNonBinaryEntry( counter,
                                     s,
                                     rewrite,
-                                    renames);
+                                    renames,
+                                    macros);
     }
   }
 
@@ -144,7 +188,8 @@ namespace clang_mutate
     m_endSrcLine(0),
     m_endSrcCol(0),
     m_srcText(""),
-    m_renames()
+    m_renames(),
+    m_macros()
   {
   }
 
@@ -157,7 +202,8 @@ namespace clang_mutate
     const unsigned int endSrcLine,
     const unsigned int endSrcCol,
     const std::string &srcText,
-    const Renames & renames) :
+    const Renames & renames,
+    const Macros & macros ) :
 
     m_counter(counter),
     m_astClass(astClass),
@@ -167,7 +213,8 @@ namespace clang_mutate
     m_endSrcLine(endSrcLine),
     m_endSrcCol(endSrcCol),
     m_srcText(srcText),
-    m_renames(renames)
+    m_renames(renames),
+    m_macros(macros)
   {
   }
 
@@ -175,7 +222,8 @@ namespace clang_mutate
     const int counter,
     clang::Stmt * s,
     clang::Rewriter& rewrite,
-    const Renames & renames)
+    const Renames & renames,
+    const Macros & macros )
   {
     clang::SourceManager &sm = rewrite.getSourceMgr();
     clang::PresumedLoc beginLoc = sm.getPresumedLoc(s->getSourceRange().getBegin());
@@ -194,6 +242,7 @@ namespace clang_mutate
     m_endSrcLine = endLoc.getLine();
     m_endSrcCol = endLoc.getColumn();
     m_renames = renames;
+    m_macros = macros;
     
     RenameFreeVar renamer(s, rewrite, renames);
     m_srcText = renamer.getRewrittenString();
@@ -214,6 +263,7 @@ namespace clang_mutate
                           jsonValue.get("src_text").get<std::string>());
       json_to_renames(jsonValue.get("unbound_vals"), VariableRename, m_renames);
       json_to_renames(jsonValue.get("unbound_funs"), FunctionRename, m_renames);
+      json_to_macros(jsonValue.get("macros"), m_macros);
     }
   }
 
@@ -229,7 +279,8 @@ namespace clang_mutate
                                   m_endSrcLine,
                                   m_endSrcCol,
                                   m_srcText,
-                                  m_renames );
+                                  m_renames,
+                                  m_macros);
   }
 
   unsigned int ASTNonBinaryEntry::getCounter() const
@@ -276,6 +327,11 @@ namespace clang_mutate
   {
       return m_renames;
   }
+
+  Macros ASTNonBinaryEntry::getMacros() const
+  {
+      return m_macros;
+  }
     
   std::string ASTNonBinaryEntry::toString() const
   {
@@ -306,6 +362,7 @@ namespace clang_mutate
     jsonObj["src_text"] = picojson::value(escape_for_json(m_srcText));
     jsonObj["unbound_vals"] = renames_to_json(m_renames, VariableRename);
     jsonObj["unbound_funs"] = renames_to_json(m_renames, FunctionRename);
+    jsonObj["macros"] = macros_to_json(m_macros);
 
     return picojson::value(jsonObj);
   }
@@ -323,7 +380,8 @@ namespace clang_mutate
            jsonValue.contains("end_src_col") &&
            jsonValue.contains("src_text") &&
            jsonValue.contains("unbound_vals") &&
-           jsonValue.contains("unbound_funs");
+           jsonValue.contains("unbound_funs") &&
+           jsonValue.contains("macros");
   }
 
   ASTBinaryEntry::ASTBinaryEntry() :
@@ -344,6 +402,7 @@ namespace clang_mutate
     const unsigned int endSrcCol,
     const std::string &srcText,
     const Renames & renames,
+    const Macros & macros,
     const std::string &binaryFileName,
     const unsigned long beginAddress,
     const unsigned long endAddress,
@@ -357,7 +416,8 @@ namespace clang_mutate
                        endSrcLine, 
                        endSrcCol, 
                        srcText,
-                       renames),
+                       renames,
+                       macros),
     m_binaryFilePath(binaryFileName),
     m_beginAddress(beginAddress),
     m_endAddress(endAddress),
@@ -370,12 +430,14 @@ namespace clang_mutate
     clang::Stmt * s,
     clang::Rewriter& rewrite,
     BinaryAddressMap& binaryAddressMap,
-    const Renames & renames) :
+    const Renames & renames,
+    const Macros & macros) :
 
     ASTNonBinaryEntry( counter,
                        s,
                        rewrite,
-                       renames )
+                       renames,
+                       macros)
   {
     m_binaryFilePath = binaryAddressMap.getBinaryPath();
     m_beginAddress = 
@@ -417,6 +479,7 @@ namespace clang_mutate
                                getEndSrcCol(),
                                getSrcText(),
                                getRenames(),
+                               getMacros(),
                                m_binaryFilePath,
                                m_beginAddress,
                                m_endAddress,

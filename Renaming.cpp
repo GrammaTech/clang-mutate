@@ -80,7 +80,10 @@ bool RenameFreeVar::VisitStmt(Stmt * stmt)
           rewriter.getSourceMgr(),
           rewriter.getLangOpts(),
           NULL).size();
-      std::string old_str = rewriter.ConvertToString(stmt);
+      std::string old_str;
+      llvm::raw_string_ostream ss(old_str);
+      stmt->printPretty(ss, 0, PrintingPolicy(rewriter.getLangOpts()));
+      old_str = ss.str();
       std::string new_str = name;
 
       if (rewriter.getRangeSize(srcRange) != -1) {

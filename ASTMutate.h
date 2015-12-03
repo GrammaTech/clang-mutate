@@ -23,19 +23,19 @@ enum ACTION { NUMBER
             , GETSCOPE
             };
 
-clang::ASTConsumer *CreateASTNumberer();
-clang::ASTConsumer *CreateASTIDS();
-clang::ASTConsumer *CreateASTAnnotator();
-clang::ASTConsumer *CreateASTCutter(unsigned int Stmt);
-clang::ASTConsumer *CreateASTEnclosingCutter(unsigned int Stmt);
-clang::ASTConsumer *CreateASTInserter(unsigned int Stmt1, unsigned int Stmt2);
-clang::ASTConsumer *CreateASTSwapper(unsigned int Stmt1, unsigned int Stmt2);
-clang::ASTConsumer *CreateASTGetter(unsigned int Stmt);
-clang::ASTConsumer *CreateASTSetter(unsigned int Stmt, clang::StringRef Value);
-clang::ASTConsumer *CreateASTValueInserter(unsigned int Stmt, clang::StringRef Value);
-clang::ASTConsumer *CreateASTValuePreInserter(unsigned int Stmt, clang::StringRef Value);
-clang::ASTConsumer *CreateASTInfoGetter(unsigned int Stmt);
-clang::ASTConsumer *CreateASTScopeGetter(unsigned int Stmt, unsigned int Depth);
+std::unique_ptr<clang::ASTConsumer> CreateASTNumberer();
+std::unique_ptr<clang::ASTConsumer> CreateASTIDS();
+std::unique_ptr<clang::ASTConsumer> CreateASTAnnotator();
+std::unique_ptr<clang::ASTConsumer> CreateASTCutter(unsigned int Stmt);
+std::unique_ptr<clang::ASTConsumer> CreateASTEnclosingCutter(unsigned int Stmt);
+std::unique_ptr<clang::ASTConsumer> CreateASTInserter(unsigned int Stmt1, unsigned int Stmt2);
+std::unique_ptr<clang::ASTConsumer> CreateASTSwapper(unsigned int Stmt1, unsigned int Stmt2);
+std::unique_ptr<clang::ASTConsumer> CreateASTGetter(unsigned int Stmt);
+std::unique_ptr<clang::ASTConsumer> CreateASTSetter(unsigned int Stmt, clang::StringRef Value);
+std::unique_ptr<clang::ASTConsumer> CreateASTValueInserter(unsigned int Stmt, clang::StringRef Value);
+std::unique_ptr<clang::ASTConsumer> CreateASTValuePreInserter(unsigned int Stmt, clang::StringRef Value);
+std::unique_ptr<clang::ASTConsumer> CreateASTInfoGetter(unsigned int Stmt);
+std::unique_ptr<clang::ASTConsumer> CreateASTScopeGetter(unsigned int Stmt, unsigned int Depth);
 
 }
 
