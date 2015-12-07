@@ -159,7 +159,6 @@ namespace clang_mutate{
     size_t startquote = line.find_first_of('\'') + 1;
     size_t endquote = line.find_last_of('\'') - 1;
     std::string directory = line.substr( startquote, endquote - startquote + 1);
-    char buffer[1024];
      
     return findOnSourcePath(sourcePaths, directory.c_str());
   }

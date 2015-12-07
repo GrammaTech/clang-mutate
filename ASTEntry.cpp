@@ -229,8 +229,6 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
     clang::PresumedLoc beginLoc = sm.getPresumedLoc(s->getSourceRange().getBegin());
     clang::PresumedLoc endLoc = sm.getPresumedLoc(s->getSourceRange().getEnd());
 
-    clang::FileID main_id = sm.getMainFileID();
-    
     m_counter = counter;
     m_astClass = s->getStmtClassName();
     m_srcFileName = 

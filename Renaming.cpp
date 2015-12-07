@@ -69,7 +69,6 @@ bool RenameFreeVar::VisitStmt(Stmt * stmt)
     std::string name;
     if (id != NULL && find_identifier(renames, id, name)) {
       SourceRange sr = stmt->getSourceRange();
-      SourceManager & sm = rewriter.getSourceMgr();
 
       // Not very efficient, but I didn't see a better way to
       // get the size in characters of a CharSourceRange.

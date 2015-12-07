@@ -137,7 +137,6 @@ using namespace clang;
 
       SaveAndRestore<GetBindingCtx> sr(get_bindings);
 
-      SourceRange R = S->getSourceRange();
       ASTEntry* NewASTEntry = NULL;
 
       GetMacros get_macros(Rewrite.getSourceMgr(),
@@ -259,9 +258,9 @@ using namespace clang;
   private:
     raw_ostream &Out;
     StringRef Binary;
-    bool OutputAsJSON;
-
     BinaryAddressMap BinaryAddresses;
+
+    bool OutputAsJSON;
     ASTEntryList ASTEntries;
 
     Rewriter Rewrite;
