@@ -27,6 +27,8 @@
 #include <sys/stat.h>
 #include <stdio.h>
 
+#include <iostream>
+
 #define VISIT(func) \
   bool func { VisitRange(element->getSourceRange()); return true; }
 
@@ -137,6 +139,7 @@ using namespace clang;
 
       SaveAndRestore<GetBindingCtx> sr(get_bindings);
 
+      SourceRange r = S->getSourceRange();
       ASTEntry* NewASTEntry = NULL;
 
       GetMacros get_macros(Rewrite.getSourceMgr(),
@@ -150,8 +153,10 @@ using namespace clang;
       if ( PM == NULL && S->getStmtClass() == Stmt::CompoundStmtClass ) {
         PM = new ParentMap(S);
       }
+
       
       if (S->getStmtClass() != Stmt::NoStmtClass &&
+          IsSourceRangeInMainFile(r) &&
           !get_macros.toplevel_is_macro())
       { 
         get_bindings.TraverseStmt(S);
