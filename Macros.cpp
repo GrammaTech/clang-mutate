@@ -31,19 +31,22 @@ bool GetMacros::VisitStmt(clang::Stmt * stmt)
         Preprocessor & pp = CI->getPreprocessor();
         StringRef name = pp.getImmediateMacroName(stmt->getLocStart());
         MacroInfo * mi = pp.getMacroInfo(pp.getIdentifierInfo(name));
-        SourceRange def(mi->getDefinitionLoc(), mi->getDefinitionEndLoc());
-        
-        std::string body;
-        SourceLocation end = def.getEnd().getLocWithOffset(2);
-        for (SourceLocation it = def.getBegin();
-             it != end;
-             it = it.getLocWithOffset(1))
-        {
-            body.push_back(sm.getCharacterData(it)[0]);
+
+        if ( mi != NULL ){
+            SourceRange def(mi->getDefinitionLoc(), mi->getDefinitionEndLoc());
+            
+            std::string body;
+            SourceLocation end = def.getEnd().getLocWithOffset(2);
+            for (SourceLocation it = def.getBegin();
+                 it != end;
+                 it = it.getLocWithOffset(1))
+            {
+                body.push_back(sm.getCharacterData(it)[0]);
+            }
+            while (body.back() == '\n' || body.back() == '\r')
+                body.pop_back();
+            macros.insert(Macro(name.str(), body));
         }
-        while (body.back() == '\n' || body.back() == '\r')
-            body.pop_back();
-        macros.insert(Macro(name.str(), body));
     }
 
     is_first = false;
