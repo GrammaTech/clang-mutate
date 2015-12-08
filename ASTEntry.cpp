@@ -141,8 +141,9 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
   }
 
   ASTEntry* ASTEntryFactory::make(
-      const unsigned int counter,
       clang::Stmt *s,
+      clang::Stmt *p,
+      const std::map<clang::Stmt*, unsigned int> &spine,
       clang::Rewriter& rewrite,
       BinaryAddressMap &binaryAddressMap,
       const Renames & renames,
@@ -162,8 +163,9 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
     if ( binaryAddressMap.canGetBeginAddressForLine( srcFileName, beginSrcLine) &&
          binaryAddressMap.canGetEndAddressForLine( srcFileName, endSrcLine ) )
     {
-      return new ASTBinaryEntry( counter,
-                                 s,
+      return new ASTBinaryEntry( s,
+                                 p,
+                                 spine,
                                  rewrite,
                                  binaryAddressMap,
                                  renames,
@@ -171,8 +173,9 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
     }
     else
     {
-      return new ASTNonBinaryEntry( counter,
-                                    s,
+      return new ASTNonBinaryEntry( s,
+                                    p,
+                                    spine,
                                     rewrite,
                                     renames,
                                     macros);
@@ -181,6 +184,7 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
 
   ASTNonBinaryEntry::ASTNonBinaryEntry() :
     m_counter(0),
+    m_parentCounter(0),
     m_astClass(""),
     m_srcFileName(""),
     m_beginSrcLine(0),
@@ -195,6 +199,7 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
 
   ASTNonBinaryEntry::ASTNonBinaryEntry( 
     const unsigned int counter,
+    const unsigned int parentCounter,
     const std::string &astClass,
     const std::string &srcFileName,
     const unsigned int beginSrcLine,
@@ -206,6 +211,7 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
     const Macros & macros ) :
 
     m_counter(counter),
+    m_parentCounter(parentCounter),
     m_astClass(astClass),
     m_srcFileName(srcFileName),
     m_beginSrcLine(beginSrcLine),
@@ -219,8 +225,9 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
   }
 
   ASTNonBinaryEntry::ASTNonBinaryEntry( 
-    const int counter,
     clang::Stmt * s,
+    clang::Stmt * p,
+    const std::map<clang::Stmt*, unsigned int> & spine,
     clang::Rewriter& rewrite,
     const Renames & renames,
     const Macros & macros )
@@ -229,7 +236,9 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
     clang::PresumedLoc beginLoc = sm.getPresumedLoc(s->getSourceRange().getBegin());
     clang::PresumedLoc endLoc = sm.getPresumedLoc(s->getSourceRange().getEnd());
 
-    m_counter = counter;
+    m_counter = spine.find(s)->second;
+    m_parentCounter = ( p == NULL || spine.find(p) == spine.end() ) ?
+                      0 : spine.find(p)->second;
     m_astClass = s->getStmtClassName();
     m_srcFileName = 
         realpath( 
@@ -251,6 +260,7 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
     if ( ASTNonBinaryEntry::jsonObjHasRequiredFields(jsonValue) )
     {
       m_counter      = jsonValue.get("counter").get<int64_t>();
+      m_parentCounter= jsonValue.get("parent_counter").get<int64_t>();
       m_astClass     = jsonValue.get("ast_class").get<std::string>();
       m_srcFileName  = jsonValue.get("src_file_name").get<std::string>();
       m_beginSrcLine = jsonValue.get("begin_src_line").get<int64_t>();
@@ -270,6 +280,7 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
   ASTNonBinaryEntry::ASTEntry* ASTNonBinaryEntry::clone() const 
   {
     return new ASTNonBinaryEntry( m_counter,
+                                  m_parentCounter,
                                   m_astClass,
                                   m_srcFileName,
                                   m_beginSrcLine,
@@ -284,6 +295,11 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
   unsigned int ASTNonBinaryEntry::getCounter() const
   {
     return m_counter;
+  }
+
+  unsigned int ASTNonBinaryEntry::getParentCounter() const
+  {
+    return m_parentCounter;
   }
 
   std::string ASTNonBinaryEntry::getASTClass() const 
@@ -351,6 +367,7 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
     picojson::object jsonObj;
     
     jsonObj["counter"] = picojson::value(static_cast<int64_t>(m_counter));
+    jsonObj["parent_counter"] = picojson::value(static_cast<int64_t>(m_parentCounter));
     jsonObj["ast_class"] = picojson::value(m_astClass);
     jsonObj["src_file_name"] = picojson::value(m_srcFileName);
     jsonObj["begin_src_line"] = picojson::value(static_cast<int64_t>(m_beginSrcLine));
@@ -370,6 +387,7 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
   {
     return jsonValue.is<picojson::object>() && 
            jsonValue.contains("counter") &&
+           jsonValue.contains("parent_counter") &&
            jsonValue.contains("ast_class") &&
            jsonValue.contains("src_file_name") &&
            jsonValue.contains("begin_src_line") &&
@@ -392,6 +410,7 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
 
   ASTBinaryEntry::ASTBinaryEntry( 
     const unsigned int counter, 
+    const unsigned int parent_counter,
     const std::string &astClass,
     const std::string &srcFileName,
     const unsigned int beginSrcLine,
@@ -407,6 +426,7 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
     const std::string &binaryContents ) :
 
     ASTNonBinaryEntry( counter, 
+                       parent_counter,
                        astClass, 
                        srcFileName, 
                        beginSrcLine, 
@@ -424,15 +444,17 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
   }
 
   ASTBinaryEntry::ASTBinaryEntry( 
-    const unsigned int counter,
     clang::Stmt * s,
+    clang::Stmt * p,
+    const std::map<clang::Stmt*, unsigned int> & spine,
     clang::Rewriter& rewrite,
     BinaryAddressMap& binaryAddressMap,
     const Renames & renames,
     const Macros & macros) :
 
-    ASTNonBinaryEntry( counter,
-                       s,
+    ASTNonBinaryEntry( s,
+                       p,
+                       spine,
                        rewrite,
                        renames,
                        macros)
@@ -469,6 +491,7 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
   ASTBinaryEntry::ASTEntry* ASTBinaryEntry::clone() const 
   {
     return new ASTBinaryEntry( getCounter(),
+                               getParentCounter(),
                                getASTClass(),
                                getSrcFileName(),
                                getBeginSrcLine(),

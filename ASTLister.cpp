@@ -62,8 +62,6 @@ using namespace clang;
       TranslationUnitDecl *D = Context.getTranslationUnitDecl();
 
       // Setup
-      Counter=0;
-
       MainFileID=Context.getSourceManager().getMainFileID();
 
       Rewrite.setSourceMgr(Context.getSourceManager(),
@@ -88,15 +86,20 @@ using namespace clang;
       return (loc.getFileID() == MainFileID);
     }
 
+    Stmt* GetParentStmt(Stmt *S) {
+      Stmt* parent = (PM != NULL) ?
+                      PM->getParent(S) :
+                      NULL;
+      return parent;
+    }
+
     // Return true if the clang::Expr is a statement in the C/C++ grammar.
     // This is done by testing if the parent of the clang::Expr
     // is an aggregation type.  The immediate children of an aggregation
     // type are all valid statements in the C/C++ grammar.
     bool IsCompleteCStatement(Stmt *ExpressionStmt)
     {
-      Stmt* parent = (PM != NULL ) ? 
-                     PM->getParent(ExpressionStmt) :
-                     NULL;
+      Stmt* parent = GetParentStmt(ExpressionStmt);
 
       if ( parent != NULL ) 
       {
@@ -159,7 +162,9 @@ using namespace clang;
           IsSourceRangeInMainFile(r) &&
           !get_macros.toplevel_is_macro())
       { 
+        Stmt * P = GetParentStmt(S);
         get_bindings.TraverseStmt(S);
+        Spine[S] = Spine.size()+1;
 
         switch (S->getStmtClass()){
 
@@ -188,8 +193,9 @@ using namespace clang;
 
           NewASTEntry = 
             ASTEntryFactory::make(
-               Counter,
                S,
+               P,
+               Spine,
                Rewrite,
                BinaryAddresses,
                make_renames(get_bindings.free_values(),
@@ -211,8 +217,9 @@ using namespace clang;
           {
             NewASTEntry = 
               ASTEntryFactory::make(
-                 Counter,
                  S,
+                 P,
+                 Spine,
                  Rewrite,
                  BinaryAddresses,
                  make_renames(get_bindings.free_values(),
@@ -225,8 +232,9 @@ using namespace clang;
           {
             NewASTEntry = 
               new ASTNonBinaryEntry(
-                Counter,
                 S,
+                P,
+                Spine,
                 Rewrite,
                 make_renames(get_bindings.free_values(),
                              get_bindings.free_functions()),
@@ -243,8 +251,9 @@ using namespace clang;
         // source code. 
         default:
           NewASTEntry = new ASTNonBinaryEntry(
-                                Counter,
                                 S,
+                                P,
+                                Spine,
                                 Rewrite,
                                 make_renames(get_bindings.free_values(),
                                              get_bindings.free_functions()),
@@ -253,8 +262,6 @@ using namespace clang;
           ASTEntries.addEntry( NewASTEntry );
           break;
         }
-
-        Counter++;
       }
 
       return true;
@@ -270,9 +277,9 @@ using namespace clang;
 
     Rewriter Rewrite;
     ParentMap* PM;
-    unsigned int Counter;
     FileID MainFileID;
 
+    std::map<Stmt*, unsigned int> Spine;
     GetBindingCtx get_bindings;
     CompilerInstance * CI;
   };

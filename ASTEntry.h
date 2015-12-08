@@ -18,6 +18,7 @@
 #include "third-party/picojson-1.3.0/picojson.h"
 
 #include <string>
+#include <map>
 
 namespace clang_mutate
 {
@@ -37,8 +38,9 @@ namespace clang_mutate
   {
   public:
     static ASTEntry* make( const picojson::value &jsonValue );
-    static ASTEntry* make( const unsigned int counter,
-                           clang::Stmt *s, 
+    static ASTEntry* make( clang::Stmt *s, 
+                           clang::Stmt *p,
+                           const std::map<clang::Stmt *, unsigned int> &spine,
                            clang::Rewriter& rewrite,
                            BinaryAddressMap &binaryAddressMap,
                            const Renames & renames,
@@ -54,6 +56,7 @@ namespace clang_mutate
     ASTNonBinaryEntry();
 
     ASTNonBinaryEntry( const unsigned int counter,
+                       const unsigned int parentCounter,
                        const std::string &astClass,
                        const std::string &srcFileName,
                        const unsigned int beginSrcLine,
@@ -64,8 +67,9 @@ namespace clang_mutate
                        const Renames & renames,
                        const Macros & macros );
 
-    ASTNonBinaryEntry( const int counter,
-                       clang::Stmt * s,
+    ASTNonBinaryEntry( clang::Stmt * s,
+                       clang::Stmt * p,
+                       const std::map<clang::Stmt *, unsigned int> &spine,
                        clang::Rewriter& rewrite,
                        const Renames & renames,
                        const Macros & macros );
@@ -77,6 +81,7 @@ namespace clang_mutate
     virtual ASTEntry* clone() const;
 
     virtual unsigned int getCounter() const;
+    virtual unsigned int getParentCounter() const;
     virtual std::string getASTClass() const;
     virtual std::string getSrcFileName() const;
     virtual unsigned int getBeginSrcLine() const;
@@ -93,6 +98,7 @@ namespace clang_mutate
     static bool jsonObjHasRequiredFields( const picojson::value& jsonValue );
   private:
     unsigned int m_counter;
+    unsigned int m_parentCounter;
     std::string  m_astClass;
     std::string  m_srcFileName;
     unsigned int m_beginSrcLine;
@@ -111,6 +117,7 @@ namespace clang_mutate
     ASTBinaryEntry();
 
     ASTBinaryEntry( const unsigned int counter, 
+                    const unsigned int parentCounter,
                     const std::string &astClass,
                     const std::string &srcFileName,
                     const unsigned int beginSrcLine,
@@ -125,8 +132,9 @@ namespace clang_mutate
                     const unsigned long endAddress,
                     const std::string &binaryContents );
 
-    ASTBinaryEntry( const unsigned int counter,
-                    clang::Stmt * s,
+    ASTBinaryEntry( clang::Stmt * s,
+                    clang::Stmt * p,
+                    const std::map<clang::Stmt*, unsigned int> &spine,
                     clang::Rewriter& rewrite,
                     BinaryAddressMap& binaryAddressMap,
                     const Renames & renames,
