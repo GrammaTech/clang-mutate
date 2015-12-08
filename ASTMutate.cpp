@@ -319,7 +319,29 @@ namespace clang_mutate{
         scopes.declare(decl->getIdentifier());
         return base::TraverseVarDecl(decl);
     }
-      
+
+    bool TraverseDecl(Decl *D){
+        bool keep_going;
+
+        if (D != NULL && D->hasBody()) {
+            const FunctionDecl * F = D->getAsFunction();
+
+            scopes.enter_scope(F->getBody());
+            for (unsigned int i = 0; i < F->getNumParams(); i++) {
+                const ParmVarDecl * param = F->getParamDecl(i);
+                scopes.declare(param->getIdentifier());
+            }
+
+            keep_going = base::TraverseDecl(D);
+            scopes.exit_scope();
+        }
+        else {
+            keep_going = base::TraverseDecl(D);
+        }
+
+        return keep_going;
+    }
+
     //// from AST/EvaluatedExprVisitor.h
     // VISIT(VisitDeclRefExpr(DeclRefExpr *element));
     // VISIT(VisitOffsetOfExpr(OffsetOfExpr *element));
