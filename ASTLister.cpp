@@ -139,8 +139,6 @@ using namespace clang;
 
       SaveAndRestore<GetBindingCtx> sr(get_bindings);
 
-      SourceRange r = S->getSourceRange();
-
       ASTEntry* NewASTEntry = NULL;
 
       GetMacros get_macros(Rewrite.getSourceMgr(),
