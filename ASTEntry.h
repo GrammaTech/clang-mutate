@@ -44,7 +44,8 @@ namespace clang_mutate
                            clang::Rewriter& rewrite,
                            BinaryAddressMap &binaryAddressMap,
                            const Renames & renames,
-                           const Macros & macros );
+                           const Macros & macros,
+                           const std::set<size_t> & types );
   private:
     ASTEntryFactory() {}
   };
@@ -65,14 +66,16 @@ namespace clang_mutate
                        const unsigned int endSrcCol,
                        const std::string &srcText,
                        const Renames & renames,
-                       const Macros & macros );
+                       const Macros & macros,
+                       const std::set<size_t> & types );
 
     ASTNonBinaryEntry( clang::Stmt * s,
                        clang::Stmt * p,
                        const std::map<clang::Stmt *, unsigned int> &spine,
                        clang::Rewriter& rewrite,
                        const Renames & renames,
-                       const Macros & macros );
+                       const Macros & macros,
+                       const std::set<size_t> & types );
 
     ASTNonBinaryEntry( const picojson::value &jsonValue );
 
@@ -91,6 +94,7 @@ namespace clang_mutate
     virtual std::string getSrcText() const;
     virtual Renames getRenames() const;
     virtual Macros getMacros() const;
+    virtual std::set<size_t> getTypes() const;
     
     virtual std::string toString() const;
     virtual picojson::value toJSON() const;
@@ -108,6 +112,7 @@ namespace clang_mutate
     std::string  m_srcText;
     Renames m_renames;
     Macros m_macros;
+    std::set<size_t> m_types;
   };
 
   // AST entry with binary information
@@ -127,6 +132,7 @@ namespace clang_mutate
                     const std::string &srcText,
                     const Renames & renames,
                     const Macros & macros,
+                    const std::set<size_t> & types,
                     const std::string &binaryFileName,
                     const unsigned long beginAddress,
                     const unsigned long endAddress,
@@ -138,7 +144,8 @@ namespace clang_mutate
                     clang::Rewriter& rewrite,
                     BinaryAddressMap& binaryAddressMap,
                     const Renames & renames,
-                    const Macros & macros );
+                    const Macros & macros,
+                    const std::set<size_t> & types );
 
     ASTBinaryEntry( const picojson::value& jsonValue );
     virtual ~ASTBinaryEntry();

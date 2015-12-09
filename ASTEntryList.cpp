@@ -3,8 +3,9 @@
 */
 
 #include "ASTEntryList.h"
+#include "TypeDBEntry.h"
 
-#include "third-party/picojson-1.3.0/picojson.h"
+#include "Json.h"
 
 #include "llvm/Support/raw_ostream.h"
 
@@ -122,7 +123,7 @@ namespace clang_mutate
 
   picojson::value ASTEntryList::toJSON() const
   {
-    picojson::array array;
+    picojson::array array = TypeDBEntry::databaseToJSON();
 
     for ( std::vector<ASTEntry*>::const_iterator iter = m_astEntries.begin();
           iter != m_astEntries.end();

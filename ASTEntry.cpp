@@ -7,6 +7,8 @@
 #include "BinaryAddressMap.h"
 #include "Renaming.h"
 
+#include "Json.h"
+
 #include "clang/AST/AST.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Lex/Lexer.h"
@@ -14,49 +16,29 @@
 #include "clang/Rewrite/Core/Rewriter.h"
 #include "llvm/Support/SaveAndRestore.h"
 
-#include "third-party/picojson-1.3.0/picojson.h"
-
-#include <string>
+#include <sstream>
 
 namespace clang_mutate
 {
 
-std::string escape_for_json(const std::string & s)
+picojson::value types_to_json(const std::set<size_t> & types)
 {
-  std::string ans;
-  for (size_t i = 0; i < s.size(); ++i) {
-    switch (s[i]) {
-    case '\n':
-      ans.append("\\n");
-      break;
-    case '\"':
-      ans.append("\\\"");
-      break;
-    case '\\':
-      ans.append("\\\\");
-      break;
-    default:
-      ans.push_back(s[i]);
+    std::vector<picojson::value> ans;
+    for (std::set<size_t>::const_iterator it = types.begin();
+         it != types.end();
+         ++it)
+    {
+        std::ostringstream ss;
+        ss << std::hex << *it;
+        ans.push_back(picojson::value(ss.str()));
     }
-  }
-  return ans;
+    return picojson::value(ans);
 }
 
-std::string unescape_from_json(const std::string & s)
+void json_to_types(const picojson::value & jv,
+                   std::set<size_t> & types)
 {
-  std::string ans;
-  for (size_t i = 0; i < s.size(); ++i) {
-    if (s[i] == '\\' && i != s.size() - 1) {
-      char c = s[++i];
-      if (c == 'n')
-        ans.push_back('\n');
-      else
-        ans.push_back(c);
-      continue;
-    }
-    ans.push_back(s[i]);
-  }
-  return ans;
+    // TODO
 }
 
 picojson::value renames_to_json(const Renames & renames, RenameKind k)
@@ -147,7 +129,8 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
       clang::Rewriter& rewrite,
       BinaryAddressMap &binaryAddressMap,
       const Renames & renames,
-      const Macros & macros )
+      const Macros & macros,
+      const std::set<size_t> & types )
   {
     clang::SourceManager &sm = rewrite.getSourceMgr();
     clang::PresumedLoc beginLoc = sm.getPresumedLoc(s->getSourceRange().getBegin());
@@ -169,7 +152,8 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
                                  rewrite,
                                  binaryAddressMap,
                                  renames,
-                                 macros);
+                                 macros,
+                                 types);
     }
     else
     {
@@ -178,7 +162,8 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
                                     spine,
                                     rewrite,
                                     renames,
-                                    macros);
+                                    macros,
+                                    types);
     }
   }
 
@@ -193,7 +178,8 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
     m_endSrcCol(0),
     m_srcText(""),
     m_renames(),
-    m_macros()
+    m_macros(),
+    m_types()
   {
   }
 
@@ -208,7 +194,8 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
     const unsigned int endSrcCol,
     const std::string &srcText,
     const Renames & renames,
-    const Macros & macros ) :
+    const Macros & macros,
+    const std::set<size_t> & types) :
 
     m_counter(counter),
     m_parentCounter(parentCounter),
@@ -220,7 +207,8 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
     m_endSrcCol(endSrcCol),
     m_srcText(srcText),
     m_renames(renames),
-    m_macros(macros)
+    m_macros(macros),
+    m_types(types)
   {
   }
 
@@ -230,7 +218,8 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
     const std::map<clang::Stmt*, unsigned int> & spine,
     clang::Rewriter& rewrite,
     const Renames & renames,
-    const Macros & macros )
+    const Macros & macros,
+    const std::set<size_t> & types )
   {
     clang::SourceManager &sm = rewrite.getSourceMgr();
     clang::PresumedLoc beginLoc = sm.getPresumedLoc(s->getSourceRange().getBegin());
@@ -250,6 +239,7 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
     m_endSrcCol = endLoc.getColumn();
     m_renames = renames;
     m_macros = macros;
+    m_types = types;
     
     RenameFreeVar renamer(s, rewrite, renames);
     m_srcText = renamer.getRewrittenString();
@@ -272,6 +262,7 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
       json_to_renames(jsonValue.get("unbound_vals"), VariableRename, m_renames);
       json_to_renames(jsonValue.get("unbound_funs"), FunctionRename, m_renames);
       json_to_macros(jsonValue.get("macros"), m_macros);
+      json_to_types(jsonValue.get("types"), m_types);
     }
   }
 
@@ -289,7 +280,8 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
                                   m_endSrcCol,
                                   m_srcText,
                                   m_renames,
-                                  m_macros);
+                                  m_macros,
+                                  m_types);
   }
 
   unsigned int ASTNonBinaryEntry::getCounter() const
@@ -346,7 +338,12 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
   {
       return m_macros;
   }
-    
+
+  std::set<size_t> ASTNonBinaryEntry::getTypes() const
+  {
+      return m_types;
+  }
+
   std::string ASTNonBinaryEntry::toString() const
   {
     char msg[256];
@@ -378,6 +375,7 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
     jsonObj["unbound_vals"] = renames_to_json(m_renames, VariableRename);
     jsonObj["unbound_funs"] = renames_to_json(m_renames, FunctionRename);
     jsonObj["macros"] = macros_to_json(m_macros);
+    jsonObj["types"] = types_to_json(m_types);
 
     return picojson::value(jsonObj);
   }
@@ -397,7 +395,8 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
            jsonValue.contains("src_text") &&
            jsonValue.contains("unbound_vals") &&
            jsonValue.contains("unbound_funs") &&
-           jsonValue.contains("macros");
+           jsonValue.contains("macros") &&
+           jsonValue.contains("types");
   }
 
   ASTBinaryEntry::ASTBinaryEntry() :
@@ -420,6 +419,7 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
     const std::string &srcText,
     const Renames & renames,
     const Macros & macros,
+    const std::set<size_t> & types,
     const std::string &binaryFileName,
     const unsigned long beginAddress,
     const unsigned long endAddress,
@@ -435,7 +435,8 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
                        endSrcCol, 
                        srcText,
                        renames,
-                       macros),
+                       macros,
+                       types),
     m_binaryFilePath(binaryFileName),
     m_beginAddress(beginAddress),
     m_endAddress(endAddress),
@@ -450,14 +451,16 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
     clang::Rewriter& rewrite,
     BinaryAddressMap& binaryAddressMap,
     const Renames & renames,
-    const Macros & macros) :
+    const Macros & macros,
+    const std::set<size_t> & types) :
 
     ASTNonBinaryEntry( s,
                        p,
                        spine,
                        rewrite,
                        renames,
-                       macros)
+                       macros,
+                       types)
   {
     m_binaryFilePath = binaryAddressMap.getBinaryPath();
     m_beginAddress = 
@@ -501,6 +504,7 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
                                getSrcText(),
                                getRenames(),
                                getMacros(),
+                               getTypes(),
                                m_binaryFilePath,
                                m_beginAddress,
                                m_endAddress,

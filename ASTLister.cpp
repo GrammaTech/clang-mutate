@@ -49,7 +49,7 @@ using namespace clang;
         BinaryAddresses(Binary),
         OutputAsJSON(OutputAsJSON),
         PM(NULL),
-        get_bindings(),
+        get_bindings(_CI),
         CI(_CI)
     {}
 
@@ -73,10 +73,12 @@ using namespace clang;
       // Output the results   
       if ( !ASTEntries.isEmpty() )
       {
-        if ( OutputAsJSON )
+        if ( OutputAsJSON ) {
           ASTEntries.toStreamJSON( Out );
-        else
+        }
+        else {
           ASTEntries.toStream( Out );
+        }
       }
     };
 
@@ -143,6 +145,7 @@ using namespace clang;
       SaveAndRestore<GetBindingCtx> sr(get_bindings);
 
       SourceRange r = S->getSourceRange();
+
       ASTEntry* NewASTEntry = NULL;
 
       GetMacros get_macros(Rewrite.getSourceMgr(),
@@ -159,8 +162,7 @@ using namespace clang;
 
       
       if (S->getStmtClass() != Stmt::NoStmtClass &&
-          IsSourceRangeInMainFile(r) &&
-          !get_macros.toplevel_is_macro())
+          IsSourceRangeInMainFile(r))
       { 
         Stmt * P = GetParentStmt(S);
         get_bindings.TraverseStmt(S);
@@ -200,7 +202,8 @@ using namespace clang;
                BinaryAddresses,
                make_renames(get_bindings.free_values(),
                             get_bindings.free_functions()),
-               get_macros.result() );
+               get_macros.result(),
+               get_bindings.required_types());
 
           ASTEntries.addEntry( NewASTEntry );
           break;
@@ -224,7 +227,8 @@ using namespace clang;
                  BinaryAddresses,
                  make_renames(get_bindings.free_values(),
                               get_bindings.free_functions()),
-                 get_macros.result() );
+                 get_macros.result(),
+                 get_bindings.required_types());
 
             ASTEntries.addEntry( NewASTEntry );
           }
@@ -238,7 +242,8 @@ using namespace clang;
                 Rewrite,
                 make_renames(get_bindings.free_values(),
                              get_bindings.free_functions()),
-                get_macros.result() );
+                get_macros.result(),
+                get_bindings.required_types());
               
             ASTEntries.addEntry( NewASTEntry );
           }
@@ -257,7 +262,8 @@ using namespace clang;
                                 Rewrite,
                                 make_renames(get_bindings.free_values(),
                                              get_bindings.free_functions()),
-                                get_macros.result() );
+                                get_macros.result(),
+                                get_bindings.required_types());
 
           ASTEntries.addEntry( NewASTEntry );
           break;

@@ -1,15 +1,25 @@
 
 #include "Bindings.h"
+#include "Macros.h"
+#include "TypeDBEntry.h"
+
+#include "clang/Lex/Lexer.h"
 
 #include <iostream>
+
+#include <functional>
+#include <set>
+#include <map>
 
 namespace clang_mutate {
 using namespace clang;
 
-void BindingCtx::push(const std::string & name, Id id)
+void BindingCtx::push(const std::string & name,
+                      Id id,
+                      size_t type_hash)
 {
   IdStack & bindings = ctx[name];
-  bindings.push(id);
+  bindings.push(std::make_pair(id, type_hash));
 }
 
 void BindingCtx::pop(const std::string & name)
@@ -19,26 +29,59 @@ void BindingCtx::pop(const std::string & name)
   search->second.pop();
 }
   
-BindingCtx::Id BindingCtx::lookup(const std::string & name) const
+std::pair<BindingCtx::Id, size_t>
+BindingCtx::lookup(const std::string & name) const
 {
   Context::const_iterator search = ctx.find(name);
   return (search == ctx.end() || search->second.empty())
-    ? NULL
-    : search->second.top();
+      ? std::pair<Id,size_t>(NULL, 0)
+      : search->second.top();
 }
 
 bool BindingCtx::is_bound(const std::string & name) const
 {
-  return lookup(name) != NULL;
+  return lookup(name).first != NULL;
 }
-  
+
 bool GetBindingCtx::TraverseVarDecl(VarDecl * decl)
 {
   std::string name = decl->getQualifiedNameAsString();
   IdentifierInfo * ident = decl->getIdentifier();
-  ctx.push(name, ident);
+
+  const Type * tdecl = decl->getTypeSourceInfo()->getType().getTypePtrOrNull();
+  size_t type_hash = hash_type(tdecl, ci);
+
+  ctx.push(name, ident, type_hash);
+
   bool cont = Base::TraverseVarDecl(decl);
   return cont;
+}
+
+std::set<size_t> GetBindingCtx::required_types() const
+{
+    std::set<size_t> ans = ctx.required_types();
+    for (std::set<size_t>::const_iterator it = addl_types.begin();
+         it != addl_types.end();
+         ++it)
+    {
+        ans.insert(*it);
+    }
+    return ans;
+}
+
+std::set<size_t> BindingCtx::required_types() const
+{
+    std::set<size_t> ans;
+    for (std::map<std::string, IdStack>::const_iterator
+             it = ctx.begin(); it != ctx.end(); ++it)
+    {
+        if (it->second.empty())
+            continue;
+        size_t type_hash = it->second.top().second;
+        if (type_hash != 0)
+            ans.insert(type_hash);
+    }
+    return ans;
 }
 
 bool GetBindingCtx::VisitStmt(Stmt * expr)
@@ -60,7 +103,28 @@ bool GetBindingCtx::VisitStmt(Stmt * expr)
   return true;
 }
 
-  
+void GetBindingCtx::addAddlType(const QualType & qt)
+{
+    size_t type_hash = hash_type(qt.getTypePtrOrNull(), ci);
+    if (type_hash != 0)
+        addl_types.insert(type_hash);
+}
+
+bool GetBindingCtx::VisitUnaryExprOrTypeTraitExpr(
+    UnaryExprOrTypeTraitExpr * expr)
+{
+    if (expr->isArgumentType())
+        addAddlType(expr->getArgumentType());
+    return true;
+}
+
+bool GetBindingCtx::VisitExplicitCastExpr(
+    ExplicitCastExpr * expr)
+{
+    addAddlType(expr->getTypeAsWritten());
+    return true;
+}
+
 static void print_unbound(const std::set<BindingCtx::Binding> & unbound)
 {
   std::cerr << "{ ";
