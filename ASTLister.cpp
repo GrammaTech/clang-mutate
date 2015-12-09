@@ -3,6 +3,7 @@
 #include "Bindings.h"
 #include "ASTEntryList.h"
 #include "Macros.h"
+#include "Utils.h"
 
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/Diagnostic.h"
@@ -82,12 +83,6 @@ using namespace clang;
       }
     };
 
-    bool IsSourceRangeInMainFile(SourceRange r)
-    {
-      FullSourceLoc loc = FullSourceLoc(r.getEnd(), Rewrite.getSourceMgr());
-      return (loc.getFileID() == MainFileID);
-    }
-
     Stmt* GetParentStmt(Stmt *S) {
       Stmt* parent = (PM != NULL) ?
                       PM->getParent(S) :
@@ -161,8 +156,10 @@ using namespace clang;
       }
 
       
-      if (S->getStmtClass() != Stmt::NoStmtClass &&
-          IsSourceRangeInMainFile(r))
+      if (ShouldVisitStmt(Rewrite.getSourceMgr(),
+                          Rewrite.getLangOpts(),
+                          MainFileID,
+                          S))
       { 
         Stmt * P = GetParentStmt(S);
         get_bindings.TraverseStmt(S);
