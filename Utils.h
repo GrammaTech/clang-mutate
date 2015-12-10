@@ -7,8 +7,6 @@
 #include "clang/Basic/SourceManager.h"
 #include "clang/Lex/Lexer.h"
 
-namespace Utils {
-
 clang::SourceLocation
 findSemiAfterLocation(clang::SourceManager & SM,
                       const clang::LangOptions & LangOpts,
@@ -17,17 +15,10 @@ findSemiAfterLocation(clang::SourceManager & SM,
 
 
 clang::SourceRange
-expandRange(clang::SourceManager & SM,
+ExpandRange(clang::SourceManager & SM,
             const clang::LangOptions & LangOpts,
             clang::SourceRange r);
 
-clang::SourceRange
-expandSpellingLocationRange(clang::SourceManager & SM,
-                            const clang::LangOptions & LangOpts,
-                            clang::SourceRange r);
-
-clang::SourceRange getSpellingLocationRange(clang::SourceManager &SM,
-                                            clang::SourceRange r);
 
 bool SelectRange(clang::SourceManager & SM,
                  clang::FileID mainFileID,
@@ -37,7 +28,5 @@ bool ShouldVisitStmt(clang::SourceManager & SM,
                      const clang::LangOptions & LangOpts,
                      clang::FileID MainFileID,
                      clang::Stmt * stmt);
-
-}
 
 #endif

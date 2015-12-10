@@ -154,10 +154,10 @@ using namespace clang;
       }
 
       
-      if (Utils::ShouldVisitStmt(Rewrite.getSourceMgr(),
-                                 Rewrite.getLangOpts(),
-                                 MainFileID,
-                                 S))
+      if (ShouldVisitStmt(Rewrite.getSourceMgr(),
+                          Rewrite.getLangOpts(),
+                          MainFileID,
+                          S))
       { 
         Stmt * P = GetParentStmt(S);
         get_bindings.TraverseStmt(S);
