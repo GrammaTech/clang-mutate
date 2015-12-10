@@ -1,5 +1,6 @@
 
 #include "Renaming.h"
+#include "Utils.h"
 #include "clang/Lex/Lexer.h"
 
 #include <sstream>
@@ -37,8 +38,12 @@ RenameFreeVar::RenameFreeVar(
     : rewriter(r)
     , renames(rn)
 {
-    begin = the_stmt->getSourceRange().getBegin();
-    end = Lexer::getLocForEndOfToken(the_stmt->getSourceRange().getEnd(), 0,
+    SourceRange spellingLocationRange = Utils::expandSpellingLocationRange(
+                                            rewriter.getSourceMgr(), 
+                                            rewriter.getLangOpts(), 
+                                            the_stmt->getSourceRange());
+    begin = spellingLocationRange.getBegin();
+    end = Lexer::getLocForEndOfToken(spellingLocationRange.getEnd(), 0,
                                      rewriter.getSourceMgr(),
                                      rewriter.getLangOpts());
     TraverseStmt(the_stmt);
@@ -68,7 +73,9 @@ bool RenameFreeVar::VisitStmt(Stmt * stmt)
     IdentifierInfo * id   = vdecl->getIdentifier();
     std::string name;
     if (id != NULL && find_identifier(renames, id, name)) {
-      SourceRange sr = stmt->getSourceRange();
+      SourceRange sr = Utils::expandSpellingLocationRange(rewriter.getSourceMgr(),
+                                                          rewriter.getLangOpts(),
+                                                          stmt->getSourceRange());
 
       // Not very efficient, but I didn't see a better way to
       // get the size in characters of a CharSourceRange.

@@ -111,16 +111,23 @@ namespace clang_mutate{
 
     SourceRange expandRange(SourceRange r)
     {
-        return ExpandRange(Rewrite.getSourceMgr(),
-                           Rewrite.getLangOpts(),
-                           r);
+        return Utils::expandRange(Rewrite.getSourceMgr(),
+                                  Rewrite.getLangOpts(),
+                                  r);
+    }
+
+    SourceRange expandSpellingLocationRange(SourceRange r)
+    {
+        return Utils::expandSpellingLocationRange(Rewrite.getSourceMgr(),
+                                                  Rewrite.getLangOpts(),
+                                                  r);
     }
 
     void AnnotateStmt(Stmt *s)
     {
       char label[128];
       unsigned EndOff;
-      SourceRange r = expandRange(s->getSourceRange());
+      SourceRange r = expandSpellingLocationRange(s->getSourceRange());
       SourceLocation END = r.getEnd();
 
       sprintf(label, "/* %d:%s[ */", Counter, s->getStmtClassName());
@@ -189,7 +196,7 @@ namespace clang_mutate{
     {
         if (Counter == Stmt1) {
             Stmt * s = getEnclosingFullStmt();
-            SourceRange r = expandRange(s->getSourceRange());
+            SourceRange r = expandSpellingLocationRange(s->getSourceRange());
             Rewrite.InsertText(r.getBegin(), Value, false);
         }
     }
@@ -198,7 +205,7 @@ namespace clang_mutate{
     {
         if (Counter == Stmt1) {
             Stmt * s = getEnclosingFullStmt();
-            SourceRange r = expandRange(s->getSourceRange());
+            SourceRange r = expandSpellingLocationRange(s->getSourceRange());
 
             char label[24];
             sprintf(label, "/* cut-enclosing: %d */", Counter);
@@ -210,7 +217,7 @@ namespace clang_mutate{
     {
         if (Counter == Stmt1) {
             Out << s->getStmtClassName() << "\n";
-            SourceLocation e = findSemiAfterLocation(
+            SourceLocation e = Utils::findSemiAfterLocation(
                 Rewrite.getSourceMgr(),
                 Rewrite.getLangOpts(),
                 s->getSourceRange().getEnd(),
@@ -236,10 +243,10 @@ namespace clang_mutate{
     }
       
     bool VisitStmt(Stmt *s){
-      if (!ShouldVisitStmt(Rewrite.getSourceMgr(),
-                           Rewrite.getLangOpts(),
-                           mainFileID,
-                           s))
+      if (!Utils::ShouldVisitStmt(Rewrite.getSourceMgr(),
+                                  Rewrite.getLangOpts(),
+                                  mainFileID,
+                                  s))
       {
           return true;
       }
@@ -247,7 +254,7 @@ namespace clang_mutate{
       case Stmt::NoStmtClass:
         break;
       default:
-        SourceRange r = expandRange(s->getSourceRange());
+        SourceRange r = expandSpellingLocationRange(s->getSourceRange());
         switch(Action){
         case ANNOTATOR:    AnnotateStmt(s); break;
         case NUMBER:       NumberRange(r);  break;

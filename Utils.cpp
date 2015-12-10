@@ -2,6 +2,8 @@
 
 using namespace clang;
 
+namespace Utils {
+
 // This function adapted from clang/lib/ARCMigrate/Transforms.cpp
 SourceLocation
 findSemiAfterLocation(SourceManager & SM,
@@ -37,9 +39,8 @@ findSemiAfterLocation(SourceManager & SM,
     return tok.getLocation();
 }
 
-
 SourceRange
-ExpandRange(SourceManager & SM,
+expandRange(SourceManager & SM,
             const LangOptions & LangOpts,
             SourceRange r)
 {
@@ -51,13 +52,29 @@ ExpandRange(SourceManager & SM,
     return SourceRange(b,e);
 }
 
+SourceRange expandSpellingLocationRange(SourceManager & SM,
+                                        const clang::LangOptions & LangOpts,
+                                        clang::SourceRange r)
+{
+    return expandRange(SM,
+                       LangOpts,
+                       getSpellingLocationRange(SM, r));
+}
+
+SourceRange getSpellingLocationRange(SourceManager & sm,
+                                     SourceRange r)
+{
+    SourceLocation sb = sm.getSpellingLoc(r.getBegin());
+    SourceLocation se = sm.getSpellingLoc(r.getEnd());
+    return SourceRange(sb, se);
+}
 
 bool SelectRange(SourceManager & SM,
                  FileID mainFileID,
                  SourceRange r)
 {
     FullSourceLoc loc = FullSourceLoc(r.getEnd(), SM);
-    return (loc.getFileID() == mainFileID);
+    return SM.isInMainFile(loc);
 }
 
 
@@ -68,6 +85,8 @@ bool ShouldVisitStmt(SourceManager & SM,
 {
     if (stmt->getStmtClass() == Stmt::NoStmtClass)
         return false;
-    SourceRange r = ExpandRange(SM, LangOpts, stmt->getSourceRange());
+    SourceRange r = expandRange(SM, LangOpts, stmt->getSourceRange());
     return SelectRange(SM, mainFileID, r);
+}
+
 }
