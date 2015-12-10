@@ -56,7 +56,6 @@ namespace clang_mutate{
                 std::stringstream buffer;
                 buffer << f.rdbuf();
                 Value = buffer.str();
-                Value = Value.substr(0, Value.length() - 1);
             } 
         }
     }
