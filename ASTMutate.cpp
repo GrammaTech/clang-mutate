@@ -24,6 +24,9 @@
 #include <sys/stat.h>
 #include <stdio.h>
 
+#include <sstream>
+#include <fstream>
+
 #define VISIT(func) \
   bool func { VisitRange(element->getSourceRange()); return true; }
 
@@ -35,14 +38,28 @@ namespace clang_mutate{
     typedef RecursiveASTVisitor<ASTMutator> base;
 
   public:
-    ASTMutator(raw_ostream *Out = NULL,
-               ACTION Action = NUMBER,
-               unsigned int Stmt1 = 0, unsigned int Stmt2 = 0,
-               StringRef Value = (StringRef)"",
-               unsigned int Depth = 0)
-      : Out(Out ? *Out : llvm::outs()),
-        Action(Action), Stmt1(Stmt1), Stmt2(Stmt2),
-        Value(Value), Depth(Depth) {}
+    ASTMutator(raw_ostream *p_Out = NULL,
+               ACTION p_Action = NUMBER,
+               unsigned int p_Stmt1 = 0, 
+               unsigned int p_Stmt2 = 0,
+               StringRef p_Value = StringRef(""),
+               unsigned int p_Depth = 0)
+      : Out(p_Out ? *p_Out : llvm::outs()),
+        Action(p_Action), Stmt1(p_Stmt1), Stmt2(p_Stmt2),
+        Value(p_Value.str()), Depth(p_Depth) 
+    {
+        // If Value is a file, read in the contents.
+        if (!Value.empty()) {
+            std::ifstream f(Value.c_str());
+
+            if (f.good()) {
+                std::stringstream buffer;
+                buffer << f.rdbuf();
+                Value = buffer.str();
+                Value = Value.substr(0, Value.length() - 1);
+            } 
+        }
+    }
 
     virtual void HandleTranslationUnit(ASTContext &Context) {
       TranslationUnitDecl *D = Context.getTranslationUnitDecl();
@@ -156,11 +173,14 @@ namespace clang_mutate{
     }
 
     void SetRange(SourceRange r){
-      if (Counter == Stmt1) Rewrite.ReplaceText(r, Value);
+      if (Counter == Stmt1) Rewrite.ReplaceText(r, 
+                                                StringRef(Value));
     }
 
     void InsertRange(SourceRange r){
-      if (Counter == Stmt1) Rewrite.InsertText(r.getBegin(), Value, false);
+      if (Counter == Stmt1) Rewrite.InsertText(r.getBegin(), 
+                                               StringRef(Value), 
+                                               false);
     }
 
     void CutRange(SourceRange r)
@@ -201,7 +221,9 @@ namespace clang_mutate{
         if (Counter == Stmt1) {
             Stmt * s = getEnclosingFullStmt();
             SourceRange r = normalizeRange(s->getSourceRange());
-            Rewrite.InsertText(r.getBegin(), Value, false);
+            Rewrite.InsertText(r.getBegin(), 
+                               StringRef(Value), 
+                               false);
         }
     }
 
@@ -364,7 +386,7 @@ namespace clang_mutate{
     raw_ostream &Out;
     ACTION Action;
     unsigned int Stmt1, Stmt2;
-    StringRef Value;
+    std::string Value;
     unsigned int Depth;
     unsigned int Counter;
     FileID mainFileID;
