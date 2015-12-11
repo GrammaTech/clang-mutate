@@ -54,8 +54,7 @@ bool begins_scope(Stmt * stmt)
 {
     if (stmt == NULL)
         return false;
-    return (isa<CompoundStmt>(stmt) ||
-            isa<IfStmt>(stmt)       );
+    return (isa<CompoundStmt>(stmt));
 }
 
 } // end namespace clang_mutate

@@ -3,6 +3,7 @@
 #include "Bindings.h"
 #include "ASTEntryList.h"
 #include "Macros.h"
+#include "Scopes.h"
 #include "Utils.h"
 
 #include "clang/Basic/FileManager.h"
@@ -163,6 +164,11 @@ using namespace clang;
         get_bindings.TraverseStmt(S);
         Spine[S] = Spine.size()+1;
 
+        if (!block_spine.empty() && begins_scope(S))
+        {
+            block_spine.back().first = Spine[S];
+        }
+
         switch (S->getStmtClass()){
 
         // These classes of statements
@@ -263,9 +269,41 @@ using namespace clang;
           ASTEntries.addEntry( NewASTEntry );
           break;
         }
+
+        if (NewASTEntry != NULL && !block_spine.empty())
+        {
+            unsigned int counter  = Spine.find(S)->second;
+            unsigned int pcounter =
+                (P == NULL || Spine.find(P) == Spine.end()) ?
+                0 : Spine.find(P)->second;
+
+            if (pcounter == block_spine.back().first) {
+                block_spine.back().second.push_back(counter);
+            }
+        }
       }
 
       return true;
+    }
+
+    bool TraverseStmt(Stmt * s) {
+        bool keep_going;
+        if (begins_scope(s)) {
+            block_spine.push_back(
+                std::make_pair(0,
+                               std::vector<unsigned int>()));
+            keep_going = base::TraverseStmt(s);
+            unsigned int block_ctr = block_spine.back().first;
+            if (block_ctr != 0) {
+                ASTEntries.getEntry(block_ctr)
+                    ->set_stmt_list(block_spine.back().second);
+            }
+            block_spine.pop_back();
+        }
+        else {
+            keep_going = base::TraverseStmt(s);
+        }
+        return keep_going;
     }
 
   private:
@@ -281,6 +319,9 @@ using namespace clang;
     FileID MainFileID;
 
     std::map<Stmt*, unsigned int> Spine;
+    std::vector<
+        std::pair<unsigned int,
+                  std::vector<unsigned int> > > block_spine;
     GetBindingCtx get_bindings;
     CompilerInstance * CI;
   };

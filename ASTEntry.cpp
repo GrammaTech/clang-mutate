@@ -112,6 +112,38 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
     }
 }
 
+picojson::value stmt_list_to_json(const std::vector<unsigned int> & stmts)
+{
+    std::vector<picojson::value> ans;
+    for (std::vector<unsigned int>::const_iterator it = stmts.begin();
+         it != stmts.end();
+         ++it)
+    {
+        ans.push_back(picojson::value(static_cast<int64_t>(*it)));
+    }
+    return picojson::value(ans);
+}
+
+void json_to_stmt_list(const picojson::value & jv,
+                       std::vector<unsigned int> & ans)
+{
+  if (!jv.is<picojson::array>()) {
+    assert (!"expected a json array");
+    return;
+  }
+
+  ans.clear();
+
+  std::vector<picojson::value> vals = jv.get<picojson::array>();
+  for (std::vector<picojson::value>::iterator it = vals.begin();
+       it != vals.end();
+       ++it)
+  {
+      ans.push_back((unsigned int) it->get<int64_t>());
+  }
+}
+
+
   ASTEntry* ASTEntryFactory::make( const picojson::value &jsonValue )
   {
     if ( ASTBinaryEntry::jsonObjHasRequiredFields(jsonValue) )
@@ -263,6 +295,10 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
       json_to_renames(jsonValue.get("unbound_funs"), FunctionRename, m_renames);
       json_to_macros(jsonValue.get("macros"), m_macros);
       json_to_types(jsonValue.get("types"), m_types);
+
+      if (jsonValue.contains("stmt_list")) {
+          json_to_stmt_list(jsonValue.get("stmt_list"), m_stmt_list);
+      }
     }
   }
 
@@ -376,6 +412,10 @@ void json_to_macros(const picojson::value & jv, Macros & macros)
     jsonObj["unbound_funs"] = renames_to_json(m_renames, FunctionRename);
     jsonObj["macros"] = macros_to_json(m_macros);
     jsonObj["types"] = types_to_json(m_types);
+
+    if (m_astClass == "CompoundStmt") {
+        jsonObj["stmt_list"] = stmt_list_to_json(m_stmt_list);
+    }
 
     return picojson::value(jsonObj);
   }
