@@ -17,6 +17,12 @@
 
 namespace clang_mutate {
 
+struct BindingDatum
+{
+    clang::IdentifierInfo * id;
+    size_t type_hash;
+};
+
 class BindingCtx
 {
 public:
@@ -62,7 +68,8 @@ public:
   bool VisitUnaryExprOrTypeTraitExpr(
       clang::UnaryExprOrTypeTraitExpr * expr);
 
-  std::set<clang::IdentifierInfo*> free_values() const;
+  std::set<std::pair<clang::IdentifierInfo*, size_t> > free_values(
+      const std::vector<std::set<clang::IdentifierInfo*> > & scopes) const;
   std::set<clang::IdentifierInfo*> free_functions() const;
   std::set<size_t> required_types() const;
   

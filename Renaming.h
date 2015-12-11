@@ -29,11 +29,13 @@ struct RenameDatum
 {
     RenameDatum(const clang::IdentifierInfo* id,
                 const std::string & n,
-                RenameKind k)
-    : ident(id), name(n), kind(k) {}
+                size_t i,
+                RenameKind k )
+    : ident(id), name(n), index(i), kind(k) {}
     
     const clang::IdentifierInfo * ident;
     std::string name;
+    size_t index;
     RenameKind kind;
 
     bool operator<(const RenameDatum & that) const
@@ -48,10 +50,20 @@ struct RenameDatum
     }
 };
 
+RenameDatum mkVariableRename(
+    clang::IdentifierInfo * id,
+    const std::string & name,
+    size_t index);
+
+RenameDatum mkFunctionRename(
+    clang::IdentifierInfo * id,
+    const std::string & name);
+
 typedef std::set<RenameDatum> Renames;
 
-Renames make_renames(const std::set<clang::IdentifierInfo*> & free_vars,
-                     const std::set<clang::IdentifierInfo*> & free_funs);
+Renames make_renames(
+    const std::set<std::pair<clang::IdentifierInfo*, size_t> > & free_vars,
+    const std::set<clang::IdentifierInfo*> & free_funs);
 
 class RenameFreeVar
   : public clang::RecursiveASTVisitor<RenameFreeVar>

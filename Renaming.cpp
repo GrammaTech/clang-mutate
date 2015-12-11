@@ -8,6 +8,17 @@
 
 using namespace clang;
 
+RenameDatum mkVariableRename(
+    clang::IdentifierInfo * id,
+    const std::string & name,
+    size_t index)
+{ return RenameDatum(id, name, index, VariableRename); }
+
+RenameDatum mkFunctionRename(
+    clang::IdentifierInfo * id,
+    const std::string & name)
+{ return RenameDatum(id, name, 0, FunctionRename); }
+
 static std::string ident_to_str(IdentifierInfo* ident, size_t id)
 {
     std::string name = ident->getName().str();
@@ -21,22 +32,26 @@ static std::string ident_to_str(IdentifierInfo* ident, size_t id)
     return oss.str();
 }
 
-Renames make_renames(const std::set<IdentifierInfo*> & free_vars,
-                     const std::set<IdentifierInfo*> & free_funs)
+Renames make_renames(
+    const std::set<std::pair<IdentifierInfo*, size_t> > & free_vars,
+    const std::set<IdentifierInfo*> & free_funs)
 {
     size_t next_id = 0;
     Renames ans;
-    std::set<IdentifierInfo*>::const_iterator it;
-    for (it = free_vars.begin(); it != free_vars.end(); ++it) {
-        ans.insert(RenameDatum(*it, ident_to_str(*it, next_id++),
-                               VariableRename));
+    for (std::set<std::pair<IdentifierInfo*,size_t> >::const_iterator
+             it = free_vars.begin(); it != free_vars.end(); ++it)
+    {
+        ans.insert(mkVariableRename(it->first,
+                                    ident_to_str(it->first, next_id++),
+                                    it->second));
     }
-    for (it = free_funs.begin(); it != free_funs.end(); ++it) {
+    for (std::set<IdentifierInfo*>::const_iterator
+             it = free_funs.begin(); it != free_funs.end(); ++it)
+    {
 #ifdef ALLOW_FREE_FUNCTIONS
-        ans.insert(RenameDatum(*it, ident_to_str(*it, next_id++),
-                               FunctionRename));
+        ans.insert(mkFunctionRename(*it, ident_to_str(*it, next_id++)));
 #else
-        ans.insert(RenameDatum(*it, (*it)->getName().str(), FunctionRename));
+        ans.insert(mkFunctionRename(*it, (*it)->getName().str()));
 #endif
     }
     return ans;

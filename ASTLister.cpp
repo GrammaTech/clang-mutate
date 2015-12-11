@@ -69,6 +69,10 @@ using namespace clang;
       Rewrite.setSourceMgr(Context.getSourceManager(),
                            Context.getLangOpts());
 
+      // Add an empty top-level variable scope
+      var_scopes.clear();
+      var_scopes.push_back(std::set<IdentifierInfo*>());
+
       // Run Recursive AST Visitor
       TraverseDecl(D);
    
@@ -201,7 +205,7 @@ using namespace clang;
                Spine,
                Rewrite,
                BinaryAddresses,
-               make_renames(get_bindings.free_values(),
+               make_renames(get_bindings.free_values(var_scopes),
                             get_bindings.free_functions()),
                get_macros.result(),
                get_bindings.required_types());
@@ -226,7 +230,7 @@ using namespace clang;
                  Spine,
                  Rewrite,
                  BinaryAddresses,
-                 make_renames(get_bindings.free_values(),
+                 make_renames(get_bindings.free_values(var_scopes),
                               get_bindings.free_functions()),
                  get_macros.result(),
                  get_bindings.required_types());
@@ -241,7 +245,7 @@ using namespace clang;
                 P,
                 Spine,
                 Rewrite,
-                make_renames(get_bindings.free_values(),
+                make_renames(get_bindings.free_values(var_scopes),
                              get_bindings.free_functions()),
                 get_macros.result(),
                 get_bindings.required_types());
@@ -256,15 +260,16 @@ using namespace clang;
         // They are too granular to associate with binary
         // source code. 
         default:
-          NewASTEntry = new ASTNonBinaryEntry(
-                                S,
-                                P,
-                                Spine,
-                                Rewrite,
-                                make_renames(get_bindings.free_values(),
-                                             get_bindings.free_functions()),
-                                get_macros.result(),
-                                get_bindings.required_types());
+          NewASTEntry =
+              new ASTNonBinaryEntry(
+                  S,
+                  P,
+                  Spine,
+                  Rewrite,
+                  make_renames(get_bindings.free_values(var_scopes),
+                               get_bindings.free_functions()),
+                  get_macros.result(),
+                  get_bindings.required_types());
 
           ASTEntries.addEntry( NewASTEntry );
           break;
@@ -286,9 +291,16 @@ using namespace clang;
       return true;
     }
 
+    bool VisitVarDecl(VarDecl * decl) {
+        var_scopes.back().insert(decl->getIdentifier());
+        return true;
+    }
+
     bool TraverseStmt(Stmt * s) {
         bool keep_going;
         if (begins_scope(s)) {
+            var_scopes.push_back(
+                std::set<clang::IdentifierInfo*>());
             block_spine.push_back(
                 std::make_pair(0,
                                std::vector<unsigned int>()));
@@ -299,6 +311,7 @@ using namespace clang;
                     ->set_stmt_list(block_spine.back().second);
             }
             block_spine.pop_back();
+            var_scopes.pop_back();
         }
         else {
             keep_going = base::TraverseStmt(s);
@@ -319,6 +332,7 @@ using namespace clang;
     FileID MainFileID;
 
     std::map<Stmt*, unsigned int> Spine;
+    std::vector<std::set<clang::IdentifierInfo*> > var_scopes;
     std::vector<
         std::pair<unsigned int,
                   std::vector<unsigned int> > > block_spine;

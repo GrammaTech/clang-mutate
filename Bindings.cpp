@@ -146,14 +146,25 @@ void GetBindingCtx::dump() const
   print_unbound(unbound_f);
 }
 
-std::set<IdentifierInfo*> GetBindingCtx::free_values() const
+std::set<std::pair<IdentifierInfo*, size_t> > GetBindingCtx::free_values(
+    const std::vector<std::set<IdentifierInfo*> > & scopes) const
 {
-    std::set<IdentifierInfo*> ans;
+    std::set<std::pair<IdentifierInfo*, size_t> > ans;
     for (std::set<BindingCtx::Binding>::const_iterator it = unbound_v.begin();
          it != unbound_v.end();
          ++it)
     {
-        ans.insert(it->second);
+        size_t index = 0;
+        typedef std::set<IdentifierInfo*> Ids;
+        for (std::vector<Ids>::const_reverse_iterator scope = scopes.rbegin();
+             scope != scopes.rend();
+             ++scope)
+        {
+            if (scope->find(it->second) != scope->end())
+                break;
+            ++index;
+        }
+        ans.insert(std::make_pair(it->second, index));
     }
     return ans;
 }

@@ -49,7 +49,10 @@ picojson::value renames_to_json(const Renames & renames, RenameKind k)
        ++it)
   {
       if (it->kind == k) {
-          ans.push_back(picojson::value(it->name));
+          std::vector<picojson::value> item;
+          item.push_back(picojson::value(it->name));
+          item.push_back(picojson::value(static_cast<int64_t>(it->index)));
+          ans.push_back(picojson::value(item));
       }
   }
   return picojson::value(ans);
@@ -59,18 +62,7 @@ void json_to_renames(const picojson::value & jv,
                      RenameKind k,
                      Renames & renames)
 {
-  if (!jv.is<picojson::array>()) {
-    assert (!"expected a json array");
-    return;
-  }
-
-  std::vector<picojson::value> vals = jv.get<picojson::array>();
-  for (std::vector<picojson::value>::iterator it = vals.begin();
-       it != vals.end();
-       ++it)
-  {
-      renames.insert(RenameDatum(NULL, it->get<std::string>(), k));
-  }
+    // TODO
 }
 
 picojson::value macros_to_json(const Macros & macros)
