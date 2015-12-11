@@ -303,9 +303,9 @@ namespace clang_mutate{
  
     if ( !m_binaryPath.empty() ) {
       const std::string dwarfDumpDebugLineCmd = 
-        "llvm-dwarfdump -debug-dump=line " + m_binaryPath;
+        LLVM_DWARFDUMP" -debug-dump=line " + m_binaryPath;
       const std::string dwarfDumpDebugInfoCmd = 
-        "llvm-dwarfdump -debug-dump=info " + m_binaryPath;
+        LLVM_DWARFDUMP" -debug-dump=info " + m_binaryPath;
 
       std::vector<std::string> dwarfDumpDebugLine = 
         exec( dwarfDumpDebugLineCmd.c_str() );

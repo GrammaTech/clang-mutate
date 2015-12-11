@@ -1,9 +1,12 @@
-CXX := clang++
+LLVM_POSTFIX ?=
+CXX := clang++$(LLVM_POSTFIX)
 RTTIFLAG := -fno-rtti
 PICOJSON_INCS := -I third-party/picojson-1.3.0
 PICOJSON_DEFINES := -D PICOJSON_USE_INT64
-CXXFLAGS := $(shell llvm-config --cxxflags) $(RTTIFLAG) $(PICOJSON_INCS) $(PICOJSON_DEFINES)
-LLVMLDFLAGS := $(shell llvm-config --ldflags --libs) -ldl
+LLVM_CONFIG := llvm-config$(LLVM_POSTFIX)
+LLVM_DWARFDUMP := llvm-dwarfdump$(LLVM_POSTFIX)
+CXXFLAGS := $(shell $(LLVM_CONFIG) --cxxflags) $(RTTIFLAG) $(PICOJSON_INCS) $(PICOJSON_DEFINES) -DLLVM_DWARFDUMP='"$(LLVM_DWARFDUMP)"'
+LLVMLDFLAGS := $(shell $(LLVM_CONFIG) --ldflags --libs) -ldl
 
 SOURCES = ASTMutate.cpp ASTLister.cpp ASTEntry.cpp ASTEntryList.cpp Bindings.cpp Renaming.cpp Scopes.cpp Macros.cpp TypeDBEntry.cpp BinaryAddressMap.cpp Json.cpp Utils.cpp clang-mutate.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
@@ -38,7 +41,7 @@ clean:
 	-rm -f $(EXES) $(OBJECTS) compile_commands.json a.out etc/hello etc/loop *~
 
 install: clang-mutate
-	cp $< $$(dirname $$(which clang))
+	cp $< $$(dirname $$(which clang$(LLVM_POSTFIX)))
 
 # An alternative to giving compiler info after -- on the command line
 compile_commands.json:
