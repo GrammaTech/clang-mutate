@@ -8,6 +8,19 @@
 
 using namespace clang;
 
+static std::string ident_to_str(IdentifierInfo* ident, size_t id)
+{
+    std::string name = ident->getName().str();
+    std::ostringstream oss;
+    oss << "(|";
+    if (name != "")
+        oss << name;
+    else
+        oss << id; // can this happen?
+    oss << "|)";
+    return oss.str();
+}
+
 Renames make_renames(const std::set<IdentifierInfo*> & free_vars,
                      const std::set<IdentifierInfo*> & free_funs)
 {
@@ -15,15 +28,13 @@ Renames make_renames(const std::set<IdentifierInfo*> & free_vars,
     Renames ans;
     std::set<IdentifierInfo*>::const_iterator it;
     for (it = free_vars.begin(); it != free_vars.end(); ++it) {
-        std::ostringstream oss;
-        oss << "(|" << next_id++ << "|)";
-        ans.insert(RenameDatum(*it, oss.str(), VariableRename));
+        ans.insert(RenameDatum(*it, ident_to_str(*it, next_id++),
+                               VariableRename));
     }
     for (it = free_funs.begin(); it != free_funs.end(); ++it) {
 #ifdef ALLOW_FREE_FUNCTIONS
-        std::ostringstream oss;
-        oss << "(|" << next_id++ << "|)";
-        ans.insert(RenameDatum(*it, oss.str(), FunctionRename));
+        ans.insert(RenameDatum(*it, ident_to_str(*it, next_id++),
+                               FunctionRename));
 #else
         ans.insert(RenameDatum(*it, (*it)->getName().str(), FunctionRename));
 #endif
