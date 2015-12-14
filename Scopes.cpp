@@ -33,16 +33,18 @@ Stmt * DeclScope::current_scope() const
     return scopes.rbegin()->first;
 }
 
-std::vector<std::string> DeclScope::get_names_in_scope(size_t length) const
+std::vector<std::vector<std::string> >
+DeclScope::get_names_in_scope(size_t length) const
 {
-    std::vector<std::string> ans;
+    std::vector<std::vector<std::string> > ans;
     if (length == 0)
         return ans;
     std::vector<BlockScope>::const_reverse_iterator s;
     std::vector<const IdentifierInfo*>::const_reverse_iterator v;
     for (s = scopes.rbegin(); s != scopes.rend(); ++s) {
+        ans.push_back(std::vector<std::string>());
         for (v = s->second.rbegin(); v != s->second.rend(); ++v) {
-            ans.push_back((*v)->getName().str());
+            ans.back().push_back((*v)->getName().str());
             if (--length == 0)
                 return ans;
         }

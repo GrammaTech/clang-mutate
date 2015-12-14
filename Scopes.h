@@ -21,7 +21,8 @@ namespace clang_mutate {
 
       clang::Stmt * current_scope() const;
 
-      std::vector<std::string> get_names_in_scope(size_t length) const;
+      std::vector<std::vector<std::string> >
+          get_names_in_scope(size_t length) const;
     
   private:
     typedef std::pair<clang::Stmt*,

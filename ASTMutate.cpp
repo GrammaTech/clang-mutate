@@ -264,12 +264,18 @@ namespace clang_mutate{
     {
         if (Counter != Stmt1)
             return;
-        std::vector<std::string> names = scopes.get_names_in_scope(Depth);
-        for (std::vector<std::string>::iterator it = names.begin();
-             it != names.end();
-             ++it)
+        std::vector<std::vector<std::string> > names =
+            scopes.get_names_in_scope(Depth);
+        for (std::vector<std::vector<std::string> >::iterator
+                 it = names.begin(); it != names.end(); ++it)
         {
-            Out << *it << "\n";
+            Out << ">";
+            for (std::vector<std::string>::iterator
+                     jt = it->begin(); jt != it->end(); ++jt)
+            {
+                Out << " " << *jt;
+            }
+            Out << "\n";
         }
     }
       
