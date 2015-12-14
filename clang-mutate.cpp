@@ -55,6 +55,7 @@ static cl::opt<bool>           Insert ("insert",       cl::desc("copy stmt1 to a
 static cl::opt<bool>             Swap ("swap",         cl::desc("Swap stmt1 and stmt2"));
 static cl::opt<bool>              Get ("get",          cl::desc("Return the text of stmt1"));
 static cl::opt<bool>              Set ("set",          cl::desc("Set the text of stmt1 to value"));
+static cl::opt<bool>         SetRange ("set-range",     cl::desc("set the range from the start of stmt1 to the end of stmt2 to value"));
 static cl::opt<unsigned int> GetScope ("get-scope",    cl::desc("Get the first n variables in scope at stmt1"));
 static cl::opt<bool>          GetInfo  ("get-info",      cl::desc("Get information about stmt1"));
 static cl::opt<bool>      InsertValue  ("insert-value",  cl::desc("insert value before stmt1"));
@@ -88,6 +89,8 @@ public:
       return clang_mutate::CreateASTLister(Binary, JSONOut, CI);
     if (Cut)
       return clang_mutate::CreateASTCutter(Stmt1);
+    if (SetRange)
+      return clang_mutate::CreateASTRangeSetter(Stmt1, Stmt2);
     if (CutEnclosing)
       return clang_mutate::CreateASTEnclosingCutter(Stmt1);
     if (Insert)
@@ -117,6 +120,7 @@ public:
     errs() << "\tswap\n";
     errs() << "\tget\n";
     errs() << "\tset\n";
+    errs() << "\tset-range\n";
     errs() << "\tinsert-value\n";
     errs() << "\tinsert-before\n";
     errs() << "\tcut-enclosing\n";

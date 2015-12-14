@@ -99,6 +99,12 @@ namespace clang_mutate{
             }
         }
         break;
+      case SETRANGE:
+      {
+          SourceRange r(Range1.getBegin(), Range2.getEnd());
+          Rewrite.ReplaceText(r, StringRef(Value));
+          break;
+      }
       default: break;
       }
       OutputRewritten(Context);
@@ -284,6 +290,7 @@ namespace clang_mutate{
         case ANNOTATOR:    AnnotateStmt(s); break;
         case NUMBER:       NumberRange(r);  break;
         case CUT:          CutRange(r);     break;
+        case SETRANGE:     SaveRange(r);    break;
         case CUTENCLOSING: CutEnclosing();  break;
         case GET:          GetStmt(s);      break;
         case SET:          SetRange(r);     break;
@@ -410,6 +417,10 @@ std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTAnnotator(){
 
 std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTCutter(unsigned int Stmt){
       return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, CUT, Stmt));
+}
+
+std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTRangeSetter(unsigned int Stmt1, unsigned int Stmt2){
+      return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, SETRANGE, Stmt1, Stmt2));
 }
 
 std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTEnclosingCutter(unsigned int Stmt){

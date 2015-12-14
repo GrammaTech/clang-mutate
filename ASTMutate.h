@@ -17,6 +17,7 @@ enum ACTION { NUMBER
             , SWAP
             , GET
             , SET
+            , SETRANGE
             , VALUEINSERT
             , PREINSERT
             , GETINFO
@@ -27,6 +28,7 @@ std::unique_ptr<clang::ASTConsumer> CreateASTNumberer();
 std::unique_ptr<clang::ASTConsumer> CreateASTIDS();
 std::unique_ptr<clang::ASTConsumer> CreateASTAnnotator();
 std::unique_ptr<clang::ASTConsumer> CreateASTCutter(unsigned int Stmt);
+std::unique_ptr<clang::ASTConsumer> CreateASTRangeSetter(unsigned int Stmt1, unsigned int Stmt2);
 std::unique_ptr<clang::ASTConsumer> CreateASTEnclosingCutter(unsigned int Stmt);
 std::unique_ptr<clang::ASTConsumer> CreateASTInserter(unsigned int Stmt1, unsigned int Stmt2);
 std::unique_ptr<clang::ASTConsumer> CreateASTSwapper(unsigned int Stmt1, unsigned int Stmt2);
