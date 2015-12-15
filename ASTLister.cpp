@@ -166,7 +166,7 @@ using namespace clang;
       { 
         Stmt * P = GetParentStmt(S);
         get_bindings.TraverseStmt(S);
-        Spine[S] = Spine.size();
+        Spine[S] = Spine.size() + 1;
 
         if (!block_spine.empty() && begins_scope(S))
         {

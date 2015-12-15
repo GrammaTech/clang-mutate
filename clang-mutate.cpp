@@ -90,7 +90,7 @@ public:
     if (Cut)
       return clang_mutate::CreateASTCutter(Stmt1);
     if (SetRange)
-      return clang_mutate::CreateASTRangeSetter(Stmt1, Stmt2);
+      return clang_mutate::CreateASTRangeSetter(Stmt1, Stmt2, Value);
     if (CutEnclosing)
       return clang_mutate::CreateASTEnclosingCutter(Stmt1);
     if (Insert)
