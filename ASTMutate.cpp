@@ -139,16 +139,22 @@ namespace clang_mutate{
     }
 
     // Normalize source range so the source range returned:
-    // 1) Includes the final semi-colon
+    // 1) Includes the final semi-colon for full statements
     // 2) In the case of a macro argument, is the immediate source
     //    range for the macro argument.
-    SourceRange normalizeRange(SourceRange r)
+    SourceRange normalizedSourceRange(Stmt * stmt)
     {
+        SourceRange r = stmt->getSourceRange();
         SourceRange ret;
 
-        ret = Utils::expandRange(Rewrite.getSourceMgr(),
-                  Rewrite.getLangOpts(),
-                  r);
+        if (stmt == getEnclosingFullStmt()) {
+            ret = Utils::expandRange(Rewrite.getSourceMgr(),
+                                     Rewrite.getLangOpts(),
+                                     r);
+        }
+        else {
+            ret = r;
+        }
         ret = Utils::getImmediateMacroArgCallerRange(
                   Rewrite.getSourceMgr(),
                   ret);
@@ -160,7 +166,7 @@ namespace clang_mutate{
     {
       char label[128];
       unsigned EndOff;
-      SourceRange r = normalizeRange(s->getSourceRange());
+      SourceRange r = normalizedSourceRange(s);
       SourceLocation END = r.getEnd();
 
       sprintf(label, "/* %d:%s[ */", Counter, s->getStmtClassName());
@@ -233,7 +239,7 @@ namespace clang_mutate{
     {
         if (Counter == Stmt1) {
             Stmt * s = getEnclosingFullStmt();
-            SourceRange r = normalizeRange(s->getSourceRange());
+            SourceRange r = normalizedSourceRange(s);
             Rewrite.InsertText(r.getBegin(), 
                                StringRef(Value1), 
                                false);
@@ -244,7 +250,7 @@ namespace clang_mutate{
     {
         if (Counter == Stmt1) {
             Stmt * s = getEnclosingFullStmt();
-            SourceRange r = normalizeRange(s->getSourceRange());
+            SourceRange r = normalizedSourceRange(s);
 
             char label[24];
             sprintf(label, "/* cut-enclosing: %d */", Counter);
@@ -293,7 +299,7 @@ namespace clang_mutate{
       case Stmt::NoStmtClass:
         break;
       default:
-        SourceRange r = normalizeRange(s->getSourceRange());
+        SourceRange r = normalizedSourceRange(s);
         ++Counter;
         switch(Action){
         case ANNOTATOR:    AnnotateStmt(s); break;
