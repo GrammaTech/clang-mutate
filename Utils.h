@@ -42,6 +42,7 @@ bool ShouldVisitStmt(clang::SourceManager & SM,
                      clang::FileID MainFileID,
                      clang::Stmt * stmt);
 
+bool IsCompleteCStmt(clang::Stmt *S, clang::Stmt *P);
 }
 
 #endif

@@ -111,4 +111,41 @@ bool ShouldVisitStmt(SourceManager & SM,
     }
 }
 
+// Return true if the clang::Expr is a statement in the C/C++ grammar.
+// This is done by testing if the parent of the clang::Expr
+// is an aggregation type.  The immediate children of an aggregation
+// type are all valid statements in the C/C++ grammar.
+bool IsCompleteCStmt(Stmt *S, Stmt *P)
+{
+
+    if ( P != NULL ) 
+    {
+        // Test if the parent is class containing
+        // sub-statements.
+        switch ( P->getStmtClass() )
+        {
+        case Stmt::CapturedStmtClass:
+        case Stmt::CompoundStmtClass:
+        case Stmt::CXXCatchStmtClass:
+        case Stmt::CXXForRangeStmtClass:
+        case Stmt::CXXTryStmtClass:
+        case Stmt::DoStmtClass:
+        case Stmt::ForStmtClass:
+        case Stmt::IfStmtClass:
+        case Stmt::SwitchStmtClass:
+        case Stmt::WhileStmtClass: 
+          return true;
+      
+        default:
+          return false;
+        }
+    }
+    else {
+        // Return true if this is the root of an AST, false otherwise.
+        return (P == NULL) && 
+               (S != NULL) &&
+               (S->getStmtClass() == Stmt::CompoundStmtClass);
+    }
+}
+
 }

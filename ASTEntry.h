@@ -69,6 +69,7 @@ namespace clang_mutate
                        const unsigned int endSrcLine,
                        const unsigned int endSrcCol,
                        const std::string &srcText,
+                       bool isCompleteCStmt, 
                        const Renames & renames,
                        const Macros & macros,
                        const std::set<size_t> & types );
@@ -96,6 +97,7 @@ namespace clang_mutate
     virtual unsigned int getEndSrcLine() const;
     virtual unsigned int getEndSrcCol() const;
     virtual std::string getSrcText() const;
+    virtual bool getIsCompleteCStmt() const;
     virtual Renames getRenames() const;
     virtual Macros getMacros() const;
     virtual std::set<size_t> getTypes() const;
@@ -118,6 +120,7 @@ namespace clang_mutate
     unsigned int m_endSrcLine;
     unsigned int m_endSrcCol;
     std::string  m_srcText;
+    bool m_isCompleteCStmt;
     Renames m_renames;
     Macros m_macros;
     std::set<size_t> m_types;
@@ -139,6 +142,7 @@ namespace clang_mutate
                     const unsigned int endSrcLine,
                     const unsigned int endSrcCol,
                     const std::string &srcText,
+                    const bool isCompleteCStmt,
                     const Renames & renames,
                     const Macros & macros,
                     const std::set<size_t> & types,

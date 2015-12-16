@@ -95,38 +95,6 @@ using namespace clang;
       return parent;
     }
 
-    // Return true if the clang::Expr is a statement in the C/C++ grammar.
-    // This is done by testing if the parent of the clang::Expr
-    // is an aggregation type.  The immediate children of an aggregation
-    // type are all valid statements in the C/C++ grammar.
-    bool IsCompleteCStatement(Stmt *ExpressionStmt)
-    {
-      Stmt* parent = GetParentStmt(ExpressionStmt);
-
-      if ( parent != NULL ) 
-      {
-        switch ( parent->getStmtClass() )
-        {
-        case Stmt::CapturedStmtClass:
-        case Stmt::CompoundStmtClass:
-        case Stmt::CXXCatchStmtClass:
-        case Stmt::CXXForRangeStmtClass:
-        case Stmt::CXXTryStmtClass:
-        case Stmt::DoStmtClass:
-        case Stmt::ForStmtClass:
-        case Stmt::IfStmtClass:
-        case Stmt::SwitchStmtClass:
-        case Stmt::WhileStmtClass: 
-          return true;
-      
-        default:
-          return false;
-        }
-      }
-
-      return false;
-    }
-
     virtual bool VisitDecl(Decl *D){
       // Delete the ParentMap if we are in a new
       // function declaration.  There is a tight 
@@ -221,7 +189,7 @@ using namespace clang;
         case Stmt::CXXMemberCallExprClass:
         case Stmt::CXXOperatorCallExprClass:
         case Stmt::CallExprClass:
-          if(IsCompleteCStatement(S))
+          if(Utils::IsCompleteCStmt(S, P))
           {
             NewASTEntry = 
               ASTEntryFactory::make(

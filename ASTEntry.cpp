@@ -218,6 +218,7 @@ void json_to_stmt_list(const picojson::value & jv,
     const unsigned int endSrcLine,
     const unsigned int endSrcCol,
     const std::string &srcText,
+    const bool isCompleteCStmt,
     const Renames & renames,
     const Macros & macros,
     const std::set<size_t> & types) :
@@ -231,6 +232,7 @@ void json_to_stmt_list(const picojson::value & jv,
     m_endSrcLine(endSrcLine),
     m_endSrcCol(endSrcCol),
     m_srcText(srcText),
+    m_isCompleteCStmt(isCompleteCStmt),
     m_renames(renames),
     m_macros(macros),
     m_types(types)
@@ -265,6 +267,7 @@ void json_to_stmt_list(const picojson::value & jv,
     m_beginSrcCol = beginLoc.getColumn();
     m_endSrcLine = endLoc.getLine();
     m_endSrcCol = endLoc.getColumn();
+    m_isCompleteCStmt = Utils::IsCompleteCStmt(s, p);
     m_renames = renames;
     m_macros = macros;
     m_types = types;
@@ -277,16 +280,17 @@ void json_to_stmt_list(const picojson::value & jv,
   {
     if ( ASTNonBinaryEntry::jsonObjHasRequiredFields(jsonValue) )
     {
-      m_counter      = jsonValue.get("counter").get<int64_t>();
-      m_parentCounter= jsonValue.get("parent_counter").get<int64_t>();
-      m_astClass     = jsonValue.get("ast_class").get<std::string>();
-      m_srcFileName  = jsonValue.get("src_file_name").get<std::string>();
-      m_beginSrcLine = jsonValue.get("begin_src_line").get<int64_t>();
-      m_beginSrcCol  = jsonValue.get("begin_src_col").get<int64_t>();
-      m_endSrcLine   = jsonValue.get("end_src_line").get<int64_t>();
-      m_endSrcCol    = jsonValue.get("end_src_col").get<int64_t>();
-      m_srcText      = unescape_from_json(
-                          jsonValue.get("src_text").get<std::string>());
+      m_counter         = jsonValue.get("counter").get<int64_t>();
+      m_parentCounter   = jsonValue.get("parent_counter").get<int64_t>();
+      m_astClass        = jsonValue.get("ast_class").get<std::string>();
+      m_srcFileName     = jsonValue.get("src_file_name").get<std::string>();
+      m_beginSrcLine    = jsonValue.get("begin_src_line").get<int64_t>();
+      m_beginSrcCol     = jsonValue.get("begin_src_col").get<int64_t>();
+      m_endSrcLine      = jsonValue.get("end_src_line").get<int64_t>();
+      m_endSrcCol       = jsonValue.get("end_src_col").get<int64_t>();
+      m_srcText         = unescape_from_json(
+                            jsonValue.get("src_text").get<std::string>());
+      m_isCompleteCStmt = jsonValue.get("is_complete_c_stmt").get<bool>();
       json_to_renames(jsonValue.get("unbound_vals"), VariableRename, m_renames);
       json_to_renames(jsonValue.get("unbound_funs"), FunctionRename, m_renames);
       json_to_macros(jsonValue.get("macros"), m_macros);
@@ -311,6 +315,7 @@ void json_to_stmt_list(const picojson::value & jv,
                                   m_endSrcLine,
                                   m_endSrcCol,
                                   m_srcText,
+                                  m_isCompleteCStmt,
                                   m_renames,
                                   m_macros,
                                   m_types);
@@ -361,6 +366,11 @@ void json_to_stmt_list(const picojson::value & jv,
     return m_srcText;
   }
 
+  bool ASTNonBinaryEntry::getIsCompleteCStmt() const
+  {
+    return m_isCompleteCStmt;
+  }
+
   Renames ASTNonBinaryEntry::getRenames() const
   {
       return m_renames;
@@ -404,6 +414,7 @@ void json_to_stmt_list(const picojson::value & jv,
     jsonObj["end_src_line"] = picojson::value(static_cast<int64_t>(m_endSrcLine));
     jsonObj["end_src_col"] = picojson::value(static_cast<int64_t>(m_endSrcCol));
     jsonObj["src_text"] = picojson::value(escape_for_json(m_srcText));
+    jsonObj["is_complete_c_stmt"] = picojson::value(m_isCompleteCStmt);
     jsonObj["unbound_vals"] = renames_to_json(m_renames, VariableRename);
     jsonObj["unbound_funs"] = renames_to_json(m_renames, FunctionRename);
     jsonObj["macros"] = macros_to_json(m_macros);
@@ -429,6 +440,7 @@ void json_to_stmt_list(const picojson::value & jv,
            jsonValue.contains("end_src_line") &&
            jsonValue.contains("end_src_col") &&
            jsonValue.contains("src_text") &&
+           jsonValue.contains("is_complete_c_stmt") &&
            jsonValue.contains("unbound_vals") &&
            jsonValue.contains("unbound_funs") &&
            jsonValue.contains("macros") &&
@@ -453,6 +465,7 @@ void json_to_stmt_list(const picojson::value & jv,
     const unsigned int endSrcLine,
     const unsigned int endSrcCol,
     const std::string &srcText,
+    bool isCompleteCStmt,
     const Renames & renames,
     const Macros & macros,
     const std::set<size_t> & types,
@@ -470,6 +483,7 @@ void json_to_stmt_list(const picojson::value & jv,
                        endSrcLine, 
                        endSrcCol, 
                        srcText,
+                       isCompleteCStmt,
                        renames,
                        macros,
                        types),
@@ -538,6 +552,7 @@ void json_to_stmt_list(const picojson::value & jv,
                                getEndSrcLine(),
                                getEndSrcCol(),
                                getSrcText(),
+                               getIsCompleteCStmt(),
                                getRenames(),
                                getMacros(),
                                getTypes(),
