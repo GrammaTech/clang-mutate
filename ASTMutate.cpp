@@ -179,7 +179,6 @@ namespace clang_mutate{
     void GetStmt(Stmt *s){
         if (Counter == Stmt1) {
             s->printPretty(Out, 0, PrintingPolicy(Rewrite.getLangOpts()));
-                           //Out << Rewrite.ConvertToString(s) ;
             Out << "\n";
         }
     }

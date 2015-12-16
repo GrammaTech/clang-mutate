@@ -204,7 +204,8 @@ void json_to_stmt_list(const picojson::value & jv,
     m_srcText(""),
     m_renames(),
     m_macros(),
-    m_types()
+    m_types(),
+    m_full_stmt(false)
   {
   }
 
@@ -235,7 +236,8 @@ void json_to_stmt_list(const picojson::value & jv,
     m_isCompleteCStmt(isCompleteCStmt),
     m_renames(renames),
     m_macros(macros),
-    m_types(types)
+    m_types(types),
+    m_full_stmt(false)
   {
   }
 
@@ -249,9 +251,7 @@ void json_to_stmt_list(const picojson::value & jv,
     const std::set<size_t> & types )
   {
     clang::SourceManager &sm = rewrite.getSourceMgr();
-    clang::SourceRange r = Utils::expandRange(rewrite.getSourceMgr(),
-                                              rewrite.getLangOpts(),
-                                              s->getSourceRange());
+    clang::SourceRange r = s->getSourceRange();
     clang::PresumedLoc beginLoc = sm.getPresumedLoc(r.getBegin());
     clang::PresumedLoc endLoc = sm.getPresumedLoc(r.getEnd());
 
@@ -271,7 +271,9 @@ void json_to_stmt_list(const picojson::value & jv,
     m_renames = renames;
     m_macros = macros;
     m_types = types;
-    
+    m_full_stmt = p == NULL
+        || p->getStmtClassName() == std::string("CompoundStmt");
+        
     RenameFreeVar renamer(s, rewrite, renames);
     m_srcText = renamer.getRewrittenString();
   }
@@ -291,6 +293,8 @@ void json_to_stmt_list(const picojson::value & jv,
       m_srcText         = unescape_from_json(
                             jsonValue.get("src_text").get<std::string>());
       m_isCompleteCStmt = jsonValue.get("is_complete_c_stmt").get<bool>();
+      m_full_stmt       = jsonValue.get("full_stmt").get<bool>();
+      
       json_to_renames(jsonValue.get("unbound_vals"), VariableRename, m_renames);
       json_to_renames(jsonValue.get("unbound_funs"), FunctionRename, m_renames);
       json_to_macros(jsonValue.get("macros"), m_macros);
@@ -419,7 +423,8 @@ void json_to_stmt_list(const picojson::value & jv,
     jsonObj["unbound_funs"] = renames_to_json(m_renames, FunctionRename);
     jsonObj["macros"] = macros_to_json(m_macros);
     jsonObj["types"] = types_to_json(m_types);
-
+    jsonObj["full_stmt"] = picojson::value(m_full_stmt);
+    
     if (m_astClass == "CompoundStmt") {
         jsonObj["stmt_list"] = stmt_list_to_json(m_stmt_list);
     }
@@ -444,7 +449,8 @@ void json_to_stmt_list(const picojson::value & jv,
            jsonValue.contains("unbound_vals") &&
            jsonValue.contains("unbound_funs") &&
            jsonValue.contains("macros") &&
-           jsonValue.contains("types");
+           jsonValue.contains("types") &&
+           jsonValue.contains("full_stmt");
   }
 
   ASTBinaryEntry::ASTBinaryEntry() :

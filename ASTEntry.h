@@ -124,6 +124,7 @@ namespace clang_mutate
     Renames m_renames;
     Macros m_macros;
     std::set<size_t> m_types;
+    bool m_full_stmt;
     std::vector<unsigned int> m_stmt_list;
   };
 
