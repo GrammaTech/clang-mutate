@@ -21,3 +21,12 @@ contains(){
             exit 1;
         fi
     done; }
+
+not_contains(){
+    if [ ! $? -eq 0 ];then exit 1;fi
+    BASE="$1"; shift;
+    for TARGET in "$@";do
+        if ! $(echo "$BASE"|grep -v "$TARGET" >/dev/null 2>/dev/null);then
+            exit 1;
+        fi
+    done; }

@@ -1,4 +1,5 @@
 #!/bin/bash
 . $(dirname $0)/common
 
-contains "$(run_hello -set -stmt1=2 -value1="puts(\"goodbye\")")" "goodbye\");"
+not_contains "$(run_hello -set -stmt1=2 -value1="puts(\"goodbye\")")" \
+             "goodbye\");"

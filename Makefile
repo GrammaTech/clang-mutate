@@ -61,7 +61,7 @@ TESTS =	hello-second-stmt-says-hello-get		\
 	hello-no-semi-colon-on-end-of-statement-json	\
 	hello-semi-colon-on-end-of-statement-insert	\
 	hello-semi-colon-on-end-of-statement-swap	\
-	hello-semi-colon-on-end-of-value-insert		\
+	hello-no-semi-colon-on-end-of-value-insert	\
 	hello-semi-colon-on-end-of-set			\
 	hello-semi-colon-on-end-of-set2			\
 	hello-semi-colon-on-end-of-statement-cut	\
