@@ -1,0 +1,4 @@
+#!/bin/bash
+. $(dirname $0)/common
+
+run_hello -cut -stmt1=2|cuted|grep -q ";$"

@@ -1,0 +1,14 @@
+#!/bin/bash
+HELLO=etc/hello.c
+
+run_hello(){
+    clang-mutate $HELLO $@ --; }
+
+json_filter(){
+    cat -|jshon -a -j|grep "\"${1}\":${2}\(,\|}\)"; }
+
+inserted(){
+    wdiff $HELLO <(cat -)|grep "{\+.*\+}"|sed 's/^.*{+//;s/+}.*$//'; }
+
+cuted(){
+    wdiff $HELLO <(cat -)|grep "\[-.*-\]"|sed 's/^.*\[-//;s/-\].*$//'; }

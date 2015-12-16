@@ -1,0 +1,4 @@
+#!/bin/bash
+. $(dirname $0)/common
+
+run_hello -get -stmt1=2|grep -q ";$"

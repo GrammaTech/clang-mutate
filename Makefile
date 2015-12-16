@@ -32,7 +32,7 @@ all: $(EXES)
 .PHONY: clean install
 
 %: %.o
-	$(CXX) -o $@ $< 
+	$(CXX) -o $@ $<
 
 clang-mutate: $(OBJECTS)
 	$(CXX) -o $@ $^ $(CLANGLIBS) $(LLVMLDFLAGS)
@@ -52,3 +52,24 @@ compile_commands.json:
 	    \"file\": \"$$(pwd)/etc/hello.c\"\n\
 	  }\n\
 	]\n" > $@
+
+
+# Tests
+TESTS =	hello-second-stmt-says-hello-get		\
+	hello-second-stmt-says-hello-json		\
+	hello-semi-colon-on-end-of-statement-get	\
+	hello-semi-colon-on-end-of-statement-insert	\
+	hello-semi-colon-on-end-of-statement-cut	\
+	hello-semi-colon-on-end-of-statement-json
+
+PASS=\e[1;1m\e[1;32mPASS\e[1;0m
+FAIL=\e[1;1m\e[1;31mFAIL\e[1;0m
+check/%: test/%
+	@if ./$< >/dev/null 2>/dev/null;then \
+	printf "$(PASS)\t"; \
+	else \
+	printf "$(FAIL)\t"; \
+	fi
+	@printf "\e[1;1m%s\n" $*
+
+check: $(addprefix check/, $(TESTS))
