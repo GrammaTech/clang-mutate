@@ -257,12 +257,6 @@ namespace clang_mutate{
     {
         if (Counter == Stmt1) {
             Out << s->getStmtClassName() << "\n";
-            SourceLocation e = Utils::findSemiAfterLocation(
-                Rewrite.getSourceMgr(),
-                Rewrite.getLangOpts(),
-                s->getSourceRange().getEnd(),
-                -1);
-            Out << (e.isInvalid() ? "no-semi" : "has-semi") << "\n";
             unsigned int ec;
             (void) getEnclosingFullStmt(&ec);
             Out << ec << "\n";
