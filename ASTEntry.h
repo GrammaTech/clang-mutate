@@ -69,7 +69,8 @@ namespace clang_mutate
                        const unsigned int endSrcLine,
                        const unsigned int endSrcCol,
                        const std::string &srcText,
-                       bool isCompleteCStmt, 
+                       const bool guardStmt,
+                       const bool fullStmt,
                        const Renames & renames,
                        const Macros & macros,
                        const std::set<size_t> & types );
@@ -97,7 +98,8 @@ namespace clang_mutate
     virtual unsigned int getEndSrcLine() const;
     virtual unsigned int getEndSrcCol() const;
     virtual std::string getSrcText() const;
-    virtual bool getIsCompleteCStmt() const;
+    virtual bool getIsGuardStmt() const;
+    virtual bool getIsFullStmt() const;
     virtual Renames getRenames() const;
     virtual Macros getMacros() const;
     virtual std::set<size_t> getTypes() const;
@@ -120,11 +122,11 @@ namespace clang_mutate
     unsigned int m_endSrcLine;
     unsigned int m_endSrcCol;
     std::string  m_srcText;
-    bool m_isCompleteCStmt;
+    bool m_guardStmt;
+    bool m_fullStmt;
     Renames m_renames;
     Macros m_macros;
     std::set<size_t> m_types;
-    bool m_full_stmt;
     std::vector<unsigned int> m_stmt_list;
   };
 
@@ -143,7 +145,8 @@ namespace clang_mutate
                     const unsigned int endSrcLine,
                     const unsigned int endSrcCol,
                     const std::string &srcText,
-                    const bool isCompleteCStmt,
+                    const bool guardStmt,
+                    const bool fullStmt,
                     const Renames & renames,
                     const Macros & macros,
                     const std::set<size_t> & types,

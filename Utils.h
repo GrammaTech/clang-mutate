@@ -42,7 +42,9 @@ bool ShouldVisitStmt(clang::SourceManager & SM,
                      clang::FileID MainFileID,
                      clang::Stmt * stmt);
 
-bool IsCompleteCStmt(clang::Stmt *S, clang::Stmt *P);
+bool ShouldAssociateBytesWithStmt(clang::Stmt *S, clang::Stmt *P);
+bool IsSingleLineStmt(clang::Stmt *S, clang::Stmt *P);
+bool IsGuardStmt(clang::Stmt *S, clang::Stmt *P);
 }
 
 #endif

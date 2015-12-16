@@ -141,106 +141,37 @@ using namespace clang;
             block_spine.back().first = Spine[S];
         }
 
-        switch (S->getStmtClass()){
-
-        // These classes of statements
-        // correspond to exactly 1 or more
-        // lines in a source file.  If applicable,
-        // associate them with binary source code.
-        case Stmt::BreakStmtClass:
-        case Stmt::CapturedStmtClass:
-        case Stmt::CompoundStmtClass:
-        case Stmt::ContinueStmtClass:
-        case Stmt::CXXCatchStmtClass:
-        case Stmt::CXXForRangeStmtClass:
-        case Stmt::CXXTryStmtClass:
-        case Stmt::DeclStmtClass:
-        case Stmt::DoStmtClass:
-        case Stmt::ForStmtClass:
-        case Stmt::GotoStmtClass:
-        case Stmt::IfStmtClass:
-        case Stmt::IndirectGotoStmtClass:
-        case Stmt::ReturnStmtClass:
-        case Stmt::SwitchStmtClass:
-        case Stmt::DefaultStmtClass: 
-        case Stmt::CaseStmtClass: 
-        case Stmt::WhileStmtClass:
-
-          NewASTEntry = 
-            ASTEntryFactory::make(
-               S,
-               P,
-               Spine,
-               Rewrite,
-               BinaryAddresses,
-               make_renames(get_bindings.free_values(var_scopes),
-                            get_bindings.free_functions()),
-               get_macros.result(),
-               get_bindings.required_types());
-
-          ASTEntries.addEntry( NewASTEntry );
-          break;
-
-        // These classes of statements may correspond
-        // to one or more lines in a source file.
-        // If applicable, associate them with binary
-        // source code.
-        case Stmt::AtomicExprClass:
-        case Stmt::CXXMemberCallExprClass:
-        case Stmt::CXXOperatorCallExprClass:
-        case Stmt::CallExprClass:
-          if(Utils::IsCompleteCStmt(S, P))
-          {
+        if (Utils::ShouldAssociateBytesWithStmt(S, P)) {
+            // This is a full statement, so attempt to associate bytes
+            // with it.
             NewASTEntry = 
-              ASTEntryFactory::make(
-                 S,
-                 P,
-                 Spine,
-                 Rewrite,
-                 BinaryAddresses,
-                 make_renames(get_bindings.free_values(var_scopes),
-                              get_bindings.free_functions()),
-                 get_macros.result(),
-                 get_bindings.required_types());
+                ASTEntryFactory::make(
+                    S,
+                    P,
+                    Spine,
+                    Rewrite,
+                    BinaryAddresses,
+                    make_renames(get_bindings.free_values(var_scopes),
+                                 get_bindings.free_functions()),
+                    get_macros.result(),
+                    get_bindings.required_types());
 
             ASTEntries.addEntry( NewASTEntry );
-          }
-          else
-          {
-            NewASTEntry = 
-              new ASTNonBinaryEntry(
-                S,
-                P,
-                Spine,
-                Rewrite,
-                make_renames(get_bindings.free_values(var_scopes),
-                             get_bindings.free_functions()),
-                get_macros.result(),
-                get_bindings.required_types());
-              
+        } else {
+            // This statement is too granular to have bytes associated
+            // with it.
+            NewASTEntry =
+                new ASTNonBinaryEntry(
+                    S,
+                    P,
+                    Spine,
+                    Rewrite,
+                    make_renames(get_bindings.free_values(var_scopes),
+                                 get_bindings.free_functions()),
+                    get_macros.result(),
+                    get_bindings.required_types());
+
             ASTEntries.addEntry( NewASTEntry );
-          }
-
-          break;
-
-        // These classes of statements correspond
-        // to sub-expressions within a C/C++ statement.
-        // They are too granular to associate with binary
-        // source code. 
-        default:
-          NewASTEntry =
-              new ASTNonBinaryEntry(
-                  S,
-                  P,
-                  Spine,
-                  Rewrite,
-                  make_renames(get_bindings.free_values(var_scopes),
-                               get_bindings.free_functions()),
-                  get_macros.result(),
-                  get_bindings.required_types());
-
-          ASTEntries.addEntry( NewASTEntry );
-          break;
         }
 
         if (NewASTEntry != NULL && !block_spine.empty())

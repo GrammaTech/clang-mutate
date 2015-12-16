@@ -111,41 +111,116 @@ bool ShouldVisitStmt(SourceManager & SM,
     }
 }
 
-// Return true if the clang::Expr is a statement in the C/C++ grammar.
-// This is done by testing if the parent of the clang::Expr
-// is an aggregation type.  The immediate children of an aggregation
-// type are all valid statements in the C/C++ grammar.
-bool IsCompleteCStmt(Stmt *S, Stmt *P)
+bool ShouldAssociateBytesWithStmt(Stmt *S, Stmt *P)
 {
-
-    if ( P != NULL ) 
+    if ( S != NULL )
     {
-        // Test if the parent is class containing
-        // sub-statements.
-        switch ( P->getStmtClass() )
-        {
-        case Stmt::CapturedStmtClass:
-        case Stmt::CompoundStmtClass:
-        case Stmt::CXXCatchStmtClass:
-        case Stmt::CXXForRangeStmtClass:
-        case Stmt::CXXTryStmtClass:
-        case Stmt::DoStmtClass:
-        case Stmt::ForStmtClass:
-        case Stmt::IfStmtClass:
-        case Stmt::SwitchStmtClass:
-        case Stmt::WhileStmtClass: 
-          return true;
-      
-        default:
-          return false;
+        if (S->getStmtClass() == Stmt::BreakStmtClass ||
+            S->getStmtClass() == Stmt::CapturedStmtClass ||
+            S->getStmtClass() == Stmt::CompoundStmtClass ||
+            S->getStmtClass() == Stmt::ContinueStmtClass ||
+            S->getStmtClass() == Stmt::CXXCatchStmtClass ||
+            S->getStmtClass() == Stmt::CXXForRangeStmtClass ||
+            S->getStmtClass() == Stmt::CXXTryStmtClass ||
+            S->getStmtClass() == Stmt::DeclStmtClass ||
+            S->getStmtClass() == Stmt::DoStmtClass ||
+            S->getStmtClass() == Stmt::ForStmtClass ||
+            S->getStmtClass() == Stmt::GotoStmtClass ||
+            S->getStmtClass() == Stmt::IfStmtClass ||
+            S->getStmtClass() == Stmt::IndirectGotoStmtClass ||
+            S->getStmtClass() == Stmt::ReturnStmtClass ||
+            S->getStmtClass() == Stmt::SwitchStmtClass ||
+            S->getStmtClass() == Stmt::DefaultStmtClass ||
+            S->getStmtClass() == Stmt::CaseStmtClass ||
+            S->getStmtClass() == Stmt::WhileStmtClass ||
+            IsSingleLineStmt(S, P)) {
+            return true;
         }
     }
-    else {
-        // Return true if this is the root of an AST, false otherwise.
-        return (P == NULL) && 
-               (S != NULL) &&
-               (S->getStmtClass() == Stmt::CompoundStmtClass);
+
+    return false;
+}
+
+// Return true if the clang::Stmt is a statement in the C++ grammar
+// which would typically be a single line in a program.
+// This is done by testing if the parent of the clang::Stmt
+// is an aggregation type.  The immediate children of an aggregation
+// type are all valid statements in the C/C++ grammar.
+bool IsSingleStmt(Stmt *S, Stmt *P)
+{
+    if (S != NULL && P != NULL) {
+        switch (P->getStmtClass()){
+        case Stmt::CompoundStmtClass:
+        {
+            return true;
+        }
+        case Stmt::CapturedStmtClass:
+        {
+            CapturedStmt * cs = static_cast<CapturedStmt*>(P);
+            return cs->getCapturedStmt() == S;
+        }
+        case Stmt::CXXCatchStmtClass:
+        {
+            CXXCatchStmt * cs = static_cast<CXXCatchStmt*>(P);
+            return cs->getHandlerBlock() == S;
+        }
+        case Stmt::CXXForRangeStmtClass:
+        {
+            CXXForRangeStmt * fs = static_cast<CXXForRangeStmt*>(P);
+            return fs->getBody() == S;
+        }
+        case Stmt::DoStmtClass:
+        {
+            DoStmt *ds = static_cast<DoStmt*>(P);
+            return ds->getBody() == S;
+        }
+        case Stmt::ForStmtClass:
+        {
+            ForStmt *fs = static_cast<ForStmt*>(P);
+            return fs->getBody() == S;
+        }
+        case Stmt::IfStmtClass:
+        {
+            IfStmt *is = static_cast<IfStmt*>(P);
+            return is->getThen() == S || is->getElse() == S;
+        }
+        case Stmt::SwitchStmtClass:
+        {
+            SwitchStmt *ss = static_cast<SwitchStmt*>(P); 
+            return ss->getBody() == S;
+        }
+        case Stmt::WhileStmtClass:
+        {
+            WhileStmt *ws = static_cast<WhileStmt*>(P);
+            return ws->getBody() == S;
+        }
+        default:
+            return false;
+        }
     }
+
+    return false;
+}
+
+// Return true if S is a top-level statement within a 
+// loop/if conditional.
+bool IsGuardStmt(Stmt *S, Stmt *P)
+{
+    if (!IsSingleLineStmt(S, P) && P != NULL &&
+        (P->getStmtClass() == Stmt::CapturedStmtClass ||
+         P->getStmtClass() == Stmt::CompoundStmtClass || 
+         P->getStmtClass() == Stmt::CXXCatchStmtClass ||
+         P->getStmtClass() == Stmt::CXXForRangeStmtClass ||
+         P->getStmtClass() == Stmt::CXXTryStmtClass ||
+         P->getStmtClass() == Stmt::DoStmtClass ||
+         P->getStmtClass() == Stmt::ForStmtClass ||
+         P->getStmtClass() == Stmt::IfStmtClass ||
+         P->getStmtClass() == Stmt::SwitchStmtClass ||
+         P->getStmtClass() == Stmt::WhileStmtClass)) {
+         return true;
+    }
+
+    return false;
 }
 
 }
