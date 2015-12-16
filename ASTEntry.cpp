@@ -3,6 +3,7 @@
 */
 
 #include "ASTEntry.h"
+#include "Utils.h"
 
 #include "BinaryAddressMap.h"
 #include "Renaming.h"
@@ -246,8 +247,11 @@ void json_to_stmt_list(const picojson::value & jv,
     const std::set<size_t> & types )
   {
     clang::SourceManager &sm = rewrite.getSourceMgr();
-    clang::PresumedLoc beginLoc = sm.getPresumedLoc(s->getSourceRange().getBegin());
-    clang::PresumedLoc endLoc = sm.getPresumedLoc(s->getSourceRange().getEnd());
+    clang::SourceRange r = Utils::expandRange(rewrite.getSourceMgr(),
+                                              rewrite.getLangOpts(),
+                                              s->getSourceRange());
+    clang::PresumedLoc beginLoc = sm.getPresumedLoc(r.getBegin());
+    clang::PresumedLoc endLoc = sm.getPresumedLoc(r.getEnd());
 
     m_counter = spine.find(s)->second;
     m_parentCounter = ( p == NULL || spine.find(p) == spine.end() ) ?

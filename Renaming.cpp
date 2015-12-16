@@ -64,9 +64,11 @@ RenameFreeVar::RenameFreeVar(
     : rewriter(r)
     , renames(rn)
 {
-    SourceRange sr = Utils::getImmediateMacroArgCallerRange(
-                         rewriter.getSourceMgr(), 
-                         the_stmt->getSourceRange());
+    SourceRange sr = Utils::expandRange(rewriter.getSourceMgr(),
+                                        rewriter.getLangOpts(),
+                                        Utils::getImmediateMacroArgCallerRange(
+                                            rewriter.getSourceMgr(),
+                                            the_stmt->getSourceRange()));
 
     begin = sr.getBegin(); 
     end = Lexer::getLocForEndOfToken(sr.getEnd(), 
@@ -100,9 +102,12 @@ bool RenameFreeVar::VisitStmt(Stmt * stmt)
     IdentifierInfo * id   = vdecl->getIdentifier();
     std::string name;
     if (id != NULL && find_identifier(renames, id, name)) {
-      SourceRange sr = Utils::getImmediateMacroArgCallerRange(
-                           rewriter.getSourceMgr(),
-                           stmt->getSourceRange());
+      SourceRange sr =
+          Utils::expandRange(rewriter.getSourceMgr(),
+                             rewriter.getLangOpts(),
+                             Utils::getImmediateMacroArgCallerRange(
+                                 rewriter.getSourceMgr(),
+                                 stmt->getSourceRange()));
 
       // Not very efficient, but I didn't see a better way to
       // get the size in characters of a CharSourceRange.
