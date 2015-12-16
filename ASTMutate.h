@@ -17,6 +17,7 @@ enum ACTION { NUMBER
             , SWAP
             , GET
             , SET
+            , SET2
             , SETRANGE
             , VALUEINSERT
             , PREINSERT
@@ -34,6 +35,8 @@ std::unique_ptr<clang::ASTConsumer> CreateASTInserter(unsigned int Stmt1, unsign
 std::unique_ptr<clang::ASTConsumer> CreateASTSwapper(unsigned int Stmt1, unsigned int Stmt2);
 std::unique_ptr<clang::ASTConsumer> CreateASTGetter(unsigned int Stmt);
 std::unique_ptr<clang::ASTConsumer> CreateASTSetter(unsigned int Stmt, clang::StringRef Value);
+std::unique_ptr<clang::ASTConsumer> CreateASTSetter2(unsigned int Stmt1, clang::StringRef Value1,
+                                                     unsigned int Stmt2, clang::StringRef Value2);
 std::unique_ptr<clang::ASTConsumer> CreateASTValueInserter(unsigned int Stmt, clang::StringRef Value);
 std::unique_ptr<clang::ASTConsumer> CreateASTValuePreInserter(unsigned int Stmt, clang::StringRef Value);
 std::unique_ptr<clang::ASTConsumer> CreateASTInfoGetter(unsigned int Stmt);

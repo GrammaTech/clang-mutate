@@ -33,6 +33,19 @@
 namespace clang_mutate{
   using namespace clang;
 
+  static void filenameToContents(std::string & str)
+  {
+      // If str is a file, read in the contents.
+      if (!str.empty()) {
+          std::ifstream f(str.c_str());
+          if (f.good()) {
+              std::stringstream buffer;
+              buffer << f.rdbuf();
+              str = buffer.str();
+          }
+      }
+  }
+
   class ASTMutator : public ASTConsumer,
                      public RecursiveASTVisitor<ASTMutator> {
     typedef RecursiveASTVisitor<ASTMutator> base;
@@ -42,22 +55,16 @@ namespace clang_mutate{
                ACTION p_Action = NUMBER,
                unsigned int p_Stmt1 = 0, 
                unsigned int p_Stmt2 = 0,
-               StringRef p_Value = StringRef(""),
+               StringRef p_Value1 = StringRef(""),
+               StringRef p_Value2 = StringRef(""),
                unsigned int p_Depth = 0)
       : Out(p_Out ? *p_Out : llvm::outs()),
         Action(p_Action), Stmt1(p_Stmt1), Stmt2(p_Stmt2),
-        Value(p_Value.str()), Depth(p_Depth) 
+        Value1(p_Value1.str()), Value2(p_Value2.str()),
+        Depth(p_Depth)
     {
-        // If Value is a file, read in the contents.
-        if (!Value.empty()) {
-            std::ifstream f(Value.c_str());
-
-            if (f.good()) {
-                std::stringstream buffer;
-                buffer << f.rdbuf();
-                Value = buffer.str();
-            } 
-        }
+        filenameToContents(Value1);
+        filenameToContents(Value2);
     }
 
     virtual void HandleTranslationUnit(ASTContext &Context) {
@@ -102,7 +109,7 @@ namespace clang_mutate{
       case SETRANGE:
       {
           SourceRange r(Range1.getBegin(), Range2.getEnd());
-          Rewrite.ReplaceText(r, StringRef(Value));
+          Rewrite.ReplaceText(r, StringRef(Value1));
           break;
       }
       default: break;
@@ -178,13 +185,15 @@ namespace clang_mutate{
     }
 
     void SetRange(SourceRange r){
-      if (Counter == Stmt1) Rewrite.ReplaceText(r, 
-                                                StringRef(Value));
+      if (Counter == Stmt1)
+          Rewrite.ReplaceText(r, StringRef(Value1));
+      if (Counter == Stmt2)
+          Rewrite.ReplaceText(r, StringRef(Value2));
     }
 
     void InsertRange(SourceRange r){
       if (Counter == Stmt1) Rewrite.InsertText(r.getBegin(), 
-                                               StringRef(Value), 
+                                               StringRef(Value1),
                                                false);
     }
 
@@ -227,7 +236,7 @@ namespace clang_mutate{
             Stmt * s = getEnclosingFullStmt();
             SourceRange r = normalizeRange(s->getSourceRange());
             Rewrite.InsertText(r.getBegin(), 
-                               StringRef(Value), 
+                               StringRef(Value1), 
                                false);
         }
     }
@@ -300,7 +309,8 @@ namespace clang_mutate{
         case SETRANGE:     SaveRange(r);    break;
         case CUTENCLOSING: CutEnclosing();  break;
         case GET:          GetStmt(s);      break;
-        case SET:          SetRange(r);     break;
+        case SET:
+        case SET2:         SetRange(r);     break;
         case VALUEINSERT:  InsertRange(r);  break;
         case INSERT:
         case SWAP:         SaveRange(r);    break;
@@ -398,7 +408,7 @@ namespace clang_mutate{
     raw_ostream &Out;
     ACTION Action;
     unsigned int Stmt1, Stmt2;
-    std::string Value;
+    std::string Value1, Value2;
     unsigned int Depth;
     unsigned int Counter;
     FileID mainFileID;
@@ -425,8 +435,8 @@ std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTCutter(unsigned int S
       return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, CUT, Stmt));
 }
 
-std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTRangeSetter(unsigned int Stmt1, unsigned int Stmt2, StringRef Value){
-    return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, SETRANGE, Stmt1, Stmt2, Value));
+std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTRangeSetter(unsigned int Stmt1, unsigned int Stmt2, StringRef Value1){
+    return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, SETRANGE, Stmt1, Stmt2, Value1));
 }
 
 std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTEnclosingCutter(unsigned int Stmt){
@@ -445,16 +455,23 @@ std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTGetter(unsigned int S
       return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, GET, Stmt));
 }
 
-std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTSetter(unsigned int Stmt, clang::StringRef Value){
-      return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, SET, Stmt, -1, Value));
+std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTSetter(unsigned int Stmt, clang::StringRef Value1){
+      return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, SET, Stmt, -1, Value1));
 }
 
-std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTValueInserter(unsigned int Stmt, clang::StringRef Value){
-      return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, VALUEINSERT, Stmt, -1, Value));
+std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTSetter2(
+    unsigned int Stmt1, clang::StringRef Value1,
+    unsigned int Stmt2, clang::StringRef Value2)
+{
+    return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, SET2, Stmt1, Stmt2, Value1, Value2));
 }
 
-std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTValuePreInserter(unsigned int Stmt, clang::StringRef Value){
-        return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, PREINSERT, Stmt, -1, Value));
+std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTValueInserter(unsigned int Stmt, clang::StringRef Value1){
+      return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, VALUEINSERT, Stmt, -1, Value1));
+}
+
+std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTValuePreInserter(unsigned int Stmt, clang::StringRef Value1){
+        return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, PREINSERT, Stmt, -1, Value1));
 }
 
 std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTInfoGetter(unsigned int Stmt)
@@ -466,6 +483,6 @@ std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTInfoGetter(unsigned i
 std::unique_ptr<clang::ASTConsumer> clang_mutate::CreateASTScopeGetter(unsigned int Stmt,
                                                        unsigned int Depth)
 {
-    return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, GETSCOPE, Stmt, -1, "", Depth));
+    return std::unique_ptr<clang::ASTConsumer>(new ASTMutator(0, GETSCOPE, Stmt, -1, "", "", Depth));
 }
 
