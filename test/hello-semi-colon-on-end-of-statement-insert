@@ -1,0 +1,4 @@
+#!/bin/bash
+. $(dirname $0)/common
+
+run_hello -insert -stmt1=2 -stmt2=2|inserted|grep -q ";$"
