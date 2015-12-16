@@ -12,3 +12,12 @@ inserted(){
 
 cuted(){
     wdiff $HELLO <(cat -)|grep "\[-.*-\]"|sed 's/^.*\[-//;s/-\].*$//'; }
+
+contains(){
+    if [ ! $? -eq 0 ];then exit 1;fi
+    BASE="$1"; shift;
+    for TARGET in "$@";do
+        if ! $(echo "$BASE"|grep "$TARGET" >/dev/null 2>/dev/null);then
+            exit 1;
+        fi
+    done; }

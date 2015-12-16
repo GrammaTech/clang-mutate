@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+# Ensure swap of two full statements preserves semi colons.
+#
+. $(dirname $0)/common
+
+contains "$(run_hello -swap -stmt1=2 -stmt2=8)" \
+         "return 0;" \
+         "puts(\"hello\");"

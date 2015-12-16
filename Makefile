@@ -57,10 +57,15 @@ compile_commands.json:
 # Tests
 TESTS =	hello-second-stmt-says-hello-get		\
 	hello-second-stmt-says-hello-json		\
-	hello-semi-colon-on-end-of-statement-get	\
+	hello-no-semi-colon-on-end-of-statement-get	\
+	hello-no-semi-colon-on-end-of-statement-json	\
 	hello-semi-colon-on-end-of-statement-insert	\
+	hello-semi-colon-on-end-of-statement-swap	\
+	hello-semi-colon-on-end-of-value-insert		\
+	hello-semi-colon-on-end-of-set			\
+	hello-semi-colon-on-end-of-set2			\
 	hello-semi-colon-on-end-of-statement-cut	\
-	hello-semi-colon-on-end-of-statement-json
+	hello-semi-colon-on-end-of-statement-cut
 
 PASS=\e[1;1m\e[1;32mPASS\e[1;0m
 FAIL=\e[1;1m\e[1;31mFAIL\e[1;0m

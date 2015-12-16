@@ -1,0 +1,5 @@
+#!/bin/bash
+. $(dirname $0)/common
+
+run_hello -insert-value -stmt1=8 -value1="puts(\"goodbye\")" \
+    |inserted|grep -q "goodbye\");"
