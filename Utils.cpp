@@ -146,7 +146,7 @@ bool ShouldAssociateBytesWithStmt(Stmt *S, Stmt *P)
 // This is done by testing if the parent of the clang::Stmt
 // is an aggregation type.  The immediate children of an aggregation
 // type are all valid statements in the C/C++ grammar.
-bool IsSingleStmt(Stmt *S, Stmt *P)
+bool IsSingleLineStmt(Stmt *S, Stmt *P)
 {
     if (S != NULL && P != NULL) {
         switch (P->getStmtClass()){
