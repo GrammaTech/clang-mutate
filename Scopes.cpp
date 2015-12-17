@@ -43,10 +43,12 @@ DeclScope::get_names_in_scope(size_t length) const
     std::vector<const IdentifierInfo*>::const_reverse_iterator v;
     for (s = scopes.rbegin(); s != scopes.rend(); ++s) {
         ans.push_back(std::vector<std::string>());
+        if (length == 0)
+            continue; // empty scopes if we hit the length limit.
         for (v = s->second.rbegin(); v != s->second.rend(); ++v) {
             ans.back().push_back((*v)->getName().str());
             if (--length == 0)
-                return ans;
+                break;
         }
     }
     return ans;
