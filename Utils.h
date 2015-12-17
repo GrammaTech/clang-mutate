@@ -45,6 +45,8 @@ bool ShouldVisitStmt(clang::SourceManager & SM,
 bool ShouldAssociateBytesWithStmt(clang::Stmt *S, clang::Stmt *P);
 bool IsSingleLineStmt(clang::Stmt *S, clang::Stmt *P);
 bool IsGuardStmt(clang::Stmt *S, clang::Stmt *P);
+
+std::string filenameToContents(const std::string & str);
 }
 
 #endif

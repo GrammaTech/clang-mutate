@@ -1,5 +1,8 @@
 #include "Utils.h"
 
+#include <fstream>
+#include <sstream>
+
 using namespace clang;
 
 namespace Utils {
@@ -221,6 +224,18 @@ bool IsGuardStmt(Stmt *S, Stmt *P)
     }
 
     return false;
+}
+
+std::string filenameToContents(const std::string & str)
+{
+    std::stringstream buffer;
+
+    std::ifstream f(str.c_str());
+    if (f.good()) {
+        buffer << f.rdbuf();
+    }
+
+    return buffer.str();
 }
 
 }
