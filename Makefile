@@ -75,6 +75,10 @@ check/%: test/%
 	else \
 	printf "$(FAIL)\t"; \
 	fi
-	@printf "\e[1;1m%s\n" $*
+	@printf "\e[1;1m%s\e[1;0m\n" $*
+
+desc/%: check/%
+	@test/$* -d
 
 check: $(addprefix check/, $(TESTS))
+desc-check: $(addprefix desc/, $(TESTS))

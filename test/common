@@ -1,4 +1,19 @@
 #!/bin/bash
+
+SCRIPT="$0"
+describe(){
+    local DESCRIPTION=$(cat "$SCRIPT" \
+        |sed '/^[^#]/q' \
+        |head -n -1 \
+        |tail -n +3 \
+        |sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' \
+        |cut -c3- \
+        |sed 's/^/  /')
+    echo "$DESCRIPTION"
+    exit 0; }
+if [ ! -z "$1" ] &&
+   $(echo "$1"|grep -q "^\-d$");then describe; fi
+
 HELLO=etc/hello.c
 
 run_hello(){
