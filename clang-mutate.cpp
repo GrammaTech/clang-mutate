@@ -65,7 +65,6 @@ static cl::opt<unsigned int>    Stmt1 ("stmt1",        cl::desc("statement 1 for
 static cl::opt<unsigned int>    Stmt2 ("stmt2",        cl::desc("statement 2 for mutation ops"));
 static cl::opt<std::string>    Value1 ("value1",        cl::desc("string value for mutation ops"));
 static cl::opt<std::string>    Value2 ("value2",        cl::desc("second string value for mutation ops"));
-static cl::opt<std::string>     Stmts ("stmts",        cl::desc("string of space-separated statement ids"));
 static cl::opt<std::string>    Binary ("binary",       cl::desc("binary with DWARF information for line->address mapping"));
 static cl::opt<bool>          JSONOut ("json",         cl::desc("output results in JSON (-list only)"));
 
@@ -142,7 +141,6 @@ int main(int argc, const char **argv) {
   CommonOptionsParser OptionsParser(argc, argv, ToolCategory);
   ClangTool Tool(OptionsParser.getCompilations(),
                  OptionsParser.getSourcePathList());
-  outs() << Stmts << "\n";
   ActionFactory Factory;
   return Tool.run(newFrontendActionFactory<ActionFactory>(&Factory, &Factory).get());
 }
