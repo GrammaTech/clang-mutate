@@ -29,21 +29,27 @@ namespace clang_mutate
     ~ASTEntryList();
 
     void addEntry(ASTEntry *astEntry);
-    ASTEntry* getEntry(unsigned int counter);
+    ASTEntry* getEntry(unsigned int counter) const;
 
     bool isEmpty() const;
 
-    std::string toString() const;
-    picojson::value toJSON() const;
+    std::string toString(unsigned int counter = -1) const;
+    picojson::value toJSON(unsigned int counter = -1) const;
 
-    std::ostream& toStream(std::ostream& out );
-    llvm::raw_ostream& toStream(llvm::raw_ostream& out);
+    std::ostream& toStream(std::ostream& out, 
+                           unsigned int counter = -1);
+    llvm::raw_ostream& toStream(llvm::raw_ostream& out, 
+                                unsigned int counter = -1);
 
-    std::ostream& toStreamJSON(std::ostream& out );
-    llvm::raw_ostream& toStreamJSON(llvm::raw_ostream& out);
+    std::ostream& toStreamJSON(std::ostream& out, 
+                               unsigned int counter = -1);
+    llvm::raw_ostream& toStreamJSON(llvm::raw_ostream& out, 
+                                    unsigned int counter = -1);
 
-    bool toFile(const std::string& outfilePath );
-    bool toFileJSON(const std::string& outfilePath );
+    bool toFile(const std::string& outfilePath, 
+                unsigned int counter = -1);
+    bool toFileJSON(const std::string& outfilePath, 
+                    unsigned int counter = -1);
 
   private:
     std::vector<ASTEntry*> m_astEntries;

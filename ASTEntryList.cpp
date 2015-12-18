@@ -88,9 +88,9 @@ namespace clang_mutate
     m_astEntries.push_back(astEntry);
   }
 
-  ASTEntry* ASTEntryList::getEntry(unsigned int counter)
+  ASTEntry* ASTEntryList::getEntry(unsigned int counter) const
   {
-    for ( std::vector<ASTEntry*>::iterator iter = m_astEntries.begin();
+    for ( std::vector<ASTEntry*>::const_iterator iter = m_astEntries.begin();
           iter != m_astEntries.end();
           iter++ )
     {
@@ -107,80 +107,98 @@ namespace clang_mutate
     return m_astEntries.size() == 0;
   }
 
-  std::string ASTEntryList::toString() const 
+  std::string ASTEntryList::toString(unsigned int counter) const 
   {
     std::stringstream ret;
 
-    for ( std::vector<ASTEntry*>::const_iterator iter = m_astEntries.begin();
-          iter != m_astEntries.end();
-          iter++ )    
-    {
-      ret << (*iter)->toString() << std::endl;        
+    if ( getEntry(counter) != NULL ) {
+      ret << getEntry(counter)->toString() << std::endl;
+    }
+    else {
+      for ( std::vector<ASTEntry*>::const_iterator iter = m_astEntries.begin();
+            iter != m_astEntries.end();
+            iter++ ) {
+        ret << (*iter)->toString() << std::endl;        
+      }
     }
 
     return ret.str();
   }
 
-  picojson::value ASTEntryList::toJSON() const
+  picojson::value ASTEntryList::toJSON(unsigned int counter) const
   {
     picojson::array array = TypeDBEntry::databaseToJSON();
 
-    for ( std::vector<ASTEntry*>::const_iterator iter = m_astEntries.begin();
-          iter != m_astEntries.end();
-          iter++ )
-    {
-      array.push_back( (*iter)->toJSON() );
+    if ( getEntry(counter) != NULL ) {
+      array.push_back(getEntry(counter)->toJSON());
+    }
+    else {
+      for ( std::vector<ASTEntry*>::const_iterator iter = m_astEntries.begin();
+            iter != m_astEntries.end();
+            iter++ ) {
+        array.push_back( (*iter)->toJSON() );
+      }
     }
 
     return picojson::value(array);
   } 
 
-  std::ostream& ASTEntryList::toStream(std::ostream& out )
+  std::ostream& ASTEntryList::toStream(std::ostream& out, 
+                                       unsigned int counter)
   {
-    for ( std::vector<ASTEntry*>::const_iterator iter = m_astEntries.begin();
-          iter != m_astEntries.end();
-          iter++ )
-    {
-      out << (*iter)->toString() << std::endl;
+    if ( getEntry(counter) != NULL ) {
+      out << getEntry(counter)->toString() << std::endl;
+    }
+    else { 
+      for ( std::vector<ASTEntry*>::const_iterator iter = m_astEntries.begin();
+            iter != m_astEntries.end();
+            iter++ ) {
+        out << (*iter)->toString() << std::endl;
+      }
     }
 
     return out;
   }
 
-  llvm::raw_ostream& ASTEntryList::toStream(llvm::raw_ostream& out)
+  llvm::raw_ostream& ASTEntryList::toStream(llvm::raw_ostream& out,
+                                            unsigned int counter)
   {
     std::stringstream ss;
-    toStream(ss);
+    toStream(ss, counter);
    
     out << ss.str(); 
     return out;
   }
 
-  std::ostream& ASTEntryList::toStreamJSON(std::ostream& out )
+  std::ostream& ASTEntryList::toStreamJSON(std::ostream& out,
+                                           unsigned int counter)
   {
-    out << toJSON() << std::endl;
+    out << toJSON(counter) << std::endl;
     return out;
   }
 
-  llvm::raw_ostream& ASTEntryList::toStreamJSON(llvm::raw_ostream& out)
+  llvm::raw_ostream& ASTEntryList::toStreamJSON(llvm::raw_ostream& out,
+                                                unsigned int counter)
   {
     std::stringstream ss;
-    toStreamJSON(ss);
+    toStreamJSON(ss, counter);
 
     out << ss.str();
     return out;
   }
 
-  bool ASTEntryList::toFile(const std::string& outfilePath )
+  bool ASTEntryList::toFile(const std::string& outfilePath,
+                            unsigned int counter)
   {
     std::ofstream outfile( outfilePath.c_str() );
-    return toStream(outfile).good();
+    return toStream(outfile, counter).good();
   }
 
-  bool ASTEntryList::toFileJSON(const std::string& outfilePath )
+  bool ASTEntryList::toFileJSON(const std::string& outfilePath,
+                                unsigned int counter)
   {
     std::ofstream outfile( outfilePath.c_str() );
-    return toStreamJSON(outfile).good();
+    return toStreamJSON(outfile, counter).good();
   }
 }
 

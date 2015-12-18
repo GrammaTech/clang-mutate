@@ -43,10 +43,12 @@ using namespace clang;
 
   public:
     ASTLister(raw_ostream *Out = NULL,
+              unsigned int Stmt1 = -1,
               StringRef Binary = (StringRef) "",
               bool OutputAsJSON = false,
               CompilerInstance * _CI = NULL)
       : Out(Out ? *Out : llvm::outs()),
+        Stmt1(Stmt1),
         Binary(Binary),
         BinaryAddresses(Binary),
         OutputAsJSON(OutputAsJSON),
@@ -80,10 +82,10 @@ using namespace clang;
       if ( !ASTEntries.isEmpty() )
       {
         if ( OutputAsJSON ) {
-          ASTEntries.toStreamJSON( Out );
+          ASTEntries.toStreamJSON( Out, Stmt1 );
         }
         else {
-          ASTEntries.toStream( Out );
+          ASTEntries.toStream( Out, Stmt1 );
         }
       }
     };
@@ -220,6 +222,7 @@ using namespace clang;
 
   private:
     raw_ostream &Out;
+    unsigned int Stmt1;
     StringRef Binary;
     BinaryAddressMap BinaryAddresses;
 
@@ -241,8 +244,14 @@ using namespace clang;
 }
 
 std::unique_ptr<clang::ASTConsumer>
-clang_mutate::CreateASTLister(clang::StringRef Binary,
+clang_mutate::CreateASTLister(unsigned int Stmt1, 
+                              clang::StringRef Binary,
                               bool OutputAsJSON,
                               clang::CompilerInstance * CI){
-    return std::unique_ptr<clang::ASTConsumer>(new ASTLister(0, Binary, OutputAsJSON, CI));
+    return std::unique_ptr<clang::ASTConsumer>(
+               new ASTLister(0, 
+                             Stmt1, 
+                             Binary, 
+                             OutputAsJSON, 
+                             CI));
 }

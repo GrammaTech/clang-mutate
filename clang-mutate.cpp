@@ -60,11 +60,10 @@ static cl::opt<bool>              Set ("set",           cl::desc("Set the text o
 static cl::opt<bool>             Set2 ("set2",          cl::desc("Set the text of stmt1 to value and stmt2 to value2"));
 static cl::opt<bool>         SetRange ("set-range",     cl::desc("set the range from the start of stmt1 to the end of stmt2 to value"));
 static cl::opt<unsigned int> GetScope ("get-scope",     cl::desc("Get the first n variables in scope at stmt1"));
-static cl::opt<bool>         GetInfo  ("get-info",      cl::desc("Get information about stmt1"));
 static cl::opt<bool>     InsertValue  ("insert-value",  cl::desc("insert value before stmt1"));
 static cl::opt<bool>     InsertBefore ("insert-before", cl::desc("insert value before the complete statement enclosing stmt1"));
-static cl::opt<unsigned int>    Stmt1 ("stmt1",         cl::desc("statement 1 for mutation ops"));
-static cl::opt<unsigned int>    Stmt2 ("stmt2",         cl::desc("statement 2 for mutation ops"));
+static cl::opt<unsigned int>    Stmt1 ("stmt1",         cl::desc("statement 1 for mutation ops"), cl::initializer<unsigned int>(-1));
+static cl::opt<unsigned int>    Stmt2 ("stmt2",         cl::desc("statement 2 for mutation ops"), cl::initializer<unsigned int>(-1));
 static cl::opt<std::string>    Value1 ("value1",        cl::desc("string value for mutation ops"));
 static cl::opt<std::string>    Value2 ("value2",        cl::desc("second string value for mutation ops"));
 static cl::opt<std::string>     File1 ("file1",         cl::desc("file contents for mutation opts"));
@@ -96,7 +95,7 @@ public:
         if (Annotate)
             return clang_mutate::CreateASTAnnotator();
         if (List)
-            return clang_mutate::CreateASTLister(Binary, JSONOut, CI);
+            return clang_mutate::CreateASTLister(Stmt1, Binary, JSONOut, CI);
         if (Cut)
             return clang_mutate::CreateASTCutter(Stmt1);
         if (SetRange)
@@ -117,8 +116,6 @@ public:
             return clang_mutate::CreateASTValueInserter(Stmt1, Value1);
         if (InsertBefore)
             return clang_mutate::CreateASTValuePreInserter(Stmt1, Value1);
-        if (GetInfo)
-            return clang_mutate::CreateASTInfoGetter(Stmt1);
         if (GetScope)
             return clang_mutate::CreateASTScopeGetter(Stmt1, GetScope);
         
@@ -137,7 +134,6 @@ public:
         errs() << "\tinsert-value\n";
         errs() << "\tinsert-before\n";
         errs() << "\tcut-enclosing\n";
-        errs() << "\tget-info\n";
         errs() << "\tget-scope\n";
         exit(EXIT_FAILURE);
   }

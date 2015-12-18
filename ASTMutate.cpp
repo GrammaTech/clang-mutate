@@ -242,16 +242,6 @@ namespace clang_mutate{
         }
     }
           
-    void GetInfo(Stmt * s)
-    {
-        if (Counter == Stmt1) {
-            Out << s->getStmtClassName() << "\n";
-            unsigned int ec;
-            (void) getEnclosingFullStmt(&ec);
-            Out << ec << "\n";
-        }
-    }
-
     void GetScope()
     {
         if (Counter != Stmt1)
@@ -299,7 +289,6 @@ namespace clang_mutate{
         case SWAP:         SaveRange(r);    break;
         case PREINSERT:    PreInsert();     break;
         case IDS:                           break;
-        case GETINFO:      GetInfo(s);      break;
         case GETSCOPE:     GetScope();      break;
         }
       }
@@ -377,7 +366,6 @@ namespace clang_mutate{
       switch(Action){
       case IDS: Out << Counter << "\n";
       case GET:
-      case GETINFO:
       case GETSCOPE:
         break;
       default:
@@ -525,16 +513,6 @@ clang_mutate::CreateASTValuePreInserter(unsigned int Stmt,
                               -1, 
                               Value1));
 }
-
-std::unique_ptr<clang::ASTConsumer> 
-clang_mutate::CreateASTInfoGetter(unsigned int Stmt)
-{
-    return std::unique_ptr<clang::ASTConsumer>(
-               new ASTMutator(0, 
-                              GETINFO, 
-                              Stmt));
-}
-
 
 std::unique_ptr<clang::ASTConsumer> 
 clang_mutate::CreateASTScopeGetter(unsigned int Stmt,

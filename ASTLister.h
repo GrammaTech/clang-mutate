@@ -9,7 +9,8 @@
 namespace clang_mutate {  
 
 std::unique_ptr<clang::ASTConsumer>
-CreateASTLister(clang::StringRef Binary,
+CreateASTLister(unsigned int Stmt1, 
+                clang::StringRef Binary,
                 bool OutputAsJSON,
                 clang::CompilerInstance * CI);
 
