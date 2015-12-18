@@ -12,11 +12,75 @@ clang-mutate [*options*] <*source0*> [...<*sourceN*>]...
 
 # DESCRIPTION
 
-TODO
+`clang-mutate` performs a number of local source-to-source
+transformations (or mutations) over C language source.
+
+This tool uses the Clang Tooling infrastructure, see
+http://clang.llvm.org/docs/LibTooling.html for details.
 
 # OPTIONS
 
-TODO
+-help
+:   Print usage information.
+
+-stmt1
+:   Statement id for mutation operations.
+
+-stmt2
+:   Second statement id for mutation operations.
+
+-value1
+:   String value for mutation operations.
+
+-value2
+:   Second string value for mutation operations.
+
+-file1
+:   File holding a string value for mutation operations.
+
+-file2
+:   Second file holding a string value for mutation operations.
+
+# MUTATION OPERATIONS
+
+-number
+:   Annotate the source marking each statement with its ID.
+
+-ids
+:   Print a count of the number of statements in the source.
+
+-annotate
+:   Annotate the source marking each statement with its ID and class.
+
+-cut
+:   Cut stmt1 from the source.
+
+-cut-enclosing
+:   Cut the complete statement containing stmt1 from the source.
+
+-insert
+:   Copy stmt1 into the source after stmt2.
+
+-swap
+:   Swap stmt1 and the stmt2 in the source.
+
+-get
+:   Print the text of stmt1.
+
+-set
+:   Set the text of stmt1 to the value1.
+
+-set2
+:   Set the text stmt1 to value1 and the text of stmt2 to value2.
+
+-set-range
+:   Set the range of statements from stmt1 to stmt2 to value1.
+
+-get-scope
+:   Get the first n variables in scope at stmt1.
+
+-insert-before
+:   Insert value1 before the complete statement enclosing stmt1.
 
 # Examples
 
