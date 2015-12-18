@@ -29,7 +29,7 @@ CLANGLIBS = \
 	-lclangRewrite
 
 all: $(EXES)
-.PHONY: clean install
+.PHONY: clean install tests.md auto-check
 
 %: %.o
 	$(CXX) -o $@ $<
@@ -82,3 +82,24 @@ desc/%: check/%
 
 check: $(addprefix check/, $(TESTS))
 desc-check: $(addprefix desc/, $(TESTS))
+
+# Makefile target to support automated testing.
+tests.md: clang-mutate
+	echo "" >> tests.md
+	echo "### $$(date)" >> tests.md
+	echo "REPO" >> tests.md
+	echo ":   $(REPO)" >> tests.md
+	echo "BRANCH" >> tests.md
+	echo ":   $(BRANCH)" >> tests.md
+	echo "HEAD" >> tests.md
+	echo ":   $(HEAD)\n" >> tests.md
+	make -s check|sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" \
+		|sed -r "s/\\\e\[1;[0-9]*m//g" \
+		|sed 's|^FAIL|<span style="color:red;font-family:monospace;">FAIL</span>|' \
+		|sed 's|^PASS|<span style="color:green;font-family:monospace">PASS</span>|' \
+		|sed 's/^/- /' >> tests.md
+
+tests.html: tests.md
+	markdown $< > $@
+
+auto-check: tests.html

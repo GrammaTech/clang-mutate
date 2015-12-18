@@ -12,3 +12,5 @@ compile_commands.json
 *-del.c
 *-ins.c
 *-swp.c
+tests.md
+tests.html
