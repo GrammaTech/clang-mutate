@@ -166,13 +166,6 @@ namespace clang_mutate{
       Rewrite.InsertText(END.getLocWithOffset(EndOff), label, true);
     }
 
-    void GetStmt(Stmt *s){
-        if (Counter == Stmt1) {
-            s->printPretty(Out, 0, PrintingPolicy(Rewrite.getLangOpts()));
-            Out << "\n";
-        }
-    }
-
     void SetRange(SourceRange r){
       if (Counter == Stmt1)
           Rewrite.ReplaceText(r, StringRef(Value1));
@@ -281,7 +274,6 @@ namespace clang_mutate{
         case CUT:          CutRange(r);     break;
         case SETRANGE:     SaveRange(r);    break;
         case CUTENCLOSING: CutEnclosing();  break;
-        case GET:          GetStmt(s);      break;
         case SET:
         case SET2:         SetRange(r);     break;
         case VALUEINSERT:  InsertRange(r);  break;
@@ -365,7 +357,6 @@ namespace clang_mutate{
       // output rewritten source code or ID count
       switch(Action){
       case IDS: Out << Counter << "\n";
-      case GET:
       case GETSCOPE:
         break;
       default:
@@ -457,14 +448,6 @@ clang_mutate::CreateASTSwapper(unsigned int Stmt1,
                               SWAP, 
                               Stmt1, 
                               Stmt2));
-}
-
-std::unique_ptr<clang::ASTConsumer> 
-clang_mutate::CreateASTGetter(unsigned int Stmt){
-    return std::unique_ptr<clang::ASTConsumer>(
-               new ASTMutator(0, 
-                              GET, 
-                              Stmt));
 }
 
 std::unique_ptr<clang::ASTConsumer> 

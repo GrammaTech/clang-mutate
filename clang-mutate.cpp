@@ -55,7 +55,6 @@ static cl::opt<bool>              Cut ("cut",           cl::desc("cut stmt1"));
 static cl::opt<bool>     CutEnclosing ("cut-enclosing", cl::desc("cut complete statement containing stmt1"));
 static cl::opt<bool>           Insert ("insert",        cl::desc("copy stmt1 to after stmt2"));
 static cl::opt<bool>             Swap ("swap",          cl::desc("Swap stmt1 and stmt2"));
-static cl::opt<bool>              Get ("get",           cl::desc("Return the text of stmt1"));
 static cl::opt<bool>              Set ("set",           cl::desc("Set the text of stmt1 to value"));
 static cl::opt<bool>             Set2 ("set2",          cl::desc("Set the text of stmt1 to value and stmt2 to value2"));
 static cl::opt<bool>         SetRange ("set-range",     cl::desc("set the range from the start of stmt1 to the end of stmt2 to value"));
@@ -106,8 +105,6 @@ public:
             return clang_mutate::CreateASTInserter(Stmt1, Stmt2);
         if (Swap)
             return clang_mutate::CreateASTSwapper(Stmt1, Stmt2);
-        if (Get)
-            return clang_mutate::CreateASTGetter(Stmt1);
         if (Set)
             return clang_mutate::CreateASTSetter(Stmt1, Value1);
         if (Set2)
