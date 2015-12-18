@@ -127,12 +127,13 @@ namespace clang_mutate
 
   picojson::value ASTEntryList::toJSON(unsigned int counter) const
   {
-    picojson::array array = TypeDBEntry::databaseToJSON();
+    picojson::array array;
 
     if ( getEntry(counter) != NULL ) {
       array.push_back(getEntry(counter)->toJSON());
     }
     else {
+      array = TypeDBEntry::databaseToJSON();
       for ( std::vector<ASTEntry*>::const_iterator iter = m_astEntries.begin();
             iter != m_astEntries.end();
             iter++ ) {
