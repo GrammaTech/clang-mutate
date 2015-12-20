@@ -107,7 +107,7 @@ namespace clang_mutate
     return m_astEntries.size() == 0;
   }
 
-  std::string ASTEntryList::toString(unsigned int counter) const 
+  std::string ASTEntryList::toString(unsigned int counter) const
   {
     std::stringstream ret;
 
@@ -125,19 +125,20 @@ namespace clang_mutate
     return ret.str();
   }
 
-  picojson::value ASTEntryList::toJSON(unsigned int counter) const
+  picojson::value ASTEntryList::toJSON(unsigned int counter,
+                                       const std::set<ASTEntryField> &fields) const 
   {
     picojson::array array;
 
     if ( getEntry(counter) != NULL ) {
-      array.push_back(getEntry(counter)->toJSON());
+      array.push_back(getEntry(counter)->toJSON(fields));
     }
     else {
       array = TypeDBEntry::databaseToJSON();
       for ( std::vector<ASTEntry*>::const_iterator iter = m_astEntries.begin();
             iter != m_astEntries.end();
             iter++ ) {
-        array.push_back( (*iter)->toJSON() );
+        array.push_back( (*iter)->toJSON(fields) );
       }
     }
 
@@ -145,7 +146,7 @@ namespace clang_mutate
   } 
 
   std::ostream& ASTEntryList::toStream(std::ostream& out, 
-                                       unsigned int counter)
+                                       unsigned int counter) const
   {
     if ( getEntry(counter) != NULL ) {
       out << getEntry(counter)->toString() << std::endl;
@@ -162,7 +163,7 @@ namespace clang_mutate
   }
 
   llvm::raw_ostream& ASTEntryList::toStream(llvm::raw_ostream& out,
-                                            unsigned int counter)
+                                            unsigned int counter) const
   {
     std::stringstream ss;
     toStream(ss, counter);
@@ -172,34 +173,37 @@ namespace clang_mutate
   }
 
   std::ostream& ASTEntryList::toStreamJSON(std::ostream& out,
-                                           unsigned int counter)
+                                           unsigned int counter,
+                                           const std::set<ASTEntryField> &fields) const
   {
-    out << toJSON(counter) << std::endl;
+    out << toJSON(counter, fields) << std::endl;
     return out;
   }
 
   llvm::raw_ostream& ASTEntryList::toStreamJSON(llvm::raw_ostream& out,
-                                                unsigned int counter)
+                                                unsigned int counter,
+                                                const std::set<ASTEntryField> &fields) const 
   {
     std::stringstream ss;
-    toStreamJSON(ss, counter);
+    toStreamJSON(ss, counter, fields);
 
     out << ss.str();
     return out;
   }
 
   bool ASTEntryList::toFile(const std::string& outfilePath,
-                            unsigned int counter)
+                            unsigned int counter) const
   {
     std::ofstream outfile( outfilePath.c_str() );
     return toStream(outfile, counter).good();
   }
 
   bool ASTEntryList::toFileJSON(const std::string& outfilePath,
-                                unsigned int counter)
+                                unsigned int counter,
+                                const std::set<ASTEntryField> &fields) const
   {
     std::ofstream outfile( outfilePath.c_str() );
-    return toStreamJSON(outfile, counter).good();
+    return toStreamJSON(outfile, counter, fields).good();
   }
 }
 

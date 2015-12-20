@@ -238,4 +238,18 @@ std::string filenameToContents(const std::string & str)
     return buffer.str();
 }
 
+std::vector<std::string> split(const std::string &input,
+                               const char delim)
+{
+    std::vector<std::string> elems;
+    std::stringstream ss(input);
+    std::string tok;
+
+    while (getline(ss, tok, delim)) {
+        elems.push_back(tok);
+    }
+
+    return elems;
+}
+
 }

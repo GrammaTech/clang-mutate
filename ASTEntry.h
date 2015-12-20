@@ -22,6 +22,45 @@
 
 namespace clang_mutate
 {
+  class ASTEntryField 
+  {
+  public:
+    static ASTEntryField NULL_FIELD;
+    static ASTEntryField COUNTER;
+    static ASTEntryField PARENT_COUNTER;
+    static ASTEntryField AST_CLASS;
+    static ASTEntryField SRC_FILE_NAME;
+    static ASTEntryField BEGIN_SRC_LINE;
+    static ASTEntryField BEGIN_SRC_COL;
+    static ASTEntryField END_SRC_LINE;
+    static ASTEntryField END_SRC_COL;
+    static ASTEntryField SRC_TEXT;
+    static ASTEntryField GUARD_STMT;
+    static ASTEntryField FULL_STMT;
+    static ASTEntryField UNBOUND_VALS;
+    static ASTEntryField UNBOUND_FUNS;
+    static ASTEntryField MACROS;
+    static ASTEntryField TYPES;
+    static ASTEntryField STMT_LIST;
+    static ASTEntryField BINARY_FILE_PATH;
+    static ASTEntryField BEGIN_ADDR;
+    static ASTEntryField END_ADDR;
+    static ASTEntryField BINARY_CONTENTS;
+
+    static ASTEntryField fromJSONName(const std::string &jsonName);
+    static std::set<ASTEntryField> fromJSONNames(const std::vector<std::string> 
+                                                 &jsonNames);
+    static std::set<ASTEntryField> getDefaultFields();
+
+    std::string getJSONName() const;
+
+    bool operator==(const ASTEntryField &other) const;
+    bool operator<(const ASTEntryField &other) const;
+  private:
+    ASTEntryField(const std::string &jsonName);
+    std::string m_jsonName;
+  };
+
   // Abstract base class for all AST entries.
   // Includes methods to convert to a string or JSON representation.
   class ASTEntry
@@ -31,11 +70,13 @@ namespace clang_mutate
     virtual ASTEntry* clone() const = 0;
     virtual unsigned int getCounter() const = 0;
     virtual std::string toString() const = 0;
-    virtual picojson::value toJSON() const = 0;
+    virtual picojson::value toJSON(const std::set<ASTEntryField> &fields =
+                                   ASTEntryField::getDefaultFields()) const = 0;
 
     virtual void set_stmt_list(const std::vector<unsigned int> &) {}
     virtual std::vector<unsigned int> get_stmt_list() const
     { return std::vector<unsigned int>(); }
+
   };
 
   class ASTEntryFactory
@@ -105,7 +146,8 @@ namespace clang_mutate
     virtual std::set<size_t> getTypes() const;
     
     virtual std::string toString() const;
-    virtual picojson::value toJSON() const;
+    virtual picojson::value toJSON(const std::set<ASTEntryField> &fields =
+                                   ASTEntryField::getDefaultFields()) const;
 
     virtual void set_stmt_list(const std::vector<unsigned int> & stmt_list)
     { m_stmt_list = stmt_list; }
@@ -175,7 +217,8 @@ namespace clang_mutate
     virtual std::string getBinaryContents() const;
 
     virtual std::string toString() const;
-    virtual picojson::value toJSON() const;
+    virtual picojson::value toJSON(const std::set<ASTEntryField> &fields =
+                                   ASTEntryField::getDefaultFields()) const;
     
     static bool jsonObjHasRequiredFields( const picojson::value &jsonValue );
   private:

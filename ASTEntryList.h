@@ -34,22 +34,30 @@ namespace clang_mutate
     bool isEmpty() const;
 
     std::string toString(unsigned int counter = -1) const;
-    picojson::value toJSON(unsigned int counter = -1) const;
+    picojson::value toJSON(unsigned int counter = -1,
+                           const std::set<ASTEntryField> &fields = 
+                           ASTEntryField::getDefaultFields()) const;
 
     std::ostream& toStream(std::ostream& out, 
-                           unsigned int counter = -1);
+                           unsigned int counter = -1) const;
     llvm::raw_ostream& toStream(llvm::raw_ostream& out, 
-                                unsigned int counter = -1);
+                                unsigned int counter = -1) const;
 
     std::ostream& toStreamJSON(std::ostream& out, 
-                               unsigned int counter = -1);
+                               unsigned int counter = -1,
+                               const std::set<ASTEntryField> &fields = 
+                               ASTEntryField::getDefaultFields()) const;
     llvm::raw_ostream& toStreamJSON(llvm::raw_ostream& out, 
-                                    unsigned int counter = -1);
+                                    unsigned int counter = -1,
+                                    const std::set<ASTEntryField> &fields = 
+                                    ASTEntryField::getDefaultFields()) const;
 
     bool toFile(const std::string& outfilePath, 
-                unsigned int counter = -1);
+                unsigned int counter = -1) const;
     bool toFileJSON(const std::string& outfilePath, 
-                    unsigned int counter = -1);
+                    unsigned int counter = -1,
+                    const std::set<ASTEntryField> &fields = 
+                    ASTEntryField::getDefaultFields()) const;
 
   private:
     std::vector<ASTEntry*> m_astEntries;

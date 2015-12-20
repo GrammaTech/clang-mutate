@@ -47,6 +47,8 @@ bool IsSingleLineStmt(clang::Stmt *S, clang::Stmt *P);
 bool IsGuardStmt(clang::Stmt *S, clang::Stmt *P);
 
 std::string filenameToContents(const std::string & str);
+std::vector<std::string> split(const std::string &input, 
+                               const char delim);
 }
 
 #endif

@@ -69,6 +69,7 @@ static cl::opt<std::string>     File1 ("file1",         cl::desc("file contents 
 static cl::opt<std::string>     File2 ("file2",         cl::desc("second file contents for mutation ops")); 
 static cl::opt<std::string>    Binary ("binary",        cl::desc("binary with DWARF information for line->address mapping"));
 static cl::opt<bool>          JSONOut ("json",          cl::desc("output results in JSON (-list only)"));
+static cl::opt<std::string>    Fields ("fields",        cl::desc("comma-delimited list of JSON fields to output"));
 
 namespace {
 class ActionFactory : public SourceFileCallbacks {
@@ -94,7 +95,11 @@ public:
         if (Annotate)
             return clang_mutate::CreateASTAnnotator();
         if (List)
-            return clang_mutate::CreateASTLister(Stmt1, Binary, JSONOut, CI);
+            return clang_mutate::CreateASTLister(Stmt1, 
+                                                 Fields,
+                                                 Binary, 
+                                                 JSONOut, 
+                                                 CI);
         if (Cut)
             return clang_mutate::CreateASTCutter(Stmt1);
         if (SetRange)
