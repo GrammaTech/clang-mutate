@@ -4,7 +4,7 @@
 . $(dirname $0)/common
 
 contains "$(run_hello -json -stmt1=9 -fields="ast_class,unbound_vals"| jshon)" \
-         '"ast_class": "IntegerLiteral",' \
+         '"ast_class": "IntegerLiteral"' \
          '"unbound_vals": \[]' 
 
 if [ $? -eq 0 ]; then
