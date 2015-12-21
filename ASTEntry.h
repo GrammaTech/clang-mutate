@@ -82,7 +82,6 @@ namespace clang_mutate
   class ASTEntryFactory
   {
   public:
-    static ASTEntry* make( const picojson::value &jsonValue );
     static ASTEntry* make( clang::Stmt *s, 
                            clang::Stmt *p,
                            const std::map<clang::Stmt *, unsigned int> &spine,
@@ -124,8 +123,6 @@ namespace clang_mutate
                        const Macros & macros,
                        const std::set<size_t> & types );
 
-    ASTNonBinaryEntry( const picojson::value &jsonValue );
-
     virtual ~ASTNonBinaryEntry();
 
     virtual ASTEntry* clone() const;
@@ -152,8 +149,7 @@ namespace clang_mutate
     virtual void set_stmt_list(const std::vector<unsigned int> & stmt_list)
     { m_stmt_list = stmt_list; }
     virtual std::vector<unsigned int> get_stmt_list() const { return m_stmt_list; }
-    
-    static bool jsonObjHasRequiredFields( const picojson::value& jsonValue );
+
   private:
     unsigned int m_counter;
     unsigned int m_parentCounter;
@@ -206,7 +202,6 @@ namespace clang_mutate
                     const Macros & macros,
                     const std::set<size_t> & types );
 
-    ASTBinaryEntry( const picojson::value& jsonValue );
     virtual ~ASTBinaryEntry();
 
     virtual ASTEntry* clone() const;
@@ -220,7 +215,6 @@ namespace clang_mutate
     virtual picojson::value toJSON(const std::set<ASTEntryField> &fields =
                                    ASTEntryField::getDefaultFields()) const;
     
-    static bool jsonObjHasRequiredFields( const picojson::value &jsonValue );
   private:
     std::string       m_binaryFilePath;
     unsigned long     m_beginAddress;

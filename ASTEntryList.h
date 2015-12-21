@@ -22,9 +22,6 @@ namespace clang_mutate
   public:
     ASTEntryList();
     ASTEntryList( const std::vector<ASTEntry*> &astEntries );
-    ASTEntryList( const picojson::value &json );
-    ASTEntryList( std::istream &in );
-    ASTEntryList( const std::string &infilePath );
 
     ~ASTEntryList();
 
@@ -61,9 +58,6 @@ namespace clang_mutate
 
   private:
     std::vector<ASTEntry*> m_astEntries;
-
-    void initFromJSONStream( std::istream& in );
-    void initFromJSON( const picojson::value &json );
   };
 }
 
