@@ -66,9 +66,9 @@ OPTION( SetRange, bool, "set-range",
         "set the range from the start of stmt1 to the end of stmt2 to value1");
 
 OPTION( CutEnclosing     , bool, "cut-enclosing"      , "XXXXXXXXX DELETE ME XXXXXXXXXX");
-OPTION( GetScope, bool, "get-scope", "XXXXXXXXX DELETE ME XXXXXXXXXX");
+OPTION( GetScope, unsigned int, "get-scope", "XXXXXXXXX DELETE ME XXXXXXXXXX");
 OPTION( GetInfo,  bool, "get-info" , "XXXXXXXXX DELETE ME XXXXXXXXXX");
-OPTION( InsertBefore, bool, "inesrt-before", "XXXXXXXX DELETE ME XXXXXXXXX");
+OPTION( InsertBefore, bool, "insert-before", "XXXXXXXX DELETE ME XXXXXXXXX");
 
 OPTION( Stmt1 , unsigned int, "stmt1" , "statement 1 for mutation ops");
 OPTION( Stmt2 , unsigned int, "stmt2" , "statement 2 for mutation ops");
