@@ -36,12 +36,6 @@ picojson::value types_to_json(const std::set<size_t> & types)
     return picojson::value(ans);
 }
 
-void json_to_types(const picojson::value & jv,
-                   std::set<size_t> & types)
-{
-    // TODO
-}
-
 picojson::value renames_to_json(const Renames & renames, RenameKind k)
 {
   std::vector<picojson::value> ans;
@@ -59,13 +53,6 @@ picojson::value renames_to_json(const Renames & renames, RenameKind k)
   return picojson::value(ans);
 }
 
-void json_to_renames(const picojson::value & jv,
-                     RenameKind k,
-                     Renames & renames)
-{
-    // TODO
-}
-
 picojson::value macros_to_json(const Macros & macros)
 {
     std::vector<picojson::value> ans;
@@ -79,32 +66,6 @@ picojson::value macros_to_json(const Macros & macros)
     return picojson::value(ans);
 }
 
-void json_to_macros(const picojson::value & jv, Macros & macros)
-{
-    if (!jv.is<picojson::array>()) {
-        assert (!"expected a json array");
-        return;
-    }
-
-    std::vector<picojson::value> vals = jv.get<picojson::array>();
-    for (std::vector<picojson::value>::iterator it = vals.begin();
-         it != vals.end();
-         ++it)
-    {
-        if (!it->is<picojson::array>()) {
-            assert (!"expected a json array with two elements");
-            return;
-        }
-        std::vector<picojson::value> item = it->get<picojson::array>();
-        assert (item.size() == 2);
-        assert (item[0].is<std::string>);
-        assert (item[1].is<std::string>);
-
-        macros.insert(Macro(item[0].get<std::string>(),
-                            item[1].get<std::string>()));
-    }
-}
-
 picojson::value stmt_list_to_json(const std::vector<unsigned int> & stmts)
 {
     std::vector<picojson::value> ans;
@@ -116,36 +77,6 @@ picojson::value stmt_list_to_json(const std::vector<unsigned int> & stmts)
     }
     return picojson::value(ans);
 }
-
-void json_to_stmt_list(const picojson::value & jv,
-                       std::vector<unsigned int> & ans)
-{
-  if (!jv.is<picojson::array>()) {
-    assert (!"expected a json array");
-    return;
-  }
-
-  ans.clear();
-
-  std::vector<picojson::value> vals = jv.get<picojson::array>();
-  for (std::vector<picojson::value>::iterator it = vals.begin();
-       it != vals.end();
-       ++it)
-  {
-      ans.push_back((unsigned int) it->get<int64_t>());
-  }
-}
-
-
-  ASTEntry* ASTEntryFactory::make( const picojson::value &jsonValue )
-  {
-    if ( ASTBinaryEntry::jsonObjHasRequiredFields(jsonValue) )
-      return new ASTBinaryEntry(jsonValue);
-    else if ( ASTNonBinaryEntry::jsonObjHasRequiredFields(jsonValue) )
-      return new ASTNonBinaryEntry(jsonValue);
-    else
-      return NULL;
-  }
 
   ASTEntry* ASTEntryFactory::make(
       clang::Stmt *s,
@@ -280,33 +211,6 @@ void json_to_stmt_list(const picojson::value & jv,
     m_srcText = renamer.getRewrittenString();
   }
 
-  ASTNonBinaryEntry::ASTNonBinaryEntry( const picojson::value &jsonValue )
-  {
-    if ( ASTNonBinaryEntry::jsonObjHasRequiredFields(jsonValue) )
-    {
-      m_counter         = jsonValue.get("counter").get<int64_t>();
-      m_parentCounter   = jsonValue.get("parent_counter").get<int64_t>();
-      m_astClass        = jsonValue.get("ast_class").get<std::string>();
-      m_srcFileName     = jsonValue.get("src_file_name").get<std::string>();
-      m_beginSrcLine    = jsonValue.get("begin_src_line").get<int64_t>();
-      m_beginSrcCol     = jsonValue.get("begin_src_col").get<int64_t>();
-      m_endSrcLine      = jsonValue.get("end_src_line").get<int64_t>();
-      m_endSrcCol       = jsonValue.get("end_src_col").get<int64_t>();
-      m_srcText         = unescape_from_json(
-                            jsonValue.get("src_text").get<std::string>());
-      m_guardStmt       = jsonValue.get("guard_stmt").get<bool>();
-      m_fullStmt        = jsonValue.get("full_stmt").get<bool>();
-      json_to_renames(jsonValue.get("unbound_vals"), VariableRename, m_renames);
-      json_to_renames(jsonValue.get("unbound_funs"), FunctionRename, m_renames);
-      json_to_macros(jsonValue.get("macros"), m_macros);
-      json_to_types(jsonValue.get("types"), m_types);
-
-      if (jsonValue.contains("stmt_list")) {
-          json_to_stmt_list(jsonValue.get("stmt_list"), m_stmt_list);
-      }
-    }
-  }
-
   ASTNonBinaryEntry::~ASTNonBinaryEntry() {}
 
   ASTNonBinaryEntry::ASTEntry* ASTNonBinaryEntry::clone() const 
@@ -439,28 +343,6 @@ void json_to_stmt_list(const picojson::value & jv,
     return picojson::value(jsonObj);
   }
 
-  bool ASTNonBinaryEntry::jsonObjHasRequiredFields( 
-    const picojson::value& jsonValue )
-  {
-    return jsonValue.is<picojson::object>() && 
-           jsonValue.contains("counter") &&
-           jsonValue.contains("parent_counter") &&
-           jsonValue.contains("ast_class") &&
-           jsonValue.contains("src_file_name") &&
-           jsonValue.contains("begin_src_line") &&
-           jsonValue.contains("begin_src_col") &&
-           jsonValue.contains("end_src_line") &&
-           jsonValue.contains("end_src_col") &&
-           jsonValue.contains("src_text") &&
-           jsonValue.contains("guard_stmt") &&
-           jsonValue.contains("full_stmt") &&
-           jsonValue.contains("unbound_vals") &&
-           jsonValue.contains("unbound_funs") &&
-           jsonValue.contains("macros") &&
-           jsonValue.contains("types") &&
-           jsonValue.contains("full_stmt");
-  }
-
   ASTBinaryEntry::ASTBinaryEntry() :
     ASTNonBinaryEntry(),
     m_binaryFilePath(""),
@@ -543,18 +425,6 @@ void json_to_stmt_list(const picojson::value & jv,
             m_endAddress);
   }
 
-  ASTBinaryEntry::ASTBinaryEntry( const picojson::value& jsonValue ) :
-    ASTNonBinaryEntry( jsonValue )
-  {
-    if ( ASTBinaryEntry::jsonObjHasRequiredFields(jsonValue) )
-    {
-      m_binaryFilePath = jsonValue.get("binary_file_path").get<std::string>();
-      m_beginAddress   = jsonValue.get("begin_addr").get<int64_t>();
-      m_endAddress     = jsonValue.get("end_addr").get<int64_t>();
-      m_binaryContents = jsonValue.get("binary_contents").get<std::string>();
-    }
-  }
-  
   ASTBinaryEntry::~ASTBinaryEntry() {}
 
   ASTBinaryEntry::ASTEntry* ASTBinaryEntry::clone() const 
@@ -628,12 +498,4 @@ void json_to_stmt_list(const picojson::value & jv,
     return picojson::value(jsonObj);
   }
 
-  bool ASTBinaryEntry::jsonObjHasRequiredFields( const picojson::value &jsonValue )
-  {
-    return ASTNonBinaryEntry::jsonObjHasRequiredFields( jsonValue ) &&
-           jsonValue.contains("binary_file_path") &&
-           jsonValue.contains("begin_addr") &&
-           jsonValue.contains("end_addr") &&
-           jsonValue.contains("binary_contents");
-  }
 }
