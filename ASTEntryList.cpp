@@ -16,38 +16,6 @@
 
 namespace clang_mutate
 {
-  void ASTEntryList::initFromJSONStream( std::istream& in )
-  {
-    if ( in.good() )
-    {
-      picojson::value json;
-      in >> json;
-      
-      if ( picojson::get_last_error().empty() )
-      {
-        initFromJSON( json );
-      }              
-    }
-  }
-
-  void ASTEntryList::initFromJSON( const picojson::value &json )
-  {
-    if ( json.is<picojson::array>() )
-    {
-      picojson::array array = json.get<picojson::array>();
-  
-      for ( picojson::array::const_iterator iter = array.begin();
-            iter != array.end();
-            iter++ )
-      {
-        ASTEntry* astEntry = ASTEntryFactory::make( json );
-
-        if ( astEntry != NULL )
-          m_astEntries.push_back(astEntry);
-      }
-    } 
-  }
-  
   ASTEntryList::ASTEntryList() {}
   ASTEntryList::ASTEntryList( const std::vector<ASTEntry*> &astEntries )
   {
@@ -57,22 +25,6 @@ namespace clang_mutate
     {
       m_astEntries.push_back( (*iter)->clone() );
     }
-  }
-
-  ASTEntryList::ASTEntryList( const picojson::value &json )
-  {
-    initFromJSON( json );
-  }
-
-  ASTEntryList::ASTEntryList( std::istream &in )
-  {
-    initFromJSONStream( in );
-  }
-
-  ASTEntryList::ASTEntryList( const std::string &infilePath )
-  {
-    std::ifstream in( infilePath.c_str() );
-    initFromJSONStream( in );
   }
 
   ASTEntryList::~ASTEntryList() 
