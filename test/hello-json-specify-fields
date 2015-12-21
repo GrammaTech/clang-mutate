@@ -1,0 +1,13 @@
+#!/bin/bash
+# Test the specified fields are present when values are passed
+# via -fields.
+. $(dirname $0)/common
+
+contains "$(run_hello -list -json -stmt1=9 -fields="ast_class,unbound_vals"| jshon)" \
+         '"ast_class": "IntegerLiteral",' \
+         '"unbound_vals": \[]' 
+
+if [ $? -eq 0 ]; then
+    not_contains "$(run_hello -list -json -stmt1=9 -fields="ast_class,unbound_vals"| jshon)" \
+                 '"counter"' 
+fi
