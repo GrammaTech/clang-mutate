@@ -55,7 +55,8 @@ compile_commands.json:
 
 
 # Tests
-TESTS =	hello-second-stmt-says-hello-get		\
+TESTS =	help-text-appears				\
+	hello-second-stmt-says-hello-get		\
 	hello-second-stmt-says-hello-json		\
 	hello-no-semi-colon-on-end-of-statement-get	\
 	hello-no-semi-colon-on-end-of-statement-json	\
