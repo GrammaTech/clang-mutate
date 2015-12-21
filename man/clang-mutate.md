@@ -36,12 +36,38 @@ http://clang.llvm.org/docs/LibTooling.html for details.
 :   Second string value for mutation operations.
 
 -file1
-:   File holding a string value for mutation operations.
+:   File holding the value1 to use for mutation operations.
 
 -file2
-:   Second file holding a string value for mutation operations.
+:   File holding the value2 to use for mutation operations.
+
+-binary
+:   Binary with DWARF information for line-to-address mapping.
 
 # MUTATION OPERATIONS
+
+-cut
+:   Cut stmt1 from the source.
+
+-insert
+:   Copy stmt1 into the source before stmt2.
+
+-insert-value
+:   Insert value1 before stmt1.
+
+-swap
+:   Swap stmt1 and stmt2 in the source.
+
+-set
+:   Set the text of stmt1 to value1.
+
+-set2
+:   Set the text stmt1 to value1 and the text of stmt2 to value2.
+
+-set-range
+:   Set the range of statements from stmt1 to stmt2 to value1.
+
+# INSPECTION OPERATIONS
 
 -number
 :   Annotate the source marking each statement with its ID.
@@ -52,35 +78,17 @@ http://clang.llvm.org/docs/LibTooling.html for details.
 -annotate
 :   Annotate the source marking each statement with its ID and class.
 
--cut
-:   Cut stmt1 from the source.
-
--cut-enclosing
-:   Cut the complete statement containing stmt1 from the source.
-
--insert
-:   Copy stmt1 into the source after stmt2.
-
--swap
-:   Swap stmt1 and the stmt2 in the source.
-
 -get
 :   Print the text of stmt1.
-
--set
-:   Set the text of stmt1 to the value1.
-
--set2
-:   Set the text stmt1 to value1 and the text of stmt2 to value2.
-
--set-range
-:   Set the range of statements from stmt1 to stmt2 to value1.
 
 -get-scope
 :   Get the first n variables in scope at stmt1.
 
--insert-before
-:   Insert value1 before the complete statement enclosing stmt1.
+-list
+:   List every statement's id, class, and range.
+
+-json
+:   List JSON-encoded descriptions for every statement.
 
 # Examples
 

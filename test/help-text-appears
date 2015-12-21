@@ -1,0 +1,27 @@
+#!/bin/bash
+#
+# Ensure the help text is actually printed.
+#
+. $(dirname $0)/common
+
+contains "$(clang-mutate -help)" \
+         "annotate" \
+         "binary=<string>" \
+         "cut" \
+         "file1=<string>" \
+         "file2=<string>" \
+         "get" \
+         "ids" \
+         "insert" \
+         "insert-value" \
+         "json" \
+         "list" \
+         "number" \
+         "set" \
+         "set-range" \
+         "set2" \
+         "stmt1=<uint>" \
+         "stmt2=<uint>" \
+         "swap" \
+         "value1=<string>" \
+         "value2=<string>"

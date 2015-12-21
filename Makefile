@@ -55,7 +55,8 @@ compile_commands.json:
 
 
 # Tests
-TESTS =	hello-second-stmt-says-hello-get		\
+TESTS =	help-text-appears				\
+	hello-second-stmt-says-hello-get		\
 	hello-second-stmt-says-hello-json		\
 	hello-json-list-size \
 	hello-json-list-size-with-stmt1-filter \
