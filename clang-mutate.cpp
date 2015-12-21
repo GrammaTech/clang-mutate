@@ -47,30 +47,36 @@ static cl::extrahelp MoreHelp(
     "\n"
 );
 
-static cl::opt<bool>           Number ("number",        cl::desc("number all statements"));
-static cl::opt<bool>              Ids ("ids",           cl::desc("print count of statement ids"));
-static cl::opt<bool>         Annotate ("annotate",      cl::desc("annotate each statement with its class"));
-static cl::opt<bool>             List ("list",          cl::desc("list every statement's id, class and range"));
-static cl::opt<bool>              Cut ("cut",           cl::desc("cut stmt1"));
-static cl::opt<bool>     CutEnclosing ("cut-enclosing", cl::desc("cut complete statement containing stmt1"));
-static cl::opt<bool>           Insert ("insert",        cl::desc("copy stmt1 to after stmt2"));
-static cl::opt<bool>             Swap ("swap",          cl::desc("Swap stmt1 and stmt2"));
-static cl::opt<bool>              Get ("get",           cl::desc("Return the text of stmt1"));
-static cl::opt<bool>              Set ("set",           cl::desc("Set the text of stmt1 to value"));
-static cl::opt<bool>             Set2 ("set2",          cl::desc("Set the text of stmt1 to value and stmt2 to value2"));
-static cl::opt<bool>         SetRange ("set-range",     cl::desc("set the range from the start of stmt1 to the end of stmt2 to value"));
-static cl::opt<unsigned int> GetScope ("get-scope",     cl::desc("Get the first n variables in scope at stmt1"));
-static cl::opt<bool>         GetInfo  ("get-info",      cl::desc("Get information about stmt1"));
-static cl::opt<bool>     InsertValue  ("insert-value",  cl::desc("insert value before stmt1"));
-static cl::opt<bool>     InsertBefore ("insert-before", cl::desc("insert value before the complete statement enclosing stmt1"));
-static cl::opt<unsigned int>    Stmt1 ("stmt1",         cl::desc("statement 1 for mutation ops"));
-static cl::opt<unsigned int>    Stmt2 ("stmt2",         cl::desc("statement 2 for mutation ops"));
-static cl::opt<std::string>    Value1 ("value1",        cl::desc("string value for mutation ops"));
-static cl::opt<std::string>    Value2 ("value2",        cl::desc("second string value for mutation ops"));
-static cl::opt<std::string>     File1 ("file1",         cl::desc("file contents for mutation opts"));
-static cl::opt<std::string>     File2 ("file2",         cl::desc("second file contents for mutation ops")); 
-static cl::opt<std::string>    Binary ("binary",        cl::desc("binary with DWARF information for line->address mapping"));
-static cl::opt<bool>          JSONOut ("json",          cl::desc("output results in JSON (-list only)"));
+#define OPTION(variable, type, option, description) \
+    static cl::opt<type> variable (option, cl::desc(description), cl::cat(ToolCategory))
+
+OPTION( Number  , bool, "number"   , "number all statements");
+OPTION( Ids     , bool, "ids"      , "print count of statement ids");
+OPTION( Annotate, bool, "annotate" , "annotate each statement with its class");
+OPTION( List    , bool, "list"     , "list every statement's id, class, and range");
+OPTION( Json    , bool, "json"     , "list JSON-encoded descriptions for every statement.");
+OPTION( Cut     , bool, "cut"      , "cut stmt1");
+OPTION( Insert  , bool, "insert"   , "copy stmt1 to before stmt2");
+OPTION( InsertV , bool, "insert-value", "insert value1 before stmt1");
+OPTION( Swap    , bool, "swap"     , "swap stmt1 and stmt2");
+OPTION( Get     , bool, "get"      , "get the text of stmt1");
+OPTION( Set     , bool, "set"      , "set the text of stmt1 to value1");
+OPTION( Set2    , bool, "set2"     , "set the text of stmt1 to value1 and stmt2 to value2");
+OPTION( SetRange, bool, "set-range",
+        "set the range from the start of stmt1 to the end of stmt2 to value1");
+
+OPTION( CutEnclosing     , bool, "cut-enclosing"      , "XXXXXXXXX DELETE ME XXXXXXXXXX");
+OPTION( GetScope, bool, "get-scope", "XXXXXXXXX DELETE ME XXXXXXXXXX");
+OPTION( GetInfo,  bool, "get-info" , "XXXXXXXXX DELETE ME XXXXXXXXXX");
+OPTION( InsertBefore, bool, "inesrt-before", "XXXXXXXX DELETE ME XXXXXXXXX");
+
+OPTION( Stmt1 , unsigned int, "stmt1" , "statement 1 for mutation ops");
+OPTION( Stmt2 , unsigned int, "stmt2" , "statement 2 for mutation ops");
+OPTION( Value1, std::string , "value1", "string value for mutation ops");
+OPTION( Value2, std::string , "value2", "second string value for mutation ops");
+OPTION( File1 , std::string , "file1" , "file containing value1");
+OPTION( File2 , std::string , "file2" , "file containing value2");
+OPTION( Binary, std::string , "binary", "binary with DWARF information for line->address mapping");
 
 namespace {
 class ActionFactory : public SourceFileCallbacks {
@@ -96,13 +102,13 @@ public:
         if (Annotate)
             return clang_mutate::CreateASTAnnotator();
         if (List)
-            return clang_mutate::CreateASTLister(Binary, JSONOut, CI);
+            return clang_mutate::CreateASTLister(Binary, false, CI);
+        if (Json)
+            return clang_mutate::CreateASTLister(Binary, true, CI);
         if (Cut)
             return clang_mutate::CreateASTCutter(Stmt1);
         if (SetRange)
             return clang_mutate::CreateASTRangeSetter(Stmt1, Stmt2, Value1);
-        if (CutEnclosing)
-            return clang_mutate::CreateASTEnclosingCutter(Stmt1);
         if (Insert)
             return clang_mutate::CreateASTInserter(Stmt1, Stmt2);
         if (Swap)
@@ -113,8 +119,11 @@ public:
             return clang_mutate::CreateASTSetter(Stmt1, Value1);
         if (Set2)
             return clang_mutate::CreateASTSetter2(Stmt1, Value1, Stmt2, Value2);
-        if (InsertValue)
+        if (InsertV)
             return clang_mutate::CreateASTValueInserter(Stmt1, Value1);
+
+        if (CutEnclosing)
+            return clang_mutate::CreateASTEnclosingCutter(Stmt1);
         if (InsertBefore)
             return clang_mutate::CreateASTValuePreInserter(Stmt1, Value1);
         if (GetInfo)
