@@ -2,5 +2,5 @@
 # Test the number of JSON entries returned is 9
 . $(dirname $0)/common
 
-contains "$(run_hello -list -json | jshon -l)" \
+contains "$(run_hello -json | jshon -l)" \
          "9"

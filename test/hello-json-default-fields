@@ -3,7 +3,7 @@
 # for -fields
 . $(dirname $0)/common
 
-contains "$(run_hello -list -json -stmt1=9 | jshon)" \
+contains "$(run_hello -json -stmt1=9 | jshon)" \
          '"src_file_name":.*,' \
          '"ast_class": "IntegerLiteral",' \
          '"unbound_vals": \[],' \
