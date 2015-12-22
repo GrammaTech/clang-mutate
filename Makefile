@@ -56,14 +56,12 @@ compile_commands.json:
 
 # Tests
 TESTS =	help-text-appears				\
-	hello-second-stmt-says-hello-get		\
 	hello-second-stmt-says-hello-json		\
 	hello-json-list-size \
 	hello-json-list-size-with-stmt1-filter \
 	hello-json-default-fields \
 	hello-json-specify-fields \
 	hello-set2-w-values				\
-	hello-no-semi-colon-on-end-of-statement-get	\
 	hello-no-semi-colon-on-end-of-statement-json	\
 	hello-semi-colon-on-end-of-statement-insert	\
 	hello-semi-colon-on-end-of-statement-swap	\
