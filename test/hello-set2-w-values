@@ -4,5 +4,5 @@
 contains "$(run_hello -set2 \
                          -stmt1=8 -value1="puts(\"goodbye 2\")" \
                          -stmt2=2 -value2="puts(\"goodbye 1\")")" \
-         "goodbye 2\");" \
-         "goodbye 1\");"
+         "goodbye 2" \
+         "goodbye 1"

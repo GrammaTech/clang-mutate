@@ -62,6 +62,7 @@ TESTS =	help-text-appears				\
 	hello-json-list-size-with-stmt1-filter \
 	hello-json-default-fields \
 	hello-json-specify-fields \
+	hello-set2-w-values				\
 	hello-no-semi-colon-on-end-of-statement-get	\
 	hello-no-semi-colon-on-end-of-statement-json	\
 	hello-semi-colon-on-end-of-statement-insert	\

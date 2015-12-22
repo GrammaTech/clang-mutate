@@ -17,7 +17,7 @@ if [ ! -z "$1" ] &&
 HELLO=etc/hello.c
 
 run_hello(){
-    clang-mutate $HELLO $@ --; }
+    clang-mutate "$@" $HELLO --; }
 
 json_filter(){
     cat -|jshon -a -j|grep "\"${1}\":${2}\(,\|}\)"; }
@@ -33,6 +33,7 @@ contains(){
     BASE="$1"; shift;
     for TARGET in "$@";do
         if ! $(echo "$BASE"|grep "$TARGET" >/dev/null 2>/dev/null);then
+            echo "missing \"$TARGET\""
             exit 1;
         fi
     done; }
