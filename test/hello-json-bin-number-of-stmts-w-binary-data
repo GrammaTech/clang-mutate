@@ -1,0 +1,7 @@
+#!/bin/bash
+# Test the default fields are present when nothing is specified
+# for -fields
+. $(dirname $0)/common
+
+run_hello -json -binary=${HELLO_EXE}|json_filter begin_addr ".*" \
+    |json_wrap|json_has_length 3

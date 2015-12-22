@@ -61,6 +61,8 @@ TESTS =	help-text-appears				\
 	hello-json-list-size-with-stmt1-filter \
 	hello-json-default-fields \
 	hello-json-specify-fields \
+	hello-json-bin-default-fields			\
+	hello-json-bin-number-of-stmts-w-binary-data	\
 	hello-set2-w-values				\
 	hello-no-semi-colon-on-end-of-statement-json	\
 	hello-semi-colon-on-end-of-statement-insert	\
@@ -71,9 +73,12 @@ TESTS =	help-text-appears				\
 	hello-semi-colon-on-end-of-statement-cut	\
 	hello-semi-colon-on-end-of-statement-cut
 
+etc/hello: etc/hello.c
+	$(CC) -g -O0 $< -o $@
+
 PASS=\e[1;1m\e[1;32mPASS\e[1;0m
 FAIL=\e[1;1m\e[1;31mFAIL\e[1;0m
-check/%: test/%
+check/%: test/% etc/hello
 	@if ./$< >/dev/null 2>/dev/null;then \
 	printf "$(PASS)\t"; \
 	else \

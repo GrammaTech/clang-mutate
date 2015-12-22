@@ -1,0 +1,26 @@
+#!/bin/bash
+# Test the default fields are present when nothing is specified
+# for -fields
+. $(dirname $0)/common
+
+contains "$(run_hello -json -binary=${HELLO_EXE}|jshon -a -k|sort|uniq)" \
+         "ast_class" \
+         "begin_addr" \
+         "begin_src_col" \
+         "begin_src_line" \
+         "binary_contents" \
+         "binary_file_path" \
+         "counter" \
+         "end_addr" \
+         "end_src_col" \
+         "end_src_line" \
+         "full_stmt" \
+         "guard_stmt" \
+         "macros" \
+         "parent_counter" \
+         "src_file_name" \
+         "src_text" \
+         "stmt_list" \
+         "types" \
+         "unbound_funs" \
+         "unbound_vals"

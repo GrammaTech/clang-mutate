@@ -15,12 +15,26 @@ if [ ! -z "$1" ] &&
    $(echo "$1"|grep -q "^\-d$");then describe; fi
 
 HELLO=etc/hello.c
+HELLO_EXE=etc/hello
 
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
 json_filter(){
     cat -|jshon -a -j|grep "\"${1}\":${2}\(,\|}\)"; }
+
+# Wrap lines of json objects into a json array.
+json_wrap(){
+    echo "["
+    cat -|sed '$ ! s/$/,/'
+    echo "]"; }
+
+# Check if the jshon input has the expected length.
+json_has_length(){
+    if [ ! $(cat -|jshon -l) -eq $1 ];then
+        exit 1;
+    fi
+}
 
 inserted(){
     wdiff $HELLO <(cat -)|grep "{\+.*\+}"|sed 's/^.*{+//;s/+}.*$//'; }
