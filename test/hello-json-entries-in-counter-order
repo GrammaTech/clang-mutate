@@ -1,0 +1,8 @@
+#!/bin/bash
+# Test the default fields are present when nothing is specified
+# for -fields
+. $(dirname $0)/common
+
+RAW="$(run_hello -json|jshon -a -e counter)"
+
+diff <(echo "$RAW") <(echo "$RAW"|sort -n)

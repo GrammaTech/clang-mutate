@@ -61,6 +61,7 @@ TESTS =	help-text-appears				\
 	hello-json-list-size-with-stmt1-filter \
 	hello-json-default-fields \
 	hello-json-specify-fields \
+	hello-json-entries-in-counter-order		\
 	hello-json-bin-default-fields			\
 	hello-json-bin-number-of-stmts-w-binary-data	\
 	hello-set2-w-values				\
