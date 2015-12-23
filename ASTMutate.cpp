@@ -212,29 +212,6 @@ namespace clang_mutate{
         return s;
     }
       
-    void PreInsert()
-    {
-        if (Counter == Stmt1) {
-            Stmt * s = getEnclosingFullStmt();
-            SourceRange r = normalizedSourceRange(s);
-            Rewrite.InsertText(r.getBegin(), 
-                               StringRef(Value1), 
-                               false);
-        }
-    }
-
-    void CutEnclosing()
-    {
-        if (Counter == Stmt1) {
-            Stmt * s = getEnclosingFullStmt();
-            SourceRange r = normalizedSourceRange(s);
-
-            char label[24];
-            sprintf(label, "/* cut-enclosing: %d */", Counter);
-            Rewrite.ReplaceText(r, label);
-        }
-    }
-          
     void GetScope()
     {
         if (Counter != Stmt1)
@@ -273,13 +250,11 @@ namespace clang_mutate{
         case NUMBER:       NumberRange(r);  break;
         case CUT:          CutRange(r);     break;
         case SETRANGE:     SaveRange(r);    break;
-        case CUTENCLOSING: CutEnclosing();  break;
         case SET:
         case SET2:         SetRange(r);     break;
         case VALUEINSERT:  InsertRange(r);  break;
         case INSERT:
         case SWAP:         SaveRange(r);    break;
-        case PREINSERT:    PreInsert();     break;
         case IDS:                           break;
         case GETSCOPE:     GetScope();      break;
         }
@@ -423,14 +398,6 @@ clang_mutate::CreateASTRangeSetter(unsigned int Stmt1,
 }
 
 std::unique_ptr<clang::ASTConsumer> 
-clang_mutate::CreateASTEnclosingCutter(unsigned int Stmt){
-    return std::unique_ptr<clang::ASTConsumer>(
-               new ASTMutator(0, 
-                              CUTENCLOSING, 
-                              Stmt));
-}
-
-std::unique_ptr<clang::ASTConsumer> 
 clang_mutate::CreateASTInserter(unsigned int Stmt1, 
                                 unsigned int Stmt2){
     return std::unique_ptr<clang::ASTConsumer>(
@@ -481,17 +448,6 @@ clang_mutate::CreateASTValueInserter(unsigned int Stmt,
     return std::unique_ptr<clang::ASTConsumer>(
                new ASTMutator(0, 
                               VALUEINSERT, 
-                              Stmt, 
-                              -1, 
-                              Value1));
-}
-
-std::unique_ptr<clang::ASTConsumer> 
-clang_mutate::CreateASTValuePreInserter(unsigned int Stmt, 
-                                        clang::StringRef Value1){
-    return std::unique_ptr<clang::ASTConsumer>(
-               new ASTMutator(0, 
-                              PREINSERT, 
                               Stmt, 
                               -1, 
                               Value1));
