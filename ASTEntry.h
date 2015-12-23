@@ -22,6 +22,8 @@
 
 namespace clang_mutate
 {
+  typedef std::vector<std::vector<std::string> > ScopedNames;
+
   class ASTEntryField 
   {
   public:
@@ -42,6 +44,7 @@ namespace clang_mutate
     static ASTEntryField MACROS;
     static ASTEntryField TYPES;
     static ASTEntryField STMT_LIST;
+    static ASTEntryField SCOPES;
     static ASTEntryField BINARY_FILE_PATH;
     static ASTEntryField BEGIN_ADDR;
     static ASTEntryField END_ADDR;
@@ -89,7 +92,8 @@ namespace clang_mutate
                            BinaryAddressMap &binaryAddressMap,
                            const Renames & renames,
                            const Macros & macros,
-                           const std::set<size_t> & types );
+                           const std::set<size_t> & types,
+                           const ScopedNames & scoped_names);
   private:
     ASTEntryFactory() {}
   };
@@ -113,7 +117,8 @@ namespace clang_mutate
                        const bool fullStmt,
                        const Renames & renames,
                        const Macros & macros,
-                       const std::set<size_t> & types );
+                       const std::set<size_t> & types,
+                       const ScopedNames & scoped_names );
 
     ASTNonBinaryEntry( clang::Stmt * s,
                        clang::Stmt * p,
@@ -121,7 +126,8 @@ namespace clang_mutate
                        clang::Rewriter& rewrite,
                        const Renames & renames,
                        const Macros & macros,
-                       const std::set<size_t> & types );
+                       const std::set<size_t> & types,
+                       const ScopedNames & scoped_names );
 
     virtual ~ASTNonBinaryEntry();
 
@@ -141,6 +147,7 @@ namespace clang_mutate
     virtual Renames getRenames() const;
     virtual Macros getMacros() const;
     virtual std::set<size_t> getTypes() const;
+    virtual ScopedNames getScopedNames() const;
     
     virtual std::string toString() const;
     virtual picojson::value toJSON(const std::set<ASTEntryField> &fields =
@@ -166,6 +173,7 @@ namespace clang_mutate
     Macros m_macros;
     std::set<size_t> m_types;
     std::vector<unsigned int> m_stmt_list;
+    ScopedNames m_scoped_names;
   };
 
   // AST entry with binary information
@@ -188,6 +196,7 @@ namespace clang_mutate
                     const Renames & renames,
                     const Macros & macros,
                     const std::set<size_t> & types,
+                    const ScopedNames & scoped_names,
                     const std::string &binaryFileName,
                     const unsigned long beginAddress,
                     const unsigned long endAddress,
@@ -200,7 +209,8 @@ namespace clang_mutate
                     BinaryAddressMap& binaryAddressMap,
                     const Renames & renames,
                     const Macros & macros,
-                    const std::set<size_t> & types );
+                    const std::set<size_t> & types,
+                    const ScopedNames & scoped_names );
 
     virtual ~ASTBinaryEntry();
 

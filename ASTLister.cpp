@@ -165,7 +165,8 @@ using namespace clang;
                     make_renames(get_bindings.free_values(var_scopes),
                                  get_bindings.free_functions()),
                     get_macros.result(),
-                    get_bindings.required_types());
+                    get_bindings.required_types(),
+                    decl_scopes.get_names_in_scope(1000));
 
             ASTEntries.addEntry( NewASTEntry );
         } else {
@@ -180,7 +181,8 @@ using namespace clang;
                     make_renames(get_bindings.free_values(var_scopes),
                                  get_bindings.free_functions()),
                     get_macros.result(),
-                    get_bindings.required_types());
+                    get_bindings.required_types(),
+                    decl_scopes.get_names_in_scope(1000));
 
             ASTEntries.addEntry( NewASTEntry );
         }
@@ -206,9 +208,33 @@ using namespace clang;
         return true;
     }
 
+    bool TraverseVarDecl(VarDecl * decl) {
+        decl_scopes.declare(decl->getIdentifier());
+        return base::TraverseVarDecl(decl);
+    }
+
+    bool TraverseDecl(Decl * D) {
+        bool keep_going;
+        if (D != NULL && D->hasBody()) {
+            const FunctionDecl * F = D->getAsFunction();
+            decl_scopes.enter_scope(F->getBody());
+            for (unsigned int i = 0; i < F->getNumParams(); i++) {
+                const ParmVarDecl * param = F->getParamDecl(i);
+                decl_scopes.declare(param->getIdentifier());
+            }
+            keep_going = base::TraverseDecl(D);
+            decl_scopes.exit_scope();
+        }
+        else {
+            keep_going = base::TraverseDecl(D);
+        }
+        return keep_going;
+    }
+
     bool TraverseStmt(Stmt * s) {
         bool keep_going;
         if (begins_scope(s)) {
+            decl_scopes.enter_scope(s);
             var_scopes.push_back(
                 std::set<clang::IdentifierInfo*>());
             block_spine.push_back(
@@ -222,6 +248,7 @@ using namespace clang;
             }
             block_spine.pop_back();
             var_scopes.pop_back();
+            decl_scopes.exit_scope();
         }
         else {
             keep_going = base::TraverseStmt(s);
@@ -244,6 +271,7 @@ using namespace clang;
     FileID MainFileID;
 
     std::map<Stmt*, unsigned int> Spine;
+    DeclScope decl_scopes;
     std::vector<std::set<clang::IdentifierInfo*> > var_scopes;
     std::vector<
         std::pair<unsigned int,

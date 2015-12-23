@@ -18,7 +18,6 @@ enum ACTION { NUMBER
             , SET2
             , SETRANGE
             , VALUEINSERT
-            , GETSCOPE
             };
 
 std::unique_ptr<clang::ASTConsumer> CreateASTNumberer();
@@ -32,7 +31,6 @@ std::unique_ptr<clang::ASTConsumer> CreateASTSetter(unsigned int Stmt, clang::St
 std::unique_ptr<clang::ASTConsumer> CreateASTSetter2(unsigned int Stmt1, clang::StringRef Value1,
                                                      unsigned int Stmt2, clang::StringRef Value2);
 std::unique_ptr<clang::ASTConsumer> CreateASTValueInserter(unsigned int Stmt, clang::StringRef Value);
-std::unique_ptr<clang::ASTConsumer> CreateASTScopeGetter(unsigned int Stmt, unsigned int Depth);
 
 }
 

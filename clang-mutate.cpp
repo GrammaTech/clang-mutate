@@ -62,7 +62,6 @@ OPTION( Swap        , bool        , "swap"         , "swap stmt1 and stmt2");
 OPTION( Set         , bool        , "set"          , "set the text of stmt1 to value1");
 OPTION( Set2        , bool        , "set2"         , "set the text of stmt1 to value1 and stmt2 to value2");
 OPTION( SetRange    , bool        , "set-range"    , "set the range from the start of stmt1 to the end of stmt2 to value1");
-OPTION( GetScope    , unsigned int, "get-scope"    , "XXXXXXXXX DELETE ME XXXXXXXXXX");
 OPTION( Stmt1       , unsigned int, "stmt1"        , "statement 1 for mutation ops");
 OPTION( Stmt2       , unsigned int, "stmt2"        , "statement 2 for mutation ops");
 OPTION( Value1      , std::string , "value1"       , "string value for mutation ops");
@@ -122,9 +121,6 @@ public:
         if (InsertV)
             return clang_mutate::CreateASTValueInserter(Stmt1, Value1);
 
-        if (GetScope)
-            return clang_mutate::CreateASTScopeGetter(Stmt1, GetScope);
-        
         errs() << "Must supply one of;";
         errs() << "\tnumber\n";
         errs() << "\tids\n";
@@ -139,7 +135,6 @@ public:
         errs() << "\tset-range\n";
         errs() << "\tinsert-value\n";
 
-        errs() << "\tget-scope\n";
         exit(EXIT_FAILURE);
   }
 

@@ -202,7 +202,7 @@ namespace clang_mutate{
             ::const_reverse_iterator it = spine.rbegin();
         Stmt * s = it->first;
         unsigned int c = it->second;
-        while (it != spine.rend() && it->first != scopes.current_scope()) {           
+        while (it != spine.rend() && it->first != scopes.current_scope()) {
             s = it->first;
             c = it->second;
             ++it;
@@ -210,25 +210,6 @@ namespace clang_mutate{
         if (counter != NULL)
             *counter = c;
         return s;
-    }
-      
-    void GetScope()
-    {
-        if (Counter != Stmt1)
-            return;
-        std::vector<std::vector<std::string> > names =
-            scopes.get_names_in_scope(Depth);
-        for (std::vector<std::vector<std::string> >::iterator
-                 it = names.begin(); it != names.end(); ++it)
-        {
-            Out << ">";
-            for (std::vector<std::string>::iterator
-                     jt = it->begin(); jt != it->end(); ++jt)
-            {
-                Out << " " << *jt;
-            }
-            Out << "\n";
-        }
     }
       
     bool VisitStmt(Stmt *s){
@@ -256,7 +237,6 @@ namespace clang_mutate{
         case INSERT:
         case SWAP:         SaveRange(r);    break;
         case IDS:                           break;
-        case GETSCOPE:     GetScope();      break;
         }
       }
       return true;
@@ -277,11 +257,6 @@ namespace clang_mutate{
         return keep_going;
     }
 
-    bool TraverseVarDecl(VarDecl * decl) {
-        scopes.declare(decl->getIdentifier());
-        return base::TraverseVarDecl(decl);
-    }
-
     bool TraverseDecl(Decl *D){
         bool keep_going;
 
@@ -289,11 +264,6 @@ namespace clang_mutate{
             const FunctionDecl * F = D->getAsFunction();
 
             scopes.enter_scope(F->getBody());
-            for (unsigned int i = 0; i < F->getNumParams(); i++) {
-                const ParmVarDecl * param = F->getParamDecl(i);
-                scopes.declare(param->getIdentifier());
-            }
-
             keep_going = base::TraverseDecl(D);
             scopes.exit_scope();
         }
@@ -332,7 +302,6 @@ namespace clang_mutate{
       // output rewritten source code or ID count
       switch(Action){
       case IDS: Out << Counter << "\n";
-      case GETSCOPE:
         break;
       default:
         const RewriteBuffer *RewriteBuf = 
@@ -452,18 +421,3 @@ clang_mutate::CreateASTValueInserter(unsigned int Stmt,
                               -1, 
                               Value1));
 }
-
-std::unique_ptr<clang::ASTConsumer> 
-clang_mutate::CreateASTScopeGetter(unsigned int Stmt,
-                                   unsigned int Depth)
-{
-    return std::unique_ptr<clang::ASTConsumer>(
-               new ASTMutator(0, 
-                              GETSCOPE, 
-                              Stmt, 
-                              -1, 
-                              "", 
-                              "", 
-                              Depth));
-}
-
