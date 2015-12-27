@@ -12,6 +12,7 @@ std::unique_ptr<clang::ASTConsumer>
 CreateASTLister(unsigned int Stmt1, 
                 clang::StringRef Fields,
                 clang::StringRef Binary,
+                clang::StringRef DwarfFilepathMap,
                 bool OutputAsJSON,
                 clang::CompilerInstance * CI);
 

@@ -29,11 +29,14 @@ namespace clang_mutate{
     typedef std::vector<Byte> Bytes;
     typedef std::map<unsigned long, Bytes > BinaryContentsMap;
 
+    typedef std::map<std::string, std::string> DwarfFilepathMap;
+
     // Construct an empty BinaryAddressMap
     BinaryAddressMap();
 
     // Initialize a BinaryAddressMap from an ELF executable.
-    BinaryAddressMap(const std::string &binary);
+    BinaryAddressMap(const std::string &binary,
+                     const std::string &dwarfFilepathMapping);
 
     // Return true if the BinaryAddressMap is empty
     bool isEmpty() const;
@@ -77,6 +80,7 @@ namespace clang_mutate{
   private:
     BinaryContentsMap m_binaryContentsCache;
     CompilationUnitMap m_compilationUnitMap;
+    DwarfFilepathMap m_dwarfFilepathMap;
     std::string m_binaryPath;
 
     // Return the results of using objdump to disassemble
@@ -145,6 +149,10 @@ namespace clang_mutate{
     // See sourceware.org/gdb/onlinedocs/gdb/Source-Path.html for more
     // information.
     std::set< std::string > getSourcePaths( const std::vector<std::string>& drawfDumpDebugInfo );
+
+    // Parse mappings of the form <Dwarf filepath1>=<NewFilePath1>,...
+    // into the m_dwarfFilepathMap
+    void parseDwarfFilepathMapping(const std::string &dwarfFilepathMapping);
 
     // Initialize from the llvm-drawfdump .debug-dump=line output lines.
     // Source paths is a set of paths to search when locating files.

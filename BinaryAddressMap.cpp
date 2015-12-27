@@ -4,6 +4,8 @@
 
 #include "BinaryAddressMap.h"
 
+#include "Utils.h"
+
 #include <cstdlib>
 #include <cstdio>
 #include <iomanip>
@@ -170,19 +172,24 @@ namespace clang_mutate{
   {
     char buffer[1024] = { '\0' };
 
-    if ( realpath( (directory + "/" + fileName).c_str(), buffer) )
-    {
-      return std::string( buffer );
+    if ( realpath( (directory + "/" + fileName).c_str(), buffer) ) {
+      return buffer;
     }
-    else 
-    {
+    else if (m_dwarfFilepathMap.find( buffer ) != m_dwarfFilepathMap.end()) {
+      return m_dwarfFilepathMap[buffer];
+    }
+    else {
       for ( std::set<std::string>::const_iterator sourcePathIter = sourcePaths.begin();
             sourcePathIter != sourcePaths.end();
             sourcePathIter++ )
       {
         if ( realpath ((*sourcePathIter + "/" + directory + "/" + fileName).c_str(), 
-                        buffer) )
-          return std::string( buffer );
+                        buffer) ) {
+          return buffer;
+        } 
+        else if (m_dwarfFilepathMap.find( buffer ) != m_dwarfFilepathMap.end()) {
+          return m_dwarfFilepathMap[buffer];
+        }
       }
     }
 
@@ -274,6 +281,23 @@ namespace clang_mutate{
     return sourcePaths;
   }
 
+  void BinaryAddressMap::parseDwarfFilepathMapping(const std::string &dwarfFilepathMapping)
+  {
+    const std::vector<std::string> mappings = Utils::split(dwarfFilepathMapping, ',');
+
+    for ( std::vector<std::string>::const_iterator iter = mappings.begin();
+          iter != mappings.end();
+          iter++ )
+    {
+      const std::vector<std::string> mapping = Utils::split(*iter, '=');
+      if (mapping.size() == 2) {
+        std::string dwarfFilepath = Utils::trim(mapping[0]);
+        std::string newFilepath = Utils::trim(mapping[1]);
+
+        m_dwarfFilepathMap[dwarfFilepath] = newFilepath;
+      }
+    }
+  }
   void BinaryAddressMap::init(const std::vector<std::string>& dwarfDumpDebugLine,
                               const std::set<std::string>& sourcePaths){
     std::string line;
@@ -295,11 +319,14 @@ namespace clang_mutate{
   }
 
   // Initialize a BinaryAddressMap from an ELF executable.
-  BinaryAddressMap::BinaryAddressMap(const std::string &binary)
+  BinaryAddressMap::BinaryAddressMap(const std::string &binary,
+                                     const std::string &dwarfFilepathMapping)
   {
     char realpath_buffer[1024];
     m_binaryPath = (realpath(binary.c_str(), realpath_buffer) == NULL) ? 
                    "" : realpath_buffer;
+
+    parseDwarfFilepathMapping(dwarfFilepathMapping);
  
     if ( !m_binaryPath.empty() ) {
       const std::string dwarfDumpDebugLineCmd = 

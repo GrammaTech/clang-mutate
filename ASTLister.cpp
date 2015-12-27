@@ -46,13 +46,14 @@ using namespace clang;
               unsigned int Stmt1 = -1,
               StringRef Fields = (StringRef) "",
               StringRef Binary = (StringRef) "",
+              StringRef DwarfFilepathMap = (StringRef) "",
               bool OutputAsJSON = false,
               CompilerInstance * _CI = NULL)
       : Out(Out ? *Out : llvm::outs()),
         Stmt1(Stmt1),
         Fields(Fields),
         Binary(Binary),
-        BinaryAddresses(Binary),
+        BinaryAddresses(Binary, DwarfFilepathMap),
         OutputAsJSON(OutputAsJSON),
         PM(NULL),
         get_bindings(_CI),
@@ -285,6 +286,7 @@ std::unique_ptr<clang::ASTConsumer>
 clang_mutate::CreateASTLister(unsigned int Stmt1, 
                               StringRef Fields,
                               clang::StringRef Binary,
+                              clang::StringRef DwarfFilepathMap,
                               bool OutputAsJSON,
                               clang::CompilerInstance * CI){
     return std::unique_ptr<clang::ASTConsumer>(
@@ -292,6 +294,7 @@ clang_mutate::CreateASTLister(unsigned int Stmt1,
                              Stmt1, 
                              Fields,
                              Binary, 
+                             DwarfFilepathMap,
                              OutputAsJSON, 
                              CI));
 }

@@ -1,5 +1,6 @@
 #include "Utils.h"
 
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 
@@ -236,6 +237,19 @@ std::string filenameToContents(const std::string & str)
     }
 
     return buffer.str();
+}
+
+std::string trim(const std::string &input)
+{
+    std::string::const_iterator it = input.begin();
+    while (it != input.end() && isspace(*it))
+        it++;
+
+    std::string::const_reverse_iterator rit = input.rbegin();
+    while (rit.base() != it && isspace(*rit))
+        rit++;
+
+    return std::string(it, rit.base());
 }
 
 std::vector<std::string> split(const std::string &input,
