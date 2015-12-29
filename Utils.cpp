@@ -266,4 +266,11 @@ std::vector<std::string> split(const std::string &input,
     return elems;
 }
 
+std::string hash_to_str(size_t hash)
+{
+    std::ostringstream ss;
+    ss << std::hex << hash << std::dec;
+    return ss.str();
 }
+
+} // end namespace Utils

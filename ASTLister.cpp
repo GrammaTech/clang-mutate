@@ -4,6 +4,8 @@
 #include "ASTEntryList.h"
 #include "Macros.h"
 #include "Scopes.h"
+#include "TypeDBEntry.h"
+#include "ProtoDBEntry.h"
 #include "Utils.h"
 
 #include "clang/Basic/FileManager.h"
@@ -107,6 +109,46 @@ using namespace clang;
       return parent;
     }
 
+    unsigned int GetNextCounter() {
+        return Spine.size() + 1;
+    }
+
+    void RegisterFunctionDecl(const FunctionDecl * F)
+    {
+        Stmt * body = F->getBody();
+        if (!body)
+            return;
+
+        QualType ret = F->getReturnType();
+
+        std::vector<std::pair<std::string, size_t> > args;
+        for (unsigned int i = 0; i < F->getNumParams(); ++i) {
+            const ParmVarDecl * p = F->getParamDecl(i);
+            args.push_back(std::make_pair(
+                               p->getIdentifier()->getName().str(),
+                               hash_type(p->getType().getTypePtr(), CI)));
+        }
+
+        SourceLocation begin = F->getSourceRange().getBegin();
+        SourceLocation end = body->getSourceRange().getBegin();
+        std::string decl_text = Lexer::getSourceText(
+            CharSourceRange::getCharRange(begin, end),
+            CI->getSourceManager(),
+            CI->getLangOpts(),
+            NULL);
+
+        // Build a function prototype, which will be added to the
+        // global database. We don't actually need the value here.
+        ProtoDBEntry proto(
+            F->getNameAsString(),
+            decl_text,
+            GetNextCounter(),
+            hash_type(ret.getTypePtr(), CI),
+            ret.getTypePtr()->isVoidType(),
+            args,
+            F->isVariadic());
+    }
+
     virtual bool VisitDecl(Decl *D){
       // Delete the ParentMap if we are in a new
       // function declaration.  There is a tight 
@@ -146,7 +188,7 @@ using namespace clang;
       { 
         Stmt * P = GetParentStmt(S);
         get_bindings.TraverseStmt(S);
-        Spine[S] = Spine.size() + 1;
+        Spine[S] = GetNextCounter();
 
         if (!block_spine.empty() && begins_scope(S))
         {
@@ -218,6 +260,7 @@ using namespace clang;
         bool keep_going;
         if (D != NULL && D->hasBody()) {
             const FunctionDecl * F = D->getAsFunction();
+            RegisterFunctionDecl(F);
             decl_scopes.enter_scope(F->getBody());
             for (unsigned int i = 0; i < F->getNumParams(); i++) {
                 const ParmVarDecl * param = F->getParamDecl(i);

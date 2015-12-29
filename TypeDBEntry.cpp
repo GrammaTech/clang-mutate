@@ -1,9 +1,8 @@
 
 #include "TypeDBEntry.h"
+#include "Utils.h"
 
 #include "clang/Lex/Lexer.h"
-
-#include <sstream>
 
 using namespace clang_mutate;
 using namespace clang;
@@ -74,15 +73,8 @@ void TypeDBEntry::compute_hash()
     type_db[m_hash] = *this;
 }
 
-static std::string hash_to_str(size_t hash)
-{
-    std::ostringstream ss;
-    ss << std::hex << hash << std::dec;
-    return ss.str();
-}
-
 std::string TypeDBEntry::hash_as_str() const
-{ return hash_to_str(m_hash); }
+{ return Utils::hash_to_str(m_hash); }
 
 picojson::value TypeDBEntry::toJSON() const
 {
@@ -95,7 +87,7 @@ picojson::value TypeDBEntry::toJSON() const
     {
         if (*it == 0)
             continue;
-        j_reqs.push_back(picojson::value(hash_to_str(*it)));
+        j_reqs.push_back(picojson::value(Utils::hash_to_str(*it)));
     }
     
     jsonObj["hash"] = picojson::value(hash_as_str());

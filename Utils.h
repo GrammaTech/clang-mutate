@@ -51,6 +51,9 @@ std::string filenameToContents(const std::string & str);
 std::string trim(const std::string &input);
 std::vector<std::string> split(const std::string &input, 
                                const char delim);
-}
+
+std::string hash_to_str(size_t hash);
+
+} // end namespace Utils
 
 #endif

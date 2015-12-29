@@ -4,6 +4,7 @@
 
 #include "ASTEntryList.h"
 #include "TypeDBEntry.h"
+#include "ProtoDBEntry.h"
 
 #include "Json.h"
 
@@ -87,6 +88,7 @@ namespace clang_mutate
     }
     else {
       array = TypeDBEntry::databaseToJSON();
+      append_arrays(array, ProtoDBEntry::databaseToJSON());
       for ( std::vector<ASTEntry*>::const_iterator iter = m_astEntries.begin();
             iter != m_astEntries.end();
             iter++ ) {
