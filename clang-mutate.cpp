@@ -62,6 +62,7 @@ OPTION( Swap        , bool        , "swap"         , "swap stmt1 and stmt2");
 OPTION( Set         , bool        , "set"          , "set the text of stmt1 to value1");
 OPTION( Set2        , bool        , "set2"         , "set the text of stmt1 to value1 and stmt2 to value2");
 OPTION( SetRange    , bool        , "set-range"    , "set the range from the start of stmt1 to the end of stmt2 to value1");
+OPTION( SetFunc     , bool        , "set-func"     , "set the text of the function containing stmt1 to value1");
 OPTION( Stmt1       , unsigned int, "stmt1"        , "statement 1 for mutation ops");
 OPTION( Stmt2       , unsigned int, "stmt2"        , "statement 2 for mutation ops");
 OPTION( Value1      , std::string , "value1"       , "string value for mutation ops");
@@ -113,6 +114,8 @@ public:
             return clang_mutate::CreateASTCutter(Stmt1);
         if (SetRange)
             return clang_mutate::CreateASTRangeSetter(Stmt1, Stmt2, Value1);
+        if (SetFunc)
+            return clang_mutate::CreateASTFuncSetter(Stmt1, Value1);
         if (Insert)
             return clang_mutate::CreateASTInserter(Stmt1, Stmt2);
         if (Swap)
@@ -124,7 +127,7 @@ public:
         if (InsertV)
             return clang_mutate::CreateASTValueInserter(Stmt1, Value1);
 
-        errs() << "Must supply one of;";
+        errs() << "Must supply one of:\n";
         errs() << "\tnumber\n";
         errs() << "\tids\n";
         errs() << "\tannotate\n";

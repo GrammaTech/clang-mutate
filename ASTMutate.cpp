@@ -90,6 +90,11 @@ namespace clang_mutate{
             }
         }
         break;
+      case SETFUNC:
+      {
+          Rewrite.ReplaceText(Range1, StringRef(Value1));
+          break;
+      }
       case SETRANGE:
       {
           SourceRange r(Range1.getBegin(), Range2.getEnd());
@@ -231,6 +236,7 @@ namespace clang_mutate{
         case NUMBER:       NumberRange(r);  break;
         case CUT:          CutRange(r);     break;
         case SETRANGE:     SaveRange(r);    break;
+        case SETFUNC:      SaveRange(FuncRange); break;
         case SET:
         case SET2:         SetRange(r);     break;
         case VALUEINSERT:  InsertRange(r);  break;
@@ -262,7 +268,8 @@ namespace clang_mutate{
 
         if (D != NULL && D->hasBody()) {
             const FunctionDecl * F = D->getAsFunction();
-
+            FuncRange = F->getSourceRange();
+            
             scopes.enter_scope(F->getBody());
             keep_going = base::TraverseDecl(D);
             scopes.exit_scope();
@@ -318,7 +325,7 @@ namespace clang_mutate{
     unsigned int Depth;
     unsigned int Counter;
     FileID mainFileID;
-    SourceRange Range1, Range2;
+    SourceRange Range1, Range2, FuncRange;
     std::string Rewritten1, Rewritten2;
     DeclScope scopes;
     std::vector<std::pair<Stmt*, unsigned int> > spine;
@@ -364,6 +371,18 @@ clang_mutate::CreateASTRangeSetter(unsigned int Stmt1,
                               Stmt1, 
                               Stmt2, 
                               Value1));
+}
+
+std::unique_ptr<clang::ASTConsumer>
+clang_mutate::CreateASTFuncSetter(unsigned int Stmt,
+                                  clang::StringRef Value)
+{
+    return std::unique_ptr<clang::ASTConsumer>(
+        new ASTMutator(0,
+                       SETFUNC,
+                       Stmt,
+                       -1,
+                       Value));
 }
 
 std::unique_ptr<clang::ASTConsumer> 

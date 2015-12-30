@@ -67,6 +67,10 @@ http://clang.llvm.org/docs/LibTooling.html for details.
 -set-range
 :   Set the range of statements from stmt1 to stmt2 to value1.
 
+-set-func
+:   Replace the entire declaration of the function containing stmt1
+    to value1.
+    
 # INSPECTION OPERATIONS
 
 -number

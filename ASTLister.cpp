@@ -137,6 +137,11 @@ using namespace clang;
             CI->getLangOpts(),
             NULL);
 
+        // Trim trailing whitespace from the declaration
+        size_t endpos = decl_text.find_last_not_of(" \t\n\r");
+        if (endpos != std::string::npos)
+            decl_text = decl_text.substr(0, endpos + 1);
+        
         // Build a function prototype, which will be added to the
         // global database. We don't actually need the value here.
         ProtoDBEntry proto(

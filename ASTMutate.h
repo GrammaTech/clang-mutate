@@ -17,6 +17,7 @@ enum ACTION { NUMBER
             , SET
             , SET2
             , SETRANGE
+            , SETFUNC
             , VALUEINSERT
             };
 
@@ -25,6 +26,7 @@ std::unique_ptr<clang::ASTConsumer> CreateASTIDS();
 std::unique_ptr<clang::ASTConsumer> CreateASTAnnotator();
 std::unique_ptr<clang::ASTConsumer> CreateASTCutter(unsigned int Stmt);
 std::unique_ptr<clang::ASTConsumer> CreateASTRangeSetter(unsigned int Stmt1, unsigned int Stmt2, clang::StringRef Value);
+std::unique_ptr<clang::ASTConsumer> CreateASTFuncSetter(unsigned int Stmt1, clang::StringRef Value);
 std::unique_ptr<clang::ASTConsumer> CreateASTInserter(unsigned int Stmt1, unsigned int Stmt2);
 std::unique_ptr<clang::ASTConsumer> CreateASTSwapper(unsigned int Stmt1, unsigned int Stmt2);
 std::unique_ptr<clang::ASTConsumer> CreateASTSetter(unsigned int Stmt, clang::StringRef Value);
