@@ -41,6 +41,7 @@ ASTEntryField ASTEntryField::UNBOUND_FUNS     = ASTEntryField("unbound_funs");
 ASTEntryField ASTEntryField::MACROS           = ASTEntryField("macros");
 ASTEntryField ASTEntryField::TYPES            = ASTEntryField("types");
 ASTEntryField ASTEntryField::STMT_LIST        = ASTEntryField("stmt_list");
+ASTEntryField ASTEntryField::OPCODE           = ASTEntryField("opcode");
 ASTEntryField ASTEntryField::SCOPES           = ASTEntryField("scopes");
 ASTEntryField ASTEntryField::BINARY_FILE_PATH = ASTEntryField("binary_file_path");
 ASTEntryField ASTEntryField::BEGIN_ADDR       = ASTEntryField("begin_addr");
@@ -226,6 +227,7 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
     defaultFields.insert(ASTEntryField::MACROS);
     defaultFields.insert(ASTEntryField::TYPES);
     defaultFields.insert(ASTEntryField::STMT_LIST);
+    defaultFields.insert(ASTEntryField::OPCODE);
     defaultFields.insert(ASTEntryField::BINARY_FILE_PATH);
     defaultFields.insert(ASTEntryField::BEGIN_ADDR);
     defaultFields.insert(ASTEntryField::END_ADDR);
@@ -297,6 +299,8 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
     m_renames(),
     m_macros(),
     m_types(),
+    m_stmt_list(),
+    m_opcode(""),
     m_scoped_names()
   {}
 
@@ -315,6 +319,8 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
     const Renames & renames,
     const Macros & macros,
     const std::set<size_t> & types,
+    const std::vector<unsigned int> & stmt_list,
+    const std::string & opcode,
     const ScopedNames & scoped_names) :
     m_counter(counter),
     m_parentCounter(parentCounter),
@@ -330,6 +336,8 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
     m_renames(renames),
     m_macros(macros),
     m_types(types),
+    m_stmt_list(stmt_list),
+    m_opcode(opcode),
     m_scoped_names(scoped_names)
     {}
 
@@ -367,6 +375,9 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
     m_macros = macros;
     m_types = types;
     m_scoped_names = scoped_names;
+    m_opcode = clang::isa<clang::BinaryOperator>(s) ? 
+               static_cast<clang::BinaryOperator*>(s)->getOpcodeStr() :
+               "";
 
     RenameFreeVar renamer(s, rewrite, renames);
     m_srcText = renamer.getRewrittenString();
@@ -390,6 +401,8 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
                                   m_renames,
                                   m_macros,
                                   m_types,
+                                  m_stmt_list,
+                                  m_opcode,
                                   m_scoped_names);
   }
 
@@ -461,6 +474,16 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
   std::set<size_t> ASTNonBinaryEntry::getTypes() const
   {
       return m_types;
+  }
+
+  std::vector<unsigned int> ASTNonBinaryEntry::getStmtList() const 
+  {
+    return m_stmt_list;
+  }
+
+  std::string ASTNonBinaryEntry::getOpcode() const
+  {
+    return m_opcode;
   }
 
   ScopedNames ASTNonBinaryEntry::getScopedNames() const
@@ -546,6 +569,11 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
 
     if (fields.find(ASTEntryField::TYPES) != fields.end()) 
       jsonObj[ASTEntryField::TYPES.getJSONName()] = types_to_json(m_types);
+
+    if (fields.find(ASTEntryField::OPCODE) != fields.end() &&
+        !m_opcode.empty()) {
+      jsonObj[ASTEntryField::OPCODE.getJSONName()] = picojson::value(m_opcode);
+    } 
     
     if (fields.find(ASTEntryField::STMT_LIST) != fields.end() && 
         m_astClass == "CompoundStmt") {
@@ -584,6 +612,8 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
     const Renames & renames,
     const Macros & macros,
     const std::set<size_t> & types,
+    const std::vector<unsigned int> & stmt_list,
+    const std::string & opcode,
     const ScopedNames & scoped_names,
     const std::string &binaryFileName,
     const unsigned long beginAddress,
@@ -604,6 +634,8 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
                        renames,
                        macros,
                        types,
+                       stmt_list,
+                       opcode,
                        scoped_names),
     m_binaryFilePath(binaryFileName),
     m_beginAddress(beginAddress),
@@ -665,6 +697,8 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
                                getRenames(),
                                getMacros(),
                                getTypes(),
+                               getStmtList(),
+                               getOpcode(),
                                getScopedNames(),
                                m_binaryFilePath,
                                m_beginAddress,

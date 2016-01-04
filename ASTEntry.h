@@ -44,6 +44,7 @@ namespace clang_mutate
     static ASTEntryField MACROS;
     static ASTEntryField TYPES;
     static ASTEntryField STMT_LIST;
+    static ASTEntryField OPCODE;
     static ASTEntryField SCOPES;
     static ASTEntryField BINARY_FILE_PATH;
     static ASTEntryField BEGIN_ADDR;
@@ -118,6 +119,8 @@ namespace clang_mutate
                        const Renames & renames,
                        const Macros & macros,
                        const std::set<size_t> & types,
+                       const std::vector<unsigned int> & stmt_list,
+                       const std::string & opcode,
                        const ScopedNames & scoped_names );
 
     ASTNonBinaryEntry( clang::Stmt * s,
@@ -147,6 +150,8 @@ namespace clang_mutate
     virtual Renames getRenames() const;
     virtual Macros getMacros() const;
     virtual std::set<size_t> getTypes() const;
+    virtual std::vector<unsigned int> getStmtList() const;
+    virtual std::string getOpcode() const;
     virtual ScopedNames getScopedNames() const;
     
     virtual std::string toString() const;
@@ -173,6 +178,7 @@ namespace clang_mutate
     Macros m_macros;
     std::set<size_t> m_types;
     std::vector<unsigned int> m_stmt_list;
+    std::string m_opcode;
     ScopedNames m_scoped_names;
   };
 
@@ -196,6 +202,8 @@ namespace clang_mutate
                     const Renames & renames,
                     const Macros & macros,
                     const std::set<size_t> & types,
+                    const std::vector<unsigned int> & stmt_list,
+                    const std::string & opcode,
                     const ScopedNames & scoped_names,
                     const std::string &binaryFileName,
                     const unsigned long beginAddress,
