@@ -116,7 +116,7 @@ using namespace clang;
     void RegisterFunctionDecl(const FunctionDecl * F)
     {
         Stmt * body = F->getBody();
-        if (!body)
+        if (!body || !F->doesThisDeclarationHaveABody())
             return;
 
         QualType ret = F->getReturnType();
