@@ -29,25 +29,25 @@ picojson::value ProtoDBEntry::toJSON() const
 {
     picojson::object jsonObj;
 
-    jsonObj["name"] = picojson::value(m_name);
-    jsonObj["text"] = picojson::value(m_text);
-    jsonObj["body"] = picojson::value(static_cast<int64_t>(m_body));
-    jsonObj["ret"] = picojson::value(hash_to_str(m_ret));
-    jsonObj["void_ret"] = picojson::value(m_ret_void);
+    jsonObj["name"] = to_json(m_name);
+    jsonObj["text"] = to_json(m_text);
+    jsonObj["body"] = to_json(m_body);
+    jsonObj["ret"] = to_json(hash_to_str(m_ret));
+    jsonObj["void_ret"] = to_json(m_ret_void);
 
     std::vector<picojson::value> args;
     for (std::vector<Argument>::const_iterator
              it = m_args.begin(); it != m_args.end(); ++it)
     {
         std::vector<picojson::value> arg;
-        arg.push_back(picojson::value(it->first));
-        arg.push_back(picojson::value(hash_to_str(it->second)));
-        args.push_back(picojson::value(arg));
+        arg.push_back(to_json(it->first));
+        arg.push_back(to_json(hash_to_str(it->second)));
+        args.push_back(to_json(arg));
     }
-    jsonObj["args"] = picojson::value(args);
-    jsonObj["varargs"] = picojson::value(m_has_varargs);
+    jsonObj["args"] = to_json(args);
+    jsonObj["varargs"] = to_json(m_has_varargs);
     
-    return picojson::value(jsonObj);
+    return to_json(jsonObj);
 }
 
 void ProtoDBEntry::register_proto()

@@ -96,7 +96,7 @@ namespace clang_mutate
       }
     }
 
-    return picojson::value(array);
+    return to_json(array);
   } 
 
   std::ostream& ASTEntryList::toStream(std::ostream& out, 

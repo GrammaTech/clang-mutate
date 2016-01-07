@@ -19,7 +19,6 @@
 
 #include <algorithm>
 #include <string>
-#include <sstream>
 
 namespace clang_mutate
 {
@@ -66,60 +65,60 @@ bool ASTEntryField::operator<(const ASTEntryField &other) const {
 
 ASTEntryField ASTEntryField::fromJSONName(const std::string &jsonName) {
   std::string lowerJSONName;
-    
+
   lowerJSONName.resize(jsonName.size());
-  std::transform(jsonName.begin(), 
-                 jsonName.end(), 
-                 lowerJSONName.begin(), 
+  std::transform(jsonName.begin(),
+                 jsonName.end(),
+                 lowerJSONName.begin(),
                  ::tolower);
 
   if (lowerJSONName == COUNTER.getJSONName())
     return COUNTER;
   else if (lowerJSONName == PARENT_COUNTER.getJSONName())
-    return PARENT_COUNTER;  
+    return PARENT_COUNTER;
   else if (lowerJSONName == AST_CLASS.getJSONName())
-    return AST_CLASS;  
+    return AST_CLASS;
   else if (lowerJSONName == SRC_FILE_NAME.getJSONName())
-    return SRC_FILE_NAME;  
+    return SRC_FILE_NAME;
   else if (lowerJSONName == BEGIN_SRC_LINE.getJSONName())
-    return BEGIN_SRC_LINE;  
+    return BEGIN_SRC_LINE;
   else if (lowerJSONName == BEGIN_SRC_COL.getJSONName())
-    return BEGIN_SRC_COL;  
+    return BEGIN_SRC_COL;
   else if (lowerJSONName == END_SRC_LINE.getJSONName())
-    return END_SRC_LINE;  
+    return END_SRC_LINE;
   else if (lowerJSONName == END_SRC_COL.getJSONName())
-    return END_SRC_COL;  
+    return END_SRC_COL;
   else if (lowerJSONName == SRC_TEXT.getJSONName())
-    return SRC_TEXT;  
+    return SRC_TEXT;
   else if (lowerJSONName == GUARD_STMT.getJSONName())
-    return GUARD_STMT;  
+    return GUARD_STMT;
   else if (lowerJSONName == FULL_STMT.getJSONName())
-    return FULL_STMT;  
+    return FULL_STMT;
   else if (lowerJSONName == UNBOUND_VALS.getJSONName())
-    return UNBOUND_VALS;  
+    return UNBOUND_VALS;
   else if (lowerJSONName == UNBOUND_FUNS.getJSONName())
-    return UNBOUND_FUNS;  
+    return UNBOUND_FUNS;
   else if (lowerJSONName == MACROS.getJSONName())
-    return MACROS;  
+    return MACROS;
   else if (lowerJSONName == TYPES.getJSONName())
-    return TYPES;  
+    return TYPES;
   else if (lowerJSONName == STMT_LIST.getJSONName())
     return STMT_LIST;
   else if (lowerJSONName == SCOPES.getJSONName())
     return SCOPES;
   else if (lowerJSONName == BINARY_FILE_PATH.getJSONName())
-    return BINARY_FILE_PATH;  
+    return BINARY_FILE_PATH;
   else if (lowerJSONName == BEGIN_ADDR.getJSONName())
-    return BEGIN_ADDR;  
+    return BEGIN_ADDR;
   else if (lowerJSONName == END_ADDR.getJSONName())
-    return END_ADDR;  
+    return END_ADDR;
   else if (lowerJSONName == BINARY_CONTENTS.getJSONName())
-    return BINARY_CONTENTS;  
+    return BINARY_CONTENTS;
   else
     return NULL_FIELD;
 }
 
-std::set<ASTEntryField> 
+std::set<ASTEntryField>
 ASTEntryField::fromJSONNames(const std::vector<std::string> &jsonNames) {
   std::set<ASTEntryField> fields;
 
@@ -134,33 +133,29 @@ ASTEntryField::fromJSONNames(const std::vector<std::string> &jsonNames) {
 
 picojson::value types_to_json(const std::set<size_t> & types)
 {
-    std::vector<picojson::value> ans;
+    std::vector<std::string> ans;
     for (std::set<size_t>::const_iterator it = types.begin();
          it != types.end();
          ++it)
     {
-        std::ostringstream ss;
-        ss << std::hex << *it;
-        ans.push_back(picojson::value(ss.str()));
+        ans.push_back(Utils::hash_to_str(*it));
     }
-    return picojson::value(ans);
+    return to_json(ans);
 }
 
 picojson::value renames_to_json(const Renames & renames, RenameKind k)
 {
-  std::vector<picojson::value> ans;
+  std::vector<std::pair<std::string, unsigned int> > ans;
   for (Renames::const_iterator it = renames.begin();
        it != renames.end();
        ++it)
   {
       if (it->kind == k) {
-          std::vector<picojson::value> item;
-          item.push_back(picojson::value(it->name));
-          item.push_back(picojson::value(static_cast<int64_t>(it->index)));
-          ans.push_back(picojson::value(item));
+          ans.push_back(std::make_pair(it->name,
+                                       it->index));
       }
   }
-  return picojson::value(ans);
+  return to_json(ans);
 }
 
 picojson::value macros_to_json(const Macros & macros)
@@ -168,42 +163,10 @@ picojson::value macros_to_json(const Macros & macros)
     std::vector<picojson::value> ans;
     for (Macros::const_iterator it = macros.begin(); it != macros.end(); ++it)
     {
-        std::vector<picojson::value> item;
-        item.push_back(picojson::value(it->name()));
-        item.push_back(picojson::value(it->body()));
-        ans.push_back(picojson::value(item));
+        ans.push_back(to_json(std::make_pair(it->name(),
+                                             it->body())));
     }
-    return picojson::value(ans);
-}
-
-picojson::value stmt_list_to_json(const std::vector<unsigned int> & stmts)
-{
-    std::vector<picojson::value> ans;
-    for (std::vector<unsigned int>::const_iterator it = stmts.begin();
-         it != stmts.end();
-         ++it)
-    {
-        ans.push_back(picojson::value(static_cast<int64_t>(*it)));
-    }
-    return picojson::value(ans);
-}
-
-picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
-{
-    std::vector<picojson::value> ans;
-    for (ScopedNames::const_iterator it = scoped_names.begin();
-         it != scoped_names.end();
-         ++it)
-    {
-        std::vector<picojson::value> scope;
-        for (std::vector<std::string>::const_iterator
-                 jt = it->begin(); jt != it->end(); ++jt)
-        {
-            scope.push_back(picojson::value(*jt));
-        }
-        ans.push_back(picojson::value(scope));
-    }
-    return picojson::value(ans);
+    return to_json(ans);
 }
 
   std::set<ASTEntryField> ASTEntryField::getDefaultFields()
@@ -304,7 +267,7 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
     m_scoped_names()
   {}
 
-  ASTNonBinaryEntry::ASTNonBinaryEntry( 
+  ASTNonBinaryEntry::ASTNonBinaryEntry(
     const unsigned int counter,
     const unsigned int parentCounter,
     const std::string &astClass,
@@ -341,7 +304,7 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
     m_scoped_names(scoped_names)
     {}
 
-  ASTNonBinaryEntry::ASTNonBinaryEntry( 
+  ASTNonBinaryEntry::ASTNonBinaryEntry(
     clang::Stmt * s,
     clang::Stmt * p,
     const std::map<clang::Stmt*, unsigned int> & spine,
@@ -360,8 +323,8 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
     m_parentCounter = ( p == NULL || spine.find(p) == spine.end() ) ?
                       0 : spine.find(p)->second;
     m_astClass = s->getStmtClassName();
-    m_srcFileName = 
-        realpath( 
+    m_srcFileName =
+        realpath(
             sm.getFileEntryForID( sm.getMainFileID() )->getName(),
             NULL);
     m_beginSrcLine = beginLoc.getLine();
@@ -375,7 +338,7 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
     m_macros = macros;
     m_types = types;
     m_scoped_names = scoped_names;
-    m_opcode = clang::isa<clang::BinaryOperator>(s) ? 
+    m_opcode = clang::isa<clang::BinaryOperator>(s) ?
                static_cast<clang::BinaryOperator*>(s)->getOpcodeStr() :
                "";
 
@@ -385,7 +348,7 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
 
   ASTNonBinaryEntry::~ASTNonBinaryEntry() {}
 
-  ASTNonBinaryEntry::ASTEntry* ASTNonBinaryEntry::clone() const 
+  ASTNonBinaryEntry::ASTEntry* ASTNonBinaryEntry::clone() const
   {
     return new ASTNonBinaryEntry( m_counter,
                                   m_parentCounter,
@@ -416,7 +379,7 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
     return m_parentCounter;
   }
 
-  std::string ASTNonBinaryEntry::getASTClass() const 
+  std::string ASTNonBinaryEntry::getASTClass() const
   {
     return m_astClass;
   }
@@ -476,7 +439,7 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
       return m_types;
   }
 
-  std::vector<unsigned int> ASTNonBinaryEntry::getStmtList() const 
+  std::vector<unsigned int> ASTNonBinaryEntry::getStmtList() const
   {
     return m_stmt_list;
   }
@@ -495,7 +458,7 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
   {
     char msg[256];
 
-    sprintf(msg, "%8d %6d:%-3d %6d:%-3d %s", 
+    sprintf(msg, "%8d %6d:%-3d %6d:%-3d %s",
                  m_counter,
                  m_beginSrcLine,
                  m_beginSrcCol,
@@ -506,87 +469,91 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
     return std::string(msg);
   }
 
-  picojson::value 
+  picojson::value
   ASTNonBinaryEntry::toJSON(const std::set<ASTEntryField> &fields) const
   {
     picojson::object jsonObj;
-   
-    if (fields.find(ASTEntryField::COUNTER) != fields.end()) 
-      jsonObj[ASTEntryField::COUNTER.getJSONName()] = 
-        picojson::value(static_cast<int64_t>(m_counter));
 
-    if (fields.find(ASTEntryField::PARENT_COUNTER) != fields.end()) 
-      jsonObj[ASTEntryField::PARENT_COUNTER.getJSONName()] = 
-        picojson::value(static_cast<int64_t>(m_parentCounter));
+    if (fields.find(ASTEntryField::COUNTER) != fields.end())
+        jsonObj[ASTEntryField::COUNTER.getJSONName()] =
+            to_json(m_counter);
 
-    if (fields.find(ASTEntryField::AST_CLASS) != fields.end()) 
-      jsonObj[ASTEntryField::AST_CLASS.getJSONName()] = 
-        picojson::value(m_astClass);
+    if (fields.find(ASTEntryField::PARENT_COUNTER) != fields.end())
+        jsonObj[ASTEntryField::PARENT_COUNTER.getJSONName()] =
+            to_json(m_parentCounter);
 
-    if (fields.find(ASTEntryField::SRC_FILE_NAME) != fields.end()) 
-      jsonObj[ASTEntryField::SRC_FILE_NAME.getJSONName()] = 
-        picojson::value(m_srcFileName);
+    if (fields.find(ASTEntryField::AST_CLASS) != fields.end())
+        jsonObj[ASTEntryField::AST_CLASS.getJSONName()] =
+          to_json(m_astClass);
 
-    if (fields.find(ASTEntryField::BEGIN_SRC_LINE) != fields.end()) 
-      jsonObj[ASTEntryField::BEGIN_SRC_LINE.getJSONName()] = 
-        picojson::value(static_cast<int64_t>(m_beginSrcLine));
+    if (fields.find(ASTEntryField::SRC_FILE_NAME) != fields.end())
+        jsonObj[ASTEntryField::SRC_FILE_NAME.getJSONName()] =
+            to_json(m_srcFileName);
 
-    if (fields.find(ASTEntryField::BEGIN_SRC_COL) != fields.end()) 
-      jsonObj[ASTEntryField::BEGIN_SRC_COL.getJSONName()] = 
-        picojson::value(static_cast<int64_t>(m_beginSrcCol));
+    if (fields.find(ASTEntryField::BEGIN_SRC_LINE) != fields.end())
+        jsonObj[ASTEntryField::BEGIN_SRC_LINE.getJSONName()] =
+            to_json(m_beginSrcLine);
 
-    if (fields.find(ASTEntryField::END_SRC_LINE) != fields.end()) 
-      jsonObj[ASTEntryField::END_SRC_LINE.getJSONName()] = 
-        picojson::value(static_cast<int64_t>(m_endSrcLine));
+    if (fields.find(ASTEntryField::BEGIN_SRC_COL) != fields.end())
+        jsonObj[ASTEntryField::BEGIN_SRC_COL.getJSONName()] =
+            to_json(m_beginSrcCol);
 
-    if (fields.find(ASTEntryField::END_SRC_COL) != fields.end()) 
-      jsonObj[ASTEntryField::END_SRC_COL.getJSONName()] = 
-        picojson::value(static_cast<int64_t>(m_endSrcCol));
+    if (fields.find(ASTEntryField::END_SRC_LINE) != fields.end())
+        jsonObj[ASTEntryField::END_SRC_LINE.getJSONName()] =
+            to_json(m_endSrcLine);
 
-    if (fields.find(ASTEntryField::SRC_TEXT) != fields.end()) 
-      jsonObj[ASTEntryField::SRC_TEXT.getJSONName()] = 
-        picojson::value(escape_for_json(m_srcText));
+    if (fields.find(ASTEntryField::END_SRC_COL) != fields.end())
+        jsonObj[ASTEntryField::END_SRC_COL.getJSONName()] =
+            to_json(m_endSrcCol);
 
-    if (fields.find(ASTEntryField::GUARD_STMT) != fields.end()) 
-      jsonObj[ASTEntryField::GUARD_STMT.getJSONName()] = 
-        picojson::value(m_guardStmt);
+    if (fields.find(ASTEntryField::SRC_TEXT) != fields.end())
+        jsonObj[ASTEntryField::SRC_TEXT.getJSONName()] =
+            to_json(m_srcText);
 
-    if (fields.find(ASTEntryField::FULL_STMT) != fields.end()) 
-      jsonObj[ASTEntryField::ASTEntryField::FULL_STMT.getJSONName()] = 
-        picojson::value(m_fullStmt);
+    if (fields.find(ASTEntryField::GUARD_STMT) != fields.end())
+        jsonObj[ASTEntryField::GUARD_STMT.getJSONName()] =
+            to_json(m_guardStmt);
 
-    if (fields.find(ASTEntryField::UNBOUND_VALS) != fields.end()) 
-      jsonObj[ASTEntryField::UNBOUND_VALS.getJSONName()] = 
-        renames_to_json(m_renames, VariableRename);
+    if (fields.find(ASTEntryField::FULL_STMT) != fields.end())
+        jsonObj[ASTEntryField::ASTEntryField::FULL_STMT.getJSONName()] =
+            to_json(m_fullStmt);
 
-    if (fields.find(ASTEntryField::UNBOUND_FUNS) != fields.end()) 
-      jsonObj[ASTEntryField::UNBOUND_FUNS.getJSONName()] = 
-        renames_to_json(m_renames, FunctionRename);
+    if (fields.find(ASTEntryField::UNBOUND_VALS) != fields.end())
+        jsonObj[ASTEntryField::UNBOUND_VALS.getJSONName()] =
+            renames_to_json(m_renames, VariableRename);
 
-    if (fields.find(ASTEntryField::MACROS) != fields.end()) 
-      jsonObj[ASTEntryField::MACROS.getJSONName()] = 
-        macros_to_json(m_macros);
+    if (fields.find(ASTEntryField::UNBOUND_FUNS) != fields.end())
+        jsonObj[ASTEntryField::UNBOUND_FUNS.getJSONName()] =
+            renames_to_json(m_renames, FunctionRename);
 
-    if (fields.find(ASTEntryField::TYPES) != fields.end()) 
-      jsonObj[ASTEntryField::TYPES.getJSONName()] = types_to_json(m_types);
+    if (fields.find(ASTEntryField::MACROS) != fields.end())
+        jsonObj[ASTEntryField::MACROS.getJSONName()] =
+            macros_to_json(m_macros);
+
+    if (fields.find(ASTEntryField::TYPES) != fields.end())
+        jsonObj[ASTEntryField::TYPES.getJSONName()] =
+            types_to_json(m_types);
 
     if (fields.find(ASTEntryField::OPCODE) != fields.end() &&
-        !m_opcode.empty()) {
-      jsonObj[ASTEntryField::OPCODE.getJSONName()] = picojson::value(m_opcode);
-    } 
-    
-    if (fields.find(ASTEntryField::STMT_LIST) != fields.end() && 
-        m_astClass == "CompoundStmt") {
-      jsonObj[ASTEntryField::STMT_LIST.getJSONName()] = 
-        stmt_list_to_json(m_stmt_list);
+        !m_opcode.empty())
+    {
+        jsonObj[ASTEntryField::OPCODE.getJSONName()] =
+            to_json(m_opcode);
+    }
+
+    if (fields.find(ASTEntryField::STMT_LIST) != fields.end() &&
+        m_astClass == "CompoundStmt")
+    {
+        jsonObj[ASTEntryField::STMT_LIST.getJSONName()] =
+            to_json(m_stmt_list);
     }
 
     if (fields.find(ASTEntryField::SCOPES) != fields.end()) {
-        jsonObj[ASTEntryField::SCOPES.getJSONName()]
-            = scoped_names_to_json(m_scoped_names);
+        jsonObj[ASTEntryField::SCOPES.getJSONName()] =
+            to_json(m_scoped_names);
     }
 
-    return picojson::value(jsonObj);
+    return to_json(jsonObj);
   }
 
   ASTBinaryEntry::ASTBinaryEntry() :
@@ -597,8 +564,8 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
   {
   }
 
-  ASTBinaryEntry::ASTBinaryEntry( 
-    const unsigned int counter, 
+  ASTBinaryEntry::ASTBinaryEntry(
+    const unsigned int counter,
     const unsigned int parent_counter,
     const std::string &astClass,
     const std::string &srcFileName,
@@ -620,14 +587,14 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
     const unsigned long endAddress,
     const std::string &binaryContents ) :
 
-    ASTNonBinaryEntry( counter, 
+    ASTNonBinaryEntry( counter,
                        parent_counter,
-                       astClass, 
-                       srcFileName, 
-                       beginSrcLine, 
-                       beginSrcCol, 
-                       endSrcLine, 
-                       endSrcCol, 
+                       astClass,
+                       srcFileName,
+                       beginSrcLine,
+                       beginSrcCol,
+                       endSrcLine,
+                       endSrcCol,
                        srcText,
                        guardStmt,
                        fullStmt,
@@ -644,7 +611,7 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
   {
   }
 
-  ASTBinaryEntry::ASTBinaryEntry( 
+  ASTBinaryEntry::ASTBinaryEntry(
     clang::Stmt * s,
     clang::Stmt * p,
     const std::map<clang::Stmt*, unsigned int> & spine,
@@ -665,23 +632,23 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
                        scoped_names)
   {
     m_binaryFilePath = binaryAddressMap.getBinaryPath();
-    m_beginAddress = 
+    m_beginAddress =
         binaryAddressMap.getBeginAddressForLine(
-            getSrcFileName(), 
+            getSrcFileName(),
             getBeginSrcLine());
-    m_endAddress = 
+    m_endAddress =
         binaryAddressMap.getEndAddressForLine(
-            getSrcFileName(), 
+            getSrcFileName(),
             getEndSrcLine());
-    m_binaryContents = 
+    m_binaryContents =
         binaryAddressMap.getBinaryContentsAsStr(
-            m_beginAddress, 
+            m_beginAddress,
             m_endAddress);
   }
 
   ASTBinaryEntry::~ASTBinaryEntry() {}
 
-  ASTBinaryEntry::ASTEntry* ASTBinaryEntry::clone() const 
+  ASTBinaryEntry::ASTEntry* ASTBinaryEntry::clone() const
   {
     return new ASTBinaryEntry( getCounter(),
                                getParentCounter(),
@@ -730,7 +697,7 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
   {
     char msg[256];
 
-    sprintf(msg, "%8d %6d:%-3d %6d:%-3d %-25s %#016lx %#016lx", 
+    sprintf(msg, "%8d %6d:%-3d %6d:%-3d %-25s %#016lx %#016lx",
                  getCounter(),
                  getBeginSrcLine(),
                  getBeginSrcCol(),
@@ -742,29 +709,29 @@ picojson::value scoped_names_to_json(const ScopedNames & scoped_names)
 
     return std::string(msg);
   }
-  
-  picojson::value 
+
+  picojson::value
   ASTBinaryEntry::toJSON(const std::set<ASTEntryField> &fields) const
   {
     picojson::object jsonObj = ASTNonBinaryEntry::toJSON().get<picojson::object>();
-   
-    if (fields.find(ASTEntryField::BINARY_FILE_PATH) != fields.end()) 
-      jsonObj[ASTEntryField::BINARY_FILE_PATH.getJSONName()] = 
-        picojson::value(m_binaryFilePath);
 
-    if (fields.find(ASTEntryField::BEGIN_ADDR) != fields.end()) 
-      jsonObj[ASTEntryField::BEGIN_ADDR.getJSONName()] = 
-        picojson::value(static_cast<int64_t>(m_beginAddress));
+    if (fields.find(ASTEntryField::BINARY_FILE_PATH) != fields.end())
+      jsonObj[ASTEntryField::BINARY_FILE_PATH.getJSONName()] =
+        to_json(m_binaryFilePath);
 
-    if (fields.find(ASTEntryField::END_ADDR) != fields.end()) 
-      jsonObj[ASTEntryField::END_ADDR.getJSONName()] = 
-        picojson::value(static_cast<int64_t>(m_endAddress));
+    if (fields.find(ASTEntryField::BEGIN_ADDR) != fields.end())
+      jsonObj[ASTEntryField::BEGIN_ADDR.getJSONName()] =
+        to_json(m_beginAddress);
 
-    if (fields.find(ASTEntryField::BINARY_CONTENTS) != fields.end()) 
-      jsonObj[ASTEntryField::BINARY_CONTENTS.getJSONName()] = 
-        picojson::value(m_binaryContents);
+    if (fields.find(ASTEntryField::END_ADDR) != fields.end())
+      jsonObj[ASTEntryField::END_ADDR.getJSONName()] =
+        to_json(m_endAddress);
 
-    return picojson::value(jsonObj);
+    if (fields.find(ASTEntryField::BINARY_CONTENTS) != fields.end())
+      jsonObj[ASTEntryField::BINARY_CONTENTS.getJSONName()] =
+        to_json(m_binaryContents);
+
+    return to_json(jsonObj);
   }
 
 }

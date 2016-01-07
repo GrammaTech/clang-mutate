@@ -31,8 +31,6 @@
 #include <sys/stat.h>
 #include <stdio.h>
 
-#include <iostream>
-
 #define VISIT(func) \
   bool func { VisitRange(element->getSourceRange()); return true; }
 
@@ -154,7 +152,7 @@ using namespace clang;
             F->isVariadic());
     }
 
-    virtual bool VisitDecl(Decl *D){
+    virtual bool VisitNamedDecl(NamedDecl *D){
       // Delete the ParentMap if we are in a new
       // function declaration.  There is a tight 
       // coupling between this action and VisitStmt(Stmt* ).
@@ -162,6 +160,15 @@ using namespace clang;
       if (isa<FunctionDecl>(D)) {
         delete PM;
         PM = NULL;
+      }
+
+      if (PM == NULL &&
+          D->getIdentifier() != NULL &&
+          Utils::SelectRange(Rewrite.getSourceMgr(),
+                             MainFileID,
+                             D->getSourceRange()))
+      {
+          // TODO
       }
 
       return true;

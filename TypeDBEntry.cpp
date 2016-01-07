@@ -87,20 +87,20 @@ picojson::value TypeDBEntry::toJSON() const
     {
         if (*it == 0)
             continue;
-        j_reqs.push_back(picojson::value(Utils::hash_to_str(*it)));
+        j_reqs.push_back(to_json(Utils::hash_to_str(*it)));
     }
     
-    jsonObj["hash"] = picojson::value(hash_as_str());
-    jsonObj["type"] = picojson::value(escape_for_json(m_name));
+    jsonObj["hash"] = to_json(hash_as_str());
+    jsonObj["type"] = to_json(m_name);
     if (m_is_include) {
-        jsonObj["include"] = picojson::value(escape_for_json(m_text));
+        jsonObj["include"] = to_json(m_text);
     }
     else {
-        jsonObj["decl"] = picojson::value(escape_for_json(m_text));
+        jsonObj["decl"] = to_json(m_text);
     }
-    jsonObj["reqs"] = picojson::value(j_reqs);
+    jsonObj["reqs"] = to_json(j_reqs);
     
-    return picojson::value(jsonObj);
+    return to_json(jsonObj);
 }
 
 picojson::array TypeDBEntry::databaseToJSON()
