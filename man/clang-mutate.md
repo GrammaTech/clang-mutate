@@ -98,104 +98,104 @@ http://clang.llvm.org/docs/LibTooling.html for details.
 
 ## Mandatory keys
 ast\_class
-:   TODO.
+:   both
 
 begin\_src\_col
-:   TODO.
+:   clang
 
 begin\_src\_line
-:   TODO.
+:   clang
 
 counter
-:   TODO.
+:   clang
 
 end\_src\_col
-:   TODO.
+:   clang
 
 end\_src\_line
-:   TODO.
+:   clang
 
 full\_stmt
-:   TODO.
+:   both
 
 guard\_stmt
-:   TODO.
+:   both
 
 macros
-:   TODO.
+:   both
 
 parent\_counter
-:   TODO.
+:   clang
 
 src\_file\_name
-:   TODO.
+:   neither
 
 src\_text
-:   TODO.
+:   both
 
 types
-:   TODO.
+:   both
 
 unbound\_funs
-:   TODO.
+:   both
 
 unbound\_vals
-:   TODO.
+:   both
 
 ## Optional keys
 opcode
-:   TODO.
+:   delete
 
 end\_addr
-:   TODO.
+:   clang
 
 binary\_file\_path
-:   TODO.
+:   neither
 
 binary\_contents
-:   TODO.
+:   both
 
 begin\_addr
-:   TODO.
+:   clang
 
 stmt\_list
-:   TODO.
+:   clang
 
 void\_ret
-:   TODO.
+:   only for function declarations, only clang
 
 varargs
-:   TODO.
+:   only for function declarations, only clang
 
 text
-:   TODO.
+:   only for function declarations, only clang
 
 ret
-:   TODO.
+:   only for function declarations, only clang
 
 name
-:   TODO.
+:   only for function declarations, only clang
 
 body
-:   TODO.
+:   statement reference, only clang
 
 args
-:   TODO.
+:   only for function declarations, only clang
 
 type
-:   TODO.
+:   both
 
 reqs
-:   TODO.
+:   both
 
 hash
-:   TODO.
+:   both
 
 include
-:   TODO.
+:   both
 
 decl
-:   TODO.
+:   both
 
 # DISCUSSION
 
