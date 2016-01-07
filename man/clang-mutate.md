@@ -44,7 +44,7 @@ http://clang.llvm.org/docs/LibTooling.html for details.
 -binary
 :   Binary with DWARF information for line-to-address mapping.
 
-# MUTATION OPERATIONS
+## Mutation operations
 
 -cut
 :   Cut stmt1 from the source.
@@ -71,7 +71,7 @@ http://clang.llvm.org/docs/LibTooling.html for details.
 :   Replace the entire declaration of the function containing stmt1
     to value1.
     
-# INSPECTION OPERATIONS
+## Inspection operations
 
 -number
 :   Annotate the source marking each statement with its ID.
@@ -94,11 +94,110 @@ http://clang.llvm.org/docs/LibTooling.html for details.
 -json
 :   List JSON-encoded descriptions for every statement.
 
-# Examples
+# JSON KEYS
 
-TODO
+## Mandatory keys
+ast\_class
+:   TODO.
 
-# Discussion
+begin\_src\_col
+:   TODO.
+
+begin\_src\_line
+:   TODO.
+
+counter
+:   TODO.
+
+end\_src\_col
+:   TODO.
+
+end\_src\_line
+:   TODO.
+
+full\_stmt
+:   TODO.
+
+guard\_stmt
+:   TODO.
+
+macros
+:   TODO.
+
+parent\_counter
+:   TODO.
+
+src\_file\_name
+:   TODO.
+
+src\_text
+:   TODO.
+
+types
+:   TODO.
+
+unbound\_funs
+:   TODO.
+
+unbound\_vals
+:   TODO.
+
+## Optional keys
+opcode
+:   TODO.
+
+end\_addr
+:   TODO.
+
+binary\_file\_path
+:   TODO.
+
+binary\_contents
+:   TODO.
+
+begin\_addr
+:   TODO.
+
+stmt\_list
+:   TODO.
+
+void\_ret
+:   TODO.
+
+varargs
+:   TODO.
+
+text
+:   TODO.
+
+ret
+:   TODO.
+
+name
+:   TODO.
+
+body
+:   TODO.
+
+args
+:   TODO.
+
+type
+:   TODO.
+
+reqs
+:   TODO.
+
+hash
+:   TODO.
+
+include
+:   TODO.
+
+decl
+:   TODO.
+
+# DISCUSSION
 
 `clang-mutate` is a tool for source modification.  In most cases
 arbitrary changes to program source code results in non-compilable
@@ -108,7 +207,7 @@ source, however in general `clang-mutate` leaves all non-trivial
 decisions to the users.  We discuss some specific cases and design
 decisions below.
 
-## Insertion of Semicolons
+## Insertion of semicolons
 
 In general full statements (within a `clang::CompoundStmt`) require a
 terminating semi-colon, while regular statements (e.g., inside of a
@@ -129,7 +228,11 @@ variables automatically, it does list in-scope variables via the
 *get-scope* functionality.  It also replaces free variables in json
 output with easily search/replaced place holders.
 
-# Terminology
+# EXAMPLES
+
+TODO
+
+# TERMINOLOGY
 
 full statement
 :   A `clang::Stmt` whose parent is a `clang::CompoundStmt`.  These
