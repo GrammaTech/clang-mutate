@@ -31,6 +31,9 @@
 #include <sys/stat.h>
 #include <stdio.h>
 
+#include <sstream>
+#include <iostream>
+
 #define VISIT(func) \
   bool func { VisitRange(element->getSourceRange()); return true; }
 
@@ -79,6 +82,7 @@ using namespace clang;
       var_scopes.push_back(std::set<IdentifierInfo*>());
 
       // Run Recursive AST Visitor
+      DeclDepth = 0;
       TraverseDecl(D);
    
       // Output the results   
@@ -142,7 +146,10 @@ using namespace clang;
         
         // Build a function prototype, which will be added to the
         // global database. We don't actually need the value here.
-        AuxDB::create(std::string("proto:") + F->getNameAsString())
+        std::ostringstream ss;
+        static unsigned int proto_id = 0;
+        ss << "proto#" << proto_id++;
+        AuxDB::create(ss.str())
             .set("name", F->getNameAsString())
             .set("text", decl_text)
             .set("body", GetNextCounter())
@@ -152,7 +159,7 @@ using namespace clang;
             .set("varargs", F->isVariadic());
     }
 
-    virtual bool VisitNamedDecl(NamedDecl *D){
+    virtual bool VisitValueDecl(NamedDecl *D){
       // Delete the ParentMap if we are in a new
       // function declaration.  There is a tight 
       // coupling between this action and VisitStmt(Stmt* ).
@@ -162,13 +169,34 @@ using namespace clang;
         PM = NULL;
       }
 
-      if (PM == NULL &&
+      SourceManager & sm = CI->getSourceManager();
+      const LangOptions & opts = CI->getLangOpts();
+      SourceRange r = D->getSourceRange();
+      r = Utils::expandRange(sm, opts, r);
+
+      // DeclDepth == 1 is the TranslationUnitDecl,
+      // DeclDepth == 2 is its immediate children (global decls)
+      if (DeclDepth == 2 &&
           D->getIdentifier() != NULL &&
-          Utils::SelectRange(Rewrite.getSourceMgr(),
-                             MainFileID,
-                             D->getSourceRange()))
+          Utils::SelectRange(sm, MainFileID, r))
       {
-          // TODO
+          PresumedLoc beginLoc = sm.getPresumedLoc(r.getBegin());
+          PresumedLoc endLoc   = sm.getPresumedLoc(r.getEnd());
+
+          std::string decl_text = Lexer::getSourceText(
+              CharSourceRange::getCharRange(r.getBegin(),
+                                            r.getEnd().getLocWithOffset(1)),
+              sm, opts, NULL);
+
+          std::ostringstream ss;
+          static unsigned int decl_id = 0;
+          ss << "global-decl#" << decl_id++;
+          AuxDB::create(ss.str())
+              .set("decl_text"     , decl_text)
+              .set("begin_src_line", beginLoc.getLine())
+              .set("begin_src_col" , beginLoc.getColumn())
+              .set("end_src_line"  , endLoc.getLine())
+              .set("end_src_col"   , endLoc.getColumn());
       }
 
       return true;
@@ -270,6 +298,7 @@ using namespace clang;
 
     bool TraverseDecl(Decl * D) {
         bool keep_going;
+        ++DeclDepth;
         if (D != NULL && D->hasBody()) {
             const FunctionDecl * F = D->getAsFunction();
             RegisterFunctionDecl(F);
@@ -284,6 +313,7 @@ using namespace clang;
         else {
             keep_going = base::TraverseDecl(D);
         }
+        --DeclDepth;
         return keep_going;
     }
 
@@ -334,6 +364,8 @@ using namespace clang;
                   std::vector<unsigned int> > > block_spine;
     GetBindingCtx get_bindings;
     CompilerInstance * CI;
+
+    unsigned int DeclDepth;
   };
 }
 

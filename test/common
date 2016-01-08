@@ -17,11 +17,19 @@ if [ ! -z "$1" ] &&
 HELLO=etc/hello.c
 HELLO_EXE=etc/hello
 
+DECLS=etc/decls.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
+run_decls(){
+    clang-mutate "$@" $DECLS --; }
+
 json_filter(){
     cat -|jshon -a -j|grep "\"${1}\":${2}\(,\|}\)"; }
+
+json_key_filter(){
+    cat -|jshon -a -j|grep "\"${1}\":"; }
 
 # Wrap lines of json objects into a json array.
 json_wrap(){

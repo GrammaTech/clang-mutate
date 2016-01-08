@@ -72,7 +72,8 @@ TESTS =	help-text-appears				\
 	hello-semi-colon-on-end-of-set			\
 	hello-semi-colon-on-end-of-set2			\
 	hello-semi-colon-on-end-of-statement-cut	\
-	hello-semi-colon-on-end-of-statement-cut
+	hello-semi-colon-on-end-of-statement-cut        \
+	decls-are-found
 
 etc/hello: etc/hello.c
 	$(CC) -g -O0 $< -o $@
