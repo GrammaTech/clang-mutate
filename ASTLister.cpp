@@ -5,7 +5,7 @@
 #include "Macros.h"
 #include "Scopes.h"
 #include "TypeDBEntry.h"
-#include "ProtoDBEntry.h"
+#include "AuxDB.h"
 #include "Utils.h"
 
 #include "clang/Basic/FileManager.h"
@@ -119,7 +119,7 @@ using namespace clang;
 
         QualType ret = F->getReturnType();
 
-        std::vector<std::pair<std::string, size_t> > args;
+        std::vector<std::pair<std::string, Hash> > args;
         for (unsigned int i = 0; i < F->getNumParams(); ++i) {
             const ParmVarDecl * p = F->getParamDecl(i);
             args.push_back(std::make_pair(
@@ -142,14 +142,14 @@ using namespace clang;
         
         // Build a function prototype, which will be added to the
         // global database. We don't actually need the value here.
-        ProtoDBEntry proto(
-            F->getNameAsString(),
-            decl_text,
-            GetNextCounter(),
-            hash_type(ret.getTypePtr(), CI),
-            ret.getTypePtr()->isVoidType(),
-            args,
-            F->isVariadic());
+        AuxDB::create(std::string("proto:") + F->getNameAsString())
+            .set("name", F->getNameAsString())
+            .set("text", decl_text)
+            .set("body", GetNextCounter())
+            .set("ret", hash_type(ret.getTypePtr(), CI))
+            .set("void_ret", ret.getTypePtr()->isVoidType())
+            .set("args", args)
+            .set("varargs", F->isVariadic());
     }
 
     virtual bool VisitNamedDecl(NamedDecl *D){

@@ -266,11 +266,12 @@ std::vector<std::string> split(const std::string &input,
     return elems;
 }
 
-std::string hash_to_str(size_t hash)
+} // end namespace Utils
+
+picojson::value Hash::toJSON() const
 {
     std::ostringstream ss;
-    ss << std::hex << hash << std::dec;
-    return ss.str();
+    ss << std::hex << m_hash;
+    return to_json(ss.str());
 }
 
-} // end namespace Utils

@@ -131,18 +131,6 @@ ASTEntryField::fromJSONNames(const std::vector<std::string> &jsonNames) {
   return fields;
 }
 
-picojson::value types_to_json(const std::set<size_t> & types)
-{
-    std::vector<std::string> ans;
-    for (std::set<size_t>::const_iterator it = types.begin();
-         it != types.end();
-         ++it)
-    {
-        ans.push_back(Utils::hash_to_str(*it));
-    }
-    return to_json(ans);
-}
-
 picojson::value renames_to_json(const Renames & renames, RenameKind k)
 {
   std::vector<std::pair<std::string, unsigned int> > ans;
@@ -156,17 +144,6 @@ picojson::value renames_to_json(const Renames & renames, RenameKind k)
       }
   }
   return to_json(ans);
-}
-
-picojson::value macros_to_json(const Macros & macros)
-{
-    std::vector<picojson::value> ans;
-    for (Macros::const_iterator it = macros.begin(); it != macros.end(); ++it)
-    {
-        ans.push_back(to_json(std::make_pair(it->name(),
-                                             it->body())));
-    }
-    return to_json(ans);
 }
 
   std::set<ASTEntryField> ASTEntryField::getDefaultFields()
@@ -207,7 +184,7 @@ picojson::value macros_to_json(const Macros & macros)
       BinaryAddressMap &binaryAddressMap,
       const Renames & renames,
       const Macros & macros,
-      const std::set<size_t> & types,
+      const std::set<Hash> & types,
       const ScopedNames & scoped_names )
   {
     clang::SourceManager &sm = rewrite.getSourceMgr();
@@ -281,7 +258,7 @@ picojson::value macros_to_json(const Macros & macros)
     const bool fullStmt,
     const Renames & renames,
     const Macros & macros,
-    const std::set<size_t> & types,
+    const std::set<Hash> & types,
     const std::vector<unsigned int> & stmt_list,
     const std::string & opcode,
     const ScopedNames & scoped_names) :
@@ -311,7 +288,7 @@ picojson::value macros_to_json(const Macros & macros)
     clang::Rewriter& rewrite,
     const Renames & renames,
     const Macros & macros,
-    const std::set<size_t> & types,
+    const std::set<Hash> & types,
     const ScopedNames & scoped_names )
   {
     clang::SourceManager &sm = rewrite.getSourceMgr();
@@ -434,7 +411,7 @@ picojson::value macros_to_json(const Macros & macros)
       return m_macros;
   }
 
-  std::set<size_t> ASTNonBinaryEntry::getTypes() const
+  std::set<Hash> ASTNonBinaryEntry::getTypes() const
   {
       return m_types;
   }
@@ -528,11 +505,11 @@ picojson::value macros_to_json(const Macros & macros)
 
     if (fields.find(ASTEntryField::MACROS) != fields.end())
         jsonObj[ASTEntryField::MACROS.getJSONName()] =
-            macros_to_json(m_macros);
+            to_json(m_macros);
 
     if (fields.find(ASTEntryField::TYPES) != fields.end())
         jsonObj[ASTEntryField::TYPES.getJSONName()] =
-            types_to_json(m_types);
+            to_json(m_types);
 
     if (fields.find(ASTEntryField::OPCODE) != fields.end() &&
         !m_opcode.empty())
@@ -578,7 +555,7 @@ picojson::value macros_to_json(const Macros & macros)
     bool fullStmt,
     const Renames & renames,
     const Macros & macros,
-    const std::set<size_t> & types,
+    const std::set<Hash> & types,
     const std::vector<unsigned int> & stmt_list,
     const std::string & opcode,
     const ScopedNames & scoped_names,
@@ -619,7 +596,7 @@ picojson::value macros_to_json(const Macros & macros)
     BinaryAddressMap& binaryAddressMap,
     const Renames & renames,
     const Macros & macros,
-    const std::set<size_t> & types,
+    const std::set<Hash> & types,
     const ScopedNames & scoped_names) :
 
     ASTNonBinaryEntry( s,

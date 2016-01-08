@@ -1,6 +1,8 @@
 #ifndef GET_MACROS_H
 #define GET_MACROS_H
 
+#include "Json.h"
+
 #include "clang/Basic/LLVM.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/ASTContext.h"
@@ -86,5 +88,10 @@ private:
 };
 
 } // end namespace clang_mutate
+
+template <> inline
+picojson::value to_json(const clang_mutate::Macro & m)
+{ return to_json(std::make_pair(m.name(), m.body())); }
+
 
 #endif

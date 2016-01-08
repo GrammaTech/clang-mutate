@@ -1,6 +1,8 @@
 #ifndef AST_BINDINGS_H
 #define AST_BINDINGS_H
 
+#include "Utils.h"
+
 #include "clang/Basic/LLVM.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/ASTContext.h"
@@ -20,7 +22,7 @@ namespace clang_mutate {
 struct BindingDatum
 {
     clang::IdentifierInfo * id;
-    size_t type_hash;
+    Hash type_hash;
 };
 
 class BindingCtx
@@ -28,18 +30,18 @@ class BindingCtx
 public:
 
   typedef clang::IdentifierInfo* Id;
-  typedef std::stack<std::pair<Id, size_t> > IdStack;
+  typedef std::stack<std::pair<Id, Hash> > IdStack;
   typedef std::map<std::string, IdStack> Context;
   typedef std::pair<std::string, Id> Binding;
   
   BindingCtx() : ctx() {}
 
-  void push(const std::string & name, Id id, size_t type_hash);
+  void push(const std::string & name, Id id, Hash type_hash);
   void pop(const std::string & name);
-  std::pair<Id,size_t> lookup(const std::string & name) const;
+  std::pair<Id,Hash> lookup(const std::string & name) const;
   bool is_bound(const std::string & name) const;
 
-  std::set<size_t> required_types() const;
+  std::set<Hash> required_types() const;
   
 private:
   Context ctx;
@@ -71,7 +73,7 @@ public:
   std::set<std::pair<clang::IdentifierInfo*, size_t> > free_values(
       const std::vector<std::set<clang::IdentifierInfo*> > & scopes) const;
   std::set<clang::IdentifierInfo*> free_functions() const;
-  std::set<size_t> required_types() const;
+  std::set<Hash> required_types() const;
   
   void dump() const;
   
@@ -81,7 +83,7 @@ private:
 
   BindingCtx ctx;
   std::set<BindingCtx::Binding> unbound_v, unbound_f;
-  std::set<size_t> addl_types;
+  std::set<Hash> addl_types;
   clang::CompilerInstance * ci;
 };
  

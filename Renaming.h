@@ -1,6 +1,8 @@
 #ifndef RENAMING_H
 #define RENAMING_H
 
+#include "Json.h"
+
 #include "clang/Basic/LLVM.h"
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/ASTContext.h"

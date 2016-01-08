@@ -7,11 +7,11 @@
 using namespace clang_mutate;
 using namespace clang;
 
-std::map<size_t, TypeDBEntry> TypeDBEntry::type_db;
+std::map<Hash, TypeDBEntry> TypeDBEntry::type_db;
 
 TypeDBEntry TypeDBEntry::mkType(const std::string & _name,
                                 const std::string & _text,
-                                const std::set<size_t> & _reqs)
+                                const std::set<Hash> & _reqs)
 {
     TypeDBEntry ti;
     ti.m_name = _name;
@@ -51,8 +51,8 @@ TypeDBEntry TypeDBEntry::mkInclude(const std::string & _name,
 void TypeDBEntry::compute_hash()
 {
     std::hash<std::string> hasher;
-    m_hash = hasher(m_name + m_text);
-    for (std::set<size_t>::iterator it = m_reqs.begin();
+    size_t h = hasher(m_name + m_text);
+    for (std::set<Hash>::iterator it = m_reqs.begin();
          it != m_reqs.end();
          ++it)
     {
@@ -61,36 +61,27 @@ void TypeDBEntry::compute_hash()
         // from Google's CityHash, as in
         // http://stackoverflow.com/questions/8513911/how-to-create-a-good-hash-combine-with-64-bit-output-inspired-by-boosthash-co
         const size_t kMul = 0x9ddfea08eb382d69ULL;
-        size_t a = (*it ^ m_hash) * kMul;
+        size_t a = (it->hash() ^ h) * kMul;
         a ^= (a >> 47);
-        size_t b = (m_hash ^ a) * kMul;
+        size_t b = (h ^ a) * kMul;
         b ^= (b >> 47);
-        m_hash = b * kMul;
+        h = b * kMul;
     }
-    
+
+    m_hash = h;
     if (type_db.find(m_hash) != type_db.end())
         return;
     type_db[m_hash] = *this;
 }
 
-std::string TypeDBEntry::hash_as_str() const
-{ return Utils::hash_to_str(m_hash); }
-
 picojson::value TypeDBEntry::toJSON() const
 {
     picojson::object jsonObj;
 
-    std::vector<picojson::value> j_reqs;
-    for (std::set<size_t>::iterator it = m_reqs.begin();
-         it != m_reqs.end();
-         ++it)
-    {
-        if (*it == 0)
-            continue;
-        j_reqs.push_back(to_json(Utils::hash_to_str(*it)));
-    }
+    std::set<Hash> j_reqs = m_reqs;
+    j_reqs.erase(Hash(0));
     
-    jsonObj["hash"] = to_json(hash_as_str());
+    jsonObj["hash"] = to_json(m_hash);
     jsonObj["type"] = to_json(m_name);
     if (m_is_include) {
         jsonObj["include"] = to_json(m_text);
@@ -106,11 +97,11 @@ picojson::value TypeDBEntry::toJSON() const
 picojson::array TypeDBEntry::databaseToJSON()
 {
     picojson::array array;
-    for (std::map<size_t, TypeDBEntry>::iterator it = type_db.begin();
+    for (std::map<Hash, TypeDBEntry>::iterator it = type_db.begin();
          it != type_db.end();
          ++it)
     {
-        array.push_back(it->second.toJSON());
+        array.push_back(to_json(it->second));
     }
     return array;
 }
@@ -139,15 +130,15 @@ static bool is_system_header(
     return false;
 }
 
-static size_t define_type(
+static Hash define_type(
     const Type * t,
-    std::map<const Type*, size_t> & seen,
+    std::map<const Type*, Hash> & seen,
     CompilerInstance * ci)
 {
     if (t == NULL)
         return 0;
     
-    std::map<const Type*, size_t>::iterator search = seen.find(t);
+    std::map<const Type*, Hash>::iterator search = seen.find(t);
     if (search != seen.end())
         return search->second;
 
@@ -158,7 +149,7 @@ static size_t define_type(
         SourceManager & sm = ci->getSourceManager();
         SourceLocation loc = sm.getSpellingLoc(td->getSourceRange().getBegin());
         if (is_system_header(sm.getFilename(loc).str(), header)) {
-            size_t hash = TypeDBEntry::mkInclude(td->getNameAsString(), header).hash();
+            Hash hash = TypeDBEntry::mkInclude(td->getNameAsString(), header).hash();
             seen[t] = hash;
             return hash;
         }
@@ -167,7 +158,7 @@ static size_t define_type(
             const Type * u_tt = td->getUnderlyingType().getTypePtr();
 
             // Emit underlying type
-            std::set<size_t> reqs;
+            std::set<Hash> reqs;
             reqs.insert(define_type(u_tt, seen, ci));
 
             // Emit the typedef itself
@@ -208,7 +199,7 @@ static size_t define_type(
                 }
             }
             if (one_line) {
-                size_t hash = TypeDBEntry::mkType(name, one_line_name, reqs).hash();
+                Hash hash = TypeDBEntry::mkType(name, one_line_name, reqs).hash();
                 seen[t] = hash;
                 return hash;
             }
@@ -236,16 +227,16 @@ static size_t define_type(
 
     else if (t->isPointerType()) {
         // Just ensure that the pointed-to type is defined
-        size_t hash = define_type(t->getPointeeType().getTypePtr(), seen, ci);
+        Hash hash = define_type(t->getPointeeType().getTypePtr(), seen, ci);
         seen[t] = hash;
         return hash;
     }
 
     else if (t->isArrayType()) {
         // Just ensure that the array's element type is defined.
-        size_t hash = define_type(t->getAsArrayTypeUnsafe()
-                                   ->getElementType().getTypePtr(),
-                                  seen, ci);
+        Hash hash = define_type(t->getAsArrayTypeUnsafe()
+                                ->getElementType().getTypePtr(),
+                                seen, ci);
         seen[t] = hash;
         return hash;
     }
@@ -254,7 +245,7 @@ static size_t define_type(
         const RecordType * rt = t->getAsStructureType();
         RecordDecl * rd = rt->getDecl()->getDefinition();
 
-        std::set<size_t> reqs;
+        std::set<Hash> reqs;
 
         // Forward-declare the struct/class if it is not anonymous
         
@@ -272,7 +263,7 @@ static size_t define_type(
              it != rd->field_end();
              ++it)
         {
-            size_t h = define_type(it->getType().getTypePtr(), seen, ci);
+            Hash h = define_type(it->getType().getTypePtr(), seen, ci);
             reqs.insert(h);
         }
 
@@ -301,8 +292,8 @@ static size_t define_type(
     return 0;
 }
 
-size_t clang_mutate::hash_type(const Type * t, CompilerInstance * ci)
+Hash clang_mutate::hash_type(const Type * t, CompilerInstance * ci)
 {
-    std::map<const Type*, size_t> seen;
+    std::map<const Type*, Hash> seen;
     return define_type(t, seen, ci);
 }

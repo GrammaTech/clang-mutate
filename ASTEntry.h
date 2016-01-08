@@ -9,6 +9,7 @@
 #include "BinaryAddressMap.h"
 #include "Renaming.h"
 #include "Macros.h"
+#include "Utils.h"
 
 #include "clang/AST/AST.h"
 #include "clang/Basic/SourceManager.h"
@@ -93,7 +94,7 @@ namespace clang_mutate
                            BinaryAddressMap &binaryAddressMap,
                            const Renames & renames,
                            const Macros & macros,
-                           const std::set<size_t> & types,
+                           const std::set<Hash> & types,
                            const ScopedNames & scoped_names);
   private:
     ASTEntryFactory() {}
@@ -118,7 +119,7 @@ namespace clang_mutate
                        const bool fullStmt,
                        const Renames & renames,
                        const Macros & macros,
-                       const std::set<size_t> & types,
+                       const std::set<Hash> & types,
                        const std::vector<unsigned int> & stmt_list,
                        const std::string & opcode,
                        const ScopedNames & scoped_names );
@@ -129,7 +130,7 @@ namespace clang_mutate
                        clang::Rewriter& rewrite,
                        const Renames & renames,
                        const Macros & macros,
-                       const std::set<size_t> & types,
+                       const std::set<Hash> & types,
                        const ScopedNames & scoped_names );
 
     virtual ~ASTNonBinaryEntry();
@@ -149,7 +150,7 @@ namespace clang_mutate
     virtual bool getIsFullStmt() const;
     virtual Renames getRenames() const;
     virtual Macros getMacros() const;
-    virtual std::set<size_t> getTypes() const;
+    virtual std::set<Hash> getTypes() const;
     virtual std::vector<unsigned int> getStmtList() const;
     virtual std::string getOpcode() const;
     virtual ScopedNames getScopedNames() const;
@@ -176,7 +177,7 @@ namespace clang_mutate
     bool m_fullStmt;
     Renames m_renames;
     Macros m_macros;
-    std::set<size_t> m_types;
+    std::set<Hash> m_types;
     std::vector<unsigned int> m_stmt_list;
     std::string m_opcode;
     ScopedNames m_scoped_names;
@@ -201,7 +202,7 @@ namespace clang_mutate
                     const bool fullStmt,
                     const Renames & renames,
                     const Macros & macros,
-                    const std::set<size_t> & types,
+                    const std::set<Hash> & types,
                     const std::vector<unsigned int> & stmt_list,
                     const std::string & opcode,
                     const ScopedNames & scoped_names,
@@ -217,7 +218,7 @@ namespace clang_mutate
                     BinaryAddressMap& binaryAddressMap,
                     const Renames & renames,
                     const Macros & macros,
-                    const std::set<size_t> & types,
+                    const std::set<Hash> & types,
                     const ScopedNames & scoped_names );
 
     virtual ~ASTBinaryEntry();

@@ -4,6 +4,9 @@
 #include "third-party/picojson-1.3.0/picojson.h"
 
 #include <string>
+#include <set>
+#include <vector>
+#include <string>
 
 class EscapedString
 {
@@ -15,7 +18,7 @@ public:
     picojson::value toJSON() const;
 
     template <typename T>
-        static picojson::value map_to_json(const std::map<std::string, T> & obj);
+    static picojson::value map_to_json(const std::map<std::string, T> & obj);
 
 private:
     std::string m_esc_str;
@@ -23,6 +26,7 @@ private:
 
 void append_arrays(picojson::array & xs, const picojson::array & ys);
 
+// Default serialization: check for a picojson::value constructor
 template <typename T>
 picojson::value to_json(const T & t)
 { return picojson::value(t); }
@@ -36,6 +40,9 @@ picojson::value to_json(const std::map<std::string,T> & obj);
 
 template <typename T>
 picojson::value to_json(const std::vector<T> & ts);
+
+template <typename T>
+picojson::value to_json(const std::set<T> & ts);
 
 // Escaped string serialization
 template <> inline
@@ -69,6 +76,19 @@ picojson::value to_json(const std::vector<T> & ts)
 template <> inline
 picojson::value to_json(const std::vector<picojson::value> & ts)
 { return picojson::value(ts); }
+
+// Set serialization, by conversion to vector
+template <typename T>
+picojson::value to_json(const std::set<T> & ts)
+{
+    std::vector<T> ans;
+    for (typename std::set<T>::const_iterator
+             it = ts.begin(); it != ts.end(); ++it)
+    {
+        ans.push_back(*it);
+    }
+    return to_json(ans);
+}
 
 // Pair serialization
 template <typename X,typename Y>
