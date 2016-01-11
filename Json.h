@@ -8,22 +8,6 @@
 #include <vector>
 #include <string>
 
-class EscapedString
-{
-public:
-    EscapedString(const std::string & s);
-    EscapedString(const EscapedString & e)
-        : m_esc_str(e.m_esc_str)
-    {}
-    picojson::value toJSON() const;
-
-    template <typename T>
-    static picojson::value map_to_json(const std::map<std::string, T> & obj);
-
-private:
-    std::string m_esc_str;
-};
-
 void append_arrays(picojson::array & xs, const picojson::array & ys);
 
 // Default serialization: check for a picojson::value constructor
@@ -44,20 +28,18 @@ picojson::value to_json(const std::vector<T> & ts);
 template <typename T>
 picojson::value to_json(const std::set<T> & ts);
 
-// Escaped string serialization
-template <> inline
-picojson::value to_json(const EscapedString & s)
-{ return s.toJSON(); }
-
-// String serialization, with escaping
-template <> inline
-picojson::value to_json(const std::string & s)
-{ return to_json(EscapedString(s)); }
-
 // Map serialization to JSON object
 template <typename T>
 picojson::value to_json(const std::map<std::string,T> & obj)
-{ return EscapedString::map_to_json(obj); }
+{
+    std::map<std::string, picojson::value> ans;
+    for (typename std::map<std::string,T>::const_iterator
+             it = obj.begin(); it != obj.end(); ++it)
+    {
+        ans[it->first] = to_json(it->second);
+    }
+    return picojson::value(ans);
+}
 
 // Vector serialization, inductive case
 template <typename T>
@@ -108,19 +90,5 @@ picojson::value to_json(const unsigned int & t)
 template <> inline
 picojson::value to_json(const unsigned long & t)
 { return to_json(static_cast<int64_t>(t)); }
-
-template <typename T>
-picojson::value
-EscapedString::map_to_json(const std::map<std::string, T> & obj)
-{
-    std::map<std::string, picojson::value> ans;
-    for (typename std::map<std::string,T>::const_iterator
-             it = obj.begin(); it != obj.end(); ++it)
-    {
-        EscapedString s(it->first);
-        ans[s.m_esc_str] = to_json(it->second);
-    }
-    return picojson::value(ans);
-}
 
 #endif
