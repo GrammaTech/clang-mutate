@@ -1,0 +1,7 @@
+#!/bin/bash
+#
+# If -aux is not provided, every AuxDB entry ends up in the output.
+#
+. $(dirname $0)/common
+
+run_aux -json | grep decl_text | grep hash | grep body

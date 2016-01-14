@@ -79,6 +79,7 @@ namespace clang_mutate
   }
 
   picojson::value ASTEntryList::toJSON(unsigned int counter,
+                                       bool include_types,
                                        const std::set<ASTEntryField> &fields) const 
   {
     picojson::array array;
@@ -87,7 +88,9 @@ namespace clang_mutate
       array.push_back(getEntry(counter)->toJSON(fields));
     }
     else {
-      array = TypeDBEntry::databaseToJSON();
+      if (include_types) {
+          array = TypeDBEntry::databaseToJSON();
+      }
       append_arrays(array, AuxDB::toJSON());
       for ( std::vector<ASTEntry*>::const_iterator iter = m_astEntries.begin();
             iter != m_astEntries.end();
@@ -128,18 +131,20 @@ namespace clang_mutate
 
   std::ostream& ASTEntryList::toStreamJSON(std::ostream& out,
                                            unsigned int counter,
+                                           bool include_types,
                                            const std::set<ASTEntryField> &fields) const
   {
-    out << toJSON(counter, fields) << std::endl;
+    out << toJSON(counter, include_types, fields) << std::endl;
     return out;
   }
 
   llvm::raw_ostream& ASTEntryList::toStreamJSON(llvm::raw_ostream& out,
                                                 unsigned int counter,
+                                                bool include_types,
                                                 const std::set<ASTEntryField> &fields) const 
   {
     std::stringstream ss;
-    toStreamJSON(ss, counter, fields);
+    toStreamJSON(ss, counter, include_types, fields);
 
     out << ss.str();
     return out;
@@ -154,10 +159,11 @@ namespace clang_mutate
 
   bool ASTEntryList::toFileJSON(const std::string& outfilePath,
                                 unsigned int counter,
+                                bool include_types,
                                 const std::set<ASTEntryField> &fields) const
   {
     std::ofstream outfile( outfilePath.c_str() );
-    return toStreamJSON(outfile, counter, fields).good();
+    return toStreamJSON(outfile, counter, include_types, fields).good();
   }
 }
 

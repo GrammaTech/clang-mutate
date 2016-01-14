@@ -75,7 +75,10 @@ TESTS =	help-text-appears				\
 	hello-semi-colon-on-end-of-statement-cut        \
 	decls-are-found                                 \
 	short-macro-is-found                            \
-	long-macro-is-found
+	long-macro-is-found                             \
+	no-aux-gives-all-entries                        \
+	aux-includes-expected-entries                   \
+	aux-excludes-expected-entries
 
 etc/hello: etc/hello.c
 	$(CC) -g -O0 $< -o $@

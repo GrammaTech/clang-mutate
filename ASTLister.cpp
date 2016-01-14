@@ -48,6 +48,7 @@ using namespace clang;
     ASTLister(raw_ostream *Out = NULL,
               unsigned int Stmt1 = -1,
               StringRef Fields = (StringRef) "",
+              StringRef Aux = (StringRef) "",
               StringRef Binary = (StringRef) "",
               StringRef DwarfFilepathMap = (StringRef) "",
               bool OutputAsJSON = false,
@@ -55,6 +56,7 @@ using namespace clang;
       : Out(Out ? *Out : llvm::outs()),
         Stmt1(Stmt1),
         Fields(Fields),
+        Aux(Aux),
         Binary(Binary),
         BinaryAddresses(Binary, DwarfFilepathMap),
         OutputAsJSON(OutputAsJSON),
@@ -68,6 +70,21 @@ using namespace clang;
       PM = NULL;
     }
 
+    virtual bool IncludeAux(const std::string & kind)
+    {
+        if (Aux.str() == "" || Aux.str() == "all")
+            return true;
+        if (Aux.str() == "none")
+            return false;
+        std::stringstream ss(Aux.str());
+        std::string allowed_kind;
+        while (std::getline(ss, allowed_kind, ',')) {
+            if (allowed_kind == kind)
+                return true;
+        }
+        return false;
+    }
+ 
     virtual void HandleTranslationUnit(ASTContext &Context) {
       TranslationUnitDecl *D = Context.getTranslationUnitDecl();
 
@@ -89,17 +106,19 @@ using namespace clang;
       if ( !ASTEntries.isEmpty() )
       {
         if ( OutputAsJSON ) {
+          bool include_types = IncludeAux("types");
           if (Fields.empty()) {
-            ASTEntries.toStreamJSON( Out, Stmt1 );
+              ASTEntries.toStreamJSON( Out, Stmt1, include_types );
           } else {
             ASTEntries.toStreamJSON( 
               Out,
-              Stmt1, 
+              Stmt1,
+              include_types,
               ASTEntryField::fromJSONNames(Utils::split(Fields.str(), ',')));
           }
         }
         else {
-          ASTEntries.toStream( Out, Stmt1 );
+            ASTEntries.toStream( Out, Stmt1 );
         }
       }
     };
@@ -155,14 +174,16 @@ using namespace clang;
         std::ostringstream ss;
         static unsigned int proto_id = 0;
         ss << "proto#" << proto_id++;
-        AuxDB::create(ss.str())
-            .set("name", F->getNameAsString())
-            .set("text", decl_text)
-            .set("body", GetNextCounter())
-            .set("ret", hash_type(ret.getTypePtr(), CI))
-            .set("void_ret", ret.getTypePtr()->isVoidType())
-            .set("args", args)
-            .set("varargs", F->isVariadic());
+        if (IncludeAux("protos")) {
+            AuxDB::create(ss.str())
+                .set("name", F->getNameAsString())
+                .set("text", decl_text)
+                .set("body", GetNextCounter())
+                .set("ret", hash_type(ret.getTypePtr(), CI))
+                .set("void_ret", ret.getTypePtr()->isVoidType())
+                .set("args", args)
+                .set("varargs", F->isVariadic());
+        }
     }
 
     virtual bool VisitValueDecl(NamedDecl *D){
@@ -197,12 +218,14 @@ using namespace clang;
           std::ostringstream ss;
           static unsigned int decl_id = 0;
           ss << "global-decl#" << decl_id++;
-          AuxDB::create(ss.str())
-              .set("decl_text"     , decl_text)
-              .set("begin_src_line", beginLoc.getLine())
-              .set("begin_src_col" , beginLoc.getColumn())
-              .set("end_src_line"  , endLoc.getLine())
-              .set("end_src_col"   , endLoc.getColumn());
+          if (IncludeAux("decls")) {
+              AuxDB::create(ss.str())
+                  .set("decl_text"     , decl_text)
+                  .set("begin_src_line", beginLoc.getLine())
+                  .set("begin_src_col" , beginLoc.getColumn())
+                  .set("end_src_line"  , endLoc.getLine())
+                  .set("end_src_col"   , endLoc.getColumn());
+          }
       }
 
       return true;
@@ -351,6 +374,7 @@ using namespace clang;
   private:
     raw_ostream &Out;
     unsigned int Stmt1;
+    StringRef Aux;
     StringRef Fields;
     StringRef Binary;
     BinaryAddressMap BinaryAddresses;
@@ -378,6 +402,7 @@ using namespace clang;
 std::unique_ptr<clang::ASTConsumer>
 clang_mutate::CreateASTLister(unsigned int Stmt1, 
                               StringRef Fields,
+                              StringRef Aux,
                               clang::StringRef Binary,
                               clang::StringRef DwarfFilepathMap,
                               bool OutputAsJSON,
@@ -386,6 +411,7 @@ clang_mutate::CreateASTLister(unsigned int Stmt1,
                new ASTLister(0, 
                              Stmt1, 
                              Fields,
+                             Aux,
                              Binary, 
                              DwarfFilepathMap,
                              OutputAsJSON, 

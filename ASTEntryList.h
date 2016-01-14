@@ -32,6 +32,7 @@ namespace clang_mutate
 
     std::string toString(unsigned int counter = -1) const;
     picojson::value toJSON(unsigned int counter = -1,
+                           bool include_types = true,
                            const std::set<ASTEntryField> &fields = 
                            ASTEntryField::getDefaultFields()) const;
 
@@ -42,10 +43,12 @@ namespace clang_mutate
 
     std::ostream& toStreamJSON(std::ostream& out, 
                                unsigned int counter = -1,
+                               bool include_types = true,
                                const std::set<ASTEntryField> &fields = 
                                ASTEntryField::getDefaultFields()) const;
     llvm::raw_ostream& toStreamJSON(llvm::raw_ostream& out, 
                                     unsigned int counter = -1,
+                                    bool include_types = true,
                                     const std::set<ASTEntryField> &fields = 
                                     ASTEntryField::getDefaultFields()) const;
 
@@ -53,6 +56,7 @@ namespace clang_mutate
                 unsigned int counter = -1) const;
     bool toFileJSON(const std::string& outfilePath, 
                     unsigned int counter = -1,
+                    bool include_types = true,
                     const std::set<ASTEntryField> &fields = 
                     ASTEntryField::getDefaultFields()) const;
 

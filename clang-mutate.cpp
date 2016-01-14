@@ -70,6 +70,7 @@ OPTION( Value2      , std::string , "value2"       , "second string value for mu
 OPTION( File1       , std::string , "file1"        , "file containing value1");
 OPTION( File2       , std::string , "file2"        , "file containing value2");
 OPTION( Fields      , std::string , "fields"       , "comma-delimited list of JSON fields to output");
+OPTION( Aux         , std::string , "aux"          , "comma-delimited list of auxiliary JSON entry kinds to output");
 OPTION( Binary      , std::string , "binary"       , "binary with DWARF information for line->address mapping");
 OPTION( DwarfFilepathMap, std::string, "dwarf-filepath-mapping", "mapping of filepaths used in compilation -> new filepath");
 
@@ -99,6 +100,7 @@ public:
         if (List)
             return clang_mutate::CreateASTLister(Stmt1, 
                                                  Fields,
+                                                 Aux,
                                                  Binary, 
                                                  DwarfFilepathMap,
                                                  false, 
@@ -106,6 +108,7 @@ public:
         if (Json)
             return clang_mutate::CreateASTLister(Stmt1, 
                                                  Fields,
+                                                 Aux,
                                                  Binary, 
                                                  DwarfFilepathMap,
                                                  true, 

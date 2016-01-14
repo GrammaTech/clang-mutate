@@ -11,6 +11,7 @@ namespace clang_mutate {
 std::unique_ptr<clang::ASTConsumer>
 CreateASTLister(unsigned int Stmt1, 
                 clang::StringRef Fields,
+                clang::StringRef Aux,
                 clang::StringRef Binary,
                 clang::StringRef DwarfFilepathMap,
                 bool OutputAsJSON,

@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# If -aux is provided, the default AuxDB entries do not
+# end up in the output.
+#
+. $(dirname $0)/common
+
+run_aux -json -aux=decls,types | grep -v body && run_aux -json -aux=types,protos | grep -v decl_text && run_aux -json -aux=protos,decls | grep -v hash

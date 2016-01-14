@@ -21,6 +21,8 @@ DECLS=etc/decls.c
 
 MACROS=etc/macros.c
 
+AUX=etc/aux.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -29,6 +31,9 @@ run_decls(){
 
 run_macros(){
     clang-mutate "$@" $MACROS --; }
+
+run_aux(){
+    clang-mutate "$@" $AUX --; }
 
 json_filter(){
     cat -|jshon -a -j|grep "\"${1}\":${2}\(,\|}\)"; }
