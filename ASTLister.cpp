@@ -118,8 +118,14 @@ using namespace clang;
     void RegisterFunctionDecl(const FunctionDecl * F)
     {
         Stmt * body = F->getBody();
-        if (!body || !F->doesThisDeclarationHaveABody())
+        if (!body ||
+            !F->doesThisDeclarationHaveABody() ||
+            !Utils::SelectRange(CI->getSourceManager(),
+                                MainFileID,
+                                F->getSourceRange()))
+        {
             return;
+        }
 
         QualType ret = F->getReturnType();
 
