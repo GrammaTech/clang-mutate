@@ -19,11 +19,16 @@ HELLO_EXE=etc/hello
 
 DECLS=etc/decls.c
 
+MACROS=etc/macros.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
 run_decls(){
     clang-mutate "$@" $DECLS --; }
+
+run_macros(){
+    clang-mutate "$@" $MACROS --; }
 
 json_filter(){
     cat -|jshon -a -j|grep "\"${1}\":${2}\(,\|}\)"; }

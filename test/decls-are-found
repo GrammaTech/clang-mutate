@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# Ensure the help text is actually printed.
+# Ensure that we are extracting global declarations.
 #
 . $(dirname $0)/common
 
 contains "$(run_decls -json |json_key_filter decl_text | wc)" \
-         "      4      19     452"
+         "      4      19     444"

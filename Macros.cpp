@@ -37,7 +37,10 @@ bool GetMacros::VisitStmt(clang::Stmt * stmt)
             SourceRange def(mi->getDefinitionLoc(), mi->getDefinitionEndLoc());
             
             std::string body;
-            SourceLocation end = def.getEnd().getLocWithOffset(2);
+            SourceLocation end =
+                Lexer::getLocForEndOfToken(def.getEnd(), 0, sm, langOpts)
+                .getLocWithOffset(1);
+
             for (SourceLocation it = def.getBegin();
                  it != end;
                  it = it.getLocWithOffset(1))

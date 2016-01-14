@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# Ensure that we can extract a long macro definition
+#
+. $(dirname $0)/common
+
+contains "$(run_macros -json)" \
+         "[\"LONG_MACRO\",\"LONG_MACRO  123456789\"]"

@@ -57,10 +57,10 @@ compile_commands.json:
 # Tests
 TESTS =	help-text-appears				\
 	hello-second-stmt-says-hello-json		\
-	hello-json-list-size \
-	hello-json-list-size-with-stmt1-filter \
-	hello-json-default-fields \
-	hello-json-specify-fields \
+	hello-json-list-size                            \
+	hello-json-list-size-with-stmt1-filter          \
+	hello-json-default-fields                       \
+	hello-json-specify-fields                       \
 	hello-json-entries-in-counter-order		\
 	hello-json-bin-default-fields			\
 	hello-json-bin-number-of-stmts-w-binary-data	\
@@ -73,7 +73,9 @@ TESTS =	help-text-appears				\
 	hello-semi-colon-on-end-of-set2			\
 	hello-semi-colon-on-end-of-statement-cut	\
 	hello-semi-colon-on-end-of-statement-cut        \
-	decls-are-found
+	decls-are-found                                 \
+	short-macro-is-found                            \
+	long-macro-is-found
 
 etc/hello: etc/hello.c
 	$(CC) -g -O0 $< -o $@
