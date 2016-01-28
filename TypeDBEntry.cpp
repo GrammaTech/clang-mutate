@@ -243,7 +243,13 @@ static Hash define_type(
     
     else if (t->isStructureType()) {
         const RecordType * rt = t->getAsStructureType();
-        RecordDecl * rd = rt->getDecl()->getDefinition();
+        RecordDecl * decl = rt->getDecl();
+        RecordDecl * rd = decl->getDefinition();
+
+        // If there's no definition (e.g. from typedef struct Foo * FooPtr),
+        // just use the declaration. That at least gives us the name.
+        if (rd == NULL)
+            rd = decl;
 
         std::set<Hash> reqs;
 
