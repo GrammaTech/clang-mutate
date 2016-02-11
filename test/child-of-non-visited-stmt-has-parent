@@ -1,0 +1,8 @@
+# Test that the child of a statement not visited has a prent
+#!/bin/bash
+. $(dirname $0)/common
+
+TEST=etc/child-of-non-visited-stmt-has-parent.c
+
+contains $(clang-mutate -json "$@" $TEST -- |json_filter counter 14|jshon -e parent_counter -u) \
+         "13"

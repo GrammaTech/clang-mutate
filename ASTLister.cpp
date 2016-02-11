@@ -124,9 +124,15 @@ using namespace clang;
     };
 
     Stmt* GetParentStmt(Stmt *S) {
-      Stmt* parent = (PM != NULL) ?
-                      PM->getParent(S) :
-                      NULL;
+      Stmt* parent = S;
+
+      do {
+        parent = (PM != NULL) ?
+                 PM->getParent(parent) :
+                 NULL;
+      } while (parent != NULL && 
+               Spine.find(parent) == Spine.end());
+
       return parent;
     }
 
@@ -247,9 +253,8 @@ using namespace clang;
       // map with the root statement of this function declaration.
       if ( PM == NULL && S->getStmtClass() == Stmt::CompoundStmtClass ) {
         PM = new ParentMap(S);
-      }
+      };
 
-      
       if (Utils::ShouldVisitStmt(Rewrite.getSourceMgr(),
                                  Rewrite.getLangOpts(),
                                  MainFileID,
