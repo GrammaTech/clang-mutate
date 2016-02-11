@@ -55,8 +55,8 @@ using namespace clang;
               CompilerInstance * _CI = NULL)
       : Out(Out ? *Out : llvm::outs()),
         Stmt1(Stmt1),
-        Fields(Fields),
         Aux(Aux),
+        Fields(Fields),
         Binary(Binary),
         BinaryAddresses(Binary, DwarfFilepathMap),
         OutputAsJSON(OutputAsJSON),

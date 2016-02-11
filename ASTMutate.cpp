@@ -43,12 +43,10 @@ namespace clang_mutate{
                unsigned int p_Stmt1 = 0, 
                unsigned int p_Stmt2 = 0,
                StringRef p_Value1 = StringRef(""),
-               StringRef p_Value2 = StringRef(""),
-               unsigned int p_Depth = 0)
+               StringRef p_Value2 = StringRef(""))
       : Out(p_Out ? *p_Out : llvm::outs()),
         Action(p_Action), Stmt1(p_Stmt1), Stmt2(p_Stmt2),
-        Value1(p_Value1.str()), Value2(p_Value2.str()),
-        Depth(p_Depth)
+        Value1(p_Value1.str()), Value2(p_Value2.str())
     {}
 
     virtual void HandleTranslationUnit(ASTContext &Context) {
@@ -322,7 +320,6 @@ namespace clang_mutate{
     ACTION Action;
     unsigned int Stmt1, Stmt2;
     std::string Value1, Value2;
-    unsigned int Depth;
     unsigned int Counter;
     FileID mainFileID;
     SourceRange Range1, Range2, FuncRange;
