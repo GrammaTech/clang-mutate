@@ -73,6 +73,7 @@ TESTS =	help-text-appears				\
 	hello-semi-colon-on-end-of-set2			\
 	hello-semi-colon-on-end-of-statement-cut	\
 	hello-semi-colon-on-end-of-statement-cut        \
+	hello-finds-stdio				\
 	decls-are-found                                 \
 	short-macro-is-found                            \
 	long-macro-is-found                             \
