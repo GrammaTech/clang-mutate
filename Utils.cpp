@@ -266,20 +266,22 @@ std::vector<std::string> split(const std::string &input,
     return elems;
 }
 
-bool is_system_header(
+bool in_system_header(
     SourceLocation loc,
     SourceManager & sm,
     std::string & header)
 {
-    if (!sm.isInSystemHeader(loc) && !sm.isInExternCSystemHeader(loc))
-        return false;
+    SourceLocation last_hdr;
+    while (sm.isInSystemHeader(loc) || sm.isInExternCSystemHeader(loc)) {
+        last_hdr = loc;
+        loc = sm.getIncludeLoc(sm.getFileID(loc));
+    }
 
-    FileID fileId = sm.getFileID(loc);
-    if (fileId == sm.getMainFileID())
+    if (last_hdr.isInvalid())
         return false;
+    loc = last_hdr;
 
-    std::string include =
-        sm.getFilename(sm.getIncludeLoc(sm.getFileID(loc))).str();
+    std::string include = sm.getFilename(loc).str();
 
     // Take foo.h in "*/include/foo.h"..
     std::string incldir = "/include/";
