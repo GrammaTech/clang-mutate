@@ -34,7 +34,7 @@ static std::string ident_to_str(IdentifierInfo* ident, size_t id)
 
 Renames make_renames(
     const std::set<std::pair<IdentifierInfo*, size_t> > & free_vars,
-    const std::set<IdentifierInfo*> & free_funs)
+    const std::set<FunctionInfo> & free_funs)
 {
     size_t next_id = 0;
     Renames ans;
@@ -45,14 +45,11 @@ Renames make_renames(
                                     ident_to_str(it->first, next_id++),
                                     it->second));
     }
-    for (std::set<IdentifierInfo*>::const_iterator
+    for (std::set<FunctionInfo>::const_iterator
              it = free_funs.begin(); it != free_funs.end(); ++it)
     {
-#ifdef ALLOW_FREE_FUNCTIONS
-        ans.insert(mkFunctionRename(*it, ident_to_str(*it, next_id++)));
-#else
-        ans.insert(mkFunctionRename(*it, (*it)->getName().str()));
-#endif
+        IdentifierInfo * id = it->getId();
+        ans.insert(mkFunctionRename(id, ident_to_str(id, next_id++)));
     }
     return ans;
 }

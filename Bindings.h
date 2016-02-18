@@ -2,6 +2,7 @@
 #define AST_BINDINGS_H
 
 #include "Utils.h"
+#include "Function.h"
 
 #include "clang/Basic/LLVM.h"
 #include "clang/AST/ASTConsumer.h"
@@ -72,18 +73,17 @@ public:
 
   std::set<std::pair<clang::IdentifierInfo*, size_t> > free_values(
       const std::vector<std::set<clang::IdentifierInfo*> > & scopes) const;
-  std::set<clang::IdentifierInfo*> free_functions() const;
+  std::set<FunctionInfo> free_functions() const;
   std::set<Hash> required_types() const;
   std::set<std::string> required_includes() const;
-  
-  void dump() const;
   
 private:
 
   void addAddlType(const clang::QualType & qt);
 
   BindingCtx ctx;
-  std::set<BindingCtx::Binding> unbound_v, unbound_f;
+  std::set<BindingCtx::Binding> unbound_v;
+  std::set<FunctionInfo> unbound_f;
   std::set<Hash> addl_types;
   std::set<std::string> includes;
   clang::CompilerInstance * ci;

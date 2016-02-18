@@ -2,6 +2,7 @@
 #define RENAMING_H
 
 #include "Json.h"
+#include "Function.h"
 
 #include "clang/Basic/LLVM.h"
 #include "clang/AST/ASTConsumer.h"
@@ -65,7 +66,7 @@ typedef std::set<RenameDatum> Renames;
 
 Renames make_renames(
     const std::set<std::pair<clang::IdentifierInfo*, size_t> > & free_vars,
-    const std::set<clang::IdentifierInfo*> & free_funs);
+    const std::set<FunctionInfo> & free_funs);
 
 class RenameFreeVar
   : public clang::RecursiveASTVisitor<RenameFreeVar>

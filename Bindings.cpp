@@ -98,14 +98,14 @@ bool GetBindingCtx::VisitStmt(Stmt * expr)
       if (isa<FunctionDecl>(vdecl)) {
         std::string header;
         if (Utils::in_system_header(vdecl->getLocation(),
-                                     ci->getSourceManager(),
-                                     header))
+                                    ci->getSourceManager(),
+                                    header))
         {
           includes.insert(header);
         }
-        else
-        {
-          unbound_f.insert(BindingCtx::Binding(name, id));
+        else  {
+            unbound_f.insert(
+                FunctionInfo(static_cast<FunctionDecl*>(vdecl)));
         }
       }
       else {
@@ -138,27 +138,6 @@ bool GetBindingCtx::VisitExplicitCastExpr(
     return true;
 }
 
-static void print_unbound(const std::set<BindingCtx::Binding> & unbound)
-{
-  std::cerr << "{ ";
-  for (std::set<BindingCtx::Binding>::iterator it = unbound.begin();
-       it != unbound.end();
-       ++it)
-  {
-    std::cerr << it->first << " ";
-  }
-  std::cerr << "}" << std::endl;
-}
-  
-void GetBindingCtx::dump() const
-{
-  std::cerr << "unbound value identifiers: ";
-  print_unbound(unbound_v);
-  
-  std::cerr << "unbound function identifiers: ";
-  print_unbound(unbound_f);
-}
-
 std::set<std::pair<IdentifierInfo*, size_t> > GetBindingCtx::free_values(
     const std::vector<std::set<IdentifierInfo*> > & scopes) const
 {
@@ -182,16 +161,7 @@ std::set<std::pair<IdentifierInfo*, size_t> > GetBindingCtx::free_values(
     return ans;
 }
 
-std::set<IdentifierInfo*> GetBindingCtx::free_functions() const
-{
-    std::set<IdentifierInfo*> ans;
-    for (std::set<BindingCtx::Binding>::const_iterator it = unbound_f.begin();
-         it != unbound_f.end();
-         ++it)
-    {
-        ans.insert(it->second);
-    }
-    return ans;
-}
+std::set<FunctionInfo> GetBindingCtx::free_functions() const
+{ return unbound_f; }
   
 } // end namespace clang_mutate
