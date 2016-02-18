@@ -3,6 +3,7 @@
 #include "Utils.h"
 
 #include "clang/Lex/Lexer.h"
+#include "clang/Lex/Preprocessor.h"
 
 using namespace clang_mutate;
 using namespace clang;
@@ -106,30 +107,6 @@ picojson::array TypeDBEntry::databaseToJSON()
     return array;
 }
 
-static bool is_system_header(
-    const std::string & fullpath,
-    std::string & header)
-{
-    static std::vector<std::string> prefixes;
-    if (prefixes.empty()) {
-        prefixes.push_back("/usr/include/x86_64-linux-gnu/");
-        prefixes.push_back("/usr/include/");
-        prefixes.push_back("/usr/lib/gcc/x86_64-linux-gnu/4.9/include/");
-    }
-
-    for (std::vector<std::string>::iterator prefix = prefixes.begin();
-         prefix != prefixes.end();
-         ++prefix)
-    {
-        if (fullpath.find(*prefix) == 0) {
-            header = fullpath.substr(prefix->size());
-            return true;
-        }
-    }
-
-    return false;
-}
-
 static Hash define_type(
     const Type * t,
     std::map<const Type*, Hash> & seen,
@@ -148,7 +125,7 @@ static Hash define_type(
         std::string header;
         SourceManager & sm = ci->getSourceManager();
         SourceLocation loc = sm.getSpellingLoc(td->getSourceRange().getBegin());
-        if (is_system_header(sm.getFilename(loc).str(), header)) {
+        if (Utils::is_system_header(loc, sm, header)) {
             Hash hash = TypeDBEntry::mkInclude(td->getNameAsString(), header).hash();
             seen[t] = hash;
             return hash;

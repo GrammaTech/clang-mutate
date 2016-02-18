@@ -54,6 +54,10 @@ std::string trim(const std::string &input);
 std::vector<std::string> split(const std::string &input,
                                const char delim);
 
+bool is_system_header(clang::SourceLocation loc,
+                      clang::SourceManager & sm,
+                      std::string & header);
+
 } // end namespace Utils
 
 class Hash

@@ -266,6 +266,37 @@ std::vector<std::string> split(const std::string &input,
     return elems;
 }
 
+bool is_system_header(
+    SourceLocation loc,
+    SourceManager & sm,
+    std::string & header)
+{
+    if (!sm.isInSystemHeader(loc) && !sm.isInExternCSystemHeader(loc))
+        return false;
+
+    FileID fileId = sm.getFileID(loc);
+    if (fileId == sm.getMainFileID())
+        return false;
+
+    std::string include =
+        sm.getFilename(sm.getIncludeLoc(sm.getFileID(loc))).str();
+
+    // Take foo.h in "*/include/foo.h"..
+    std::string incldir = "/include/";
+    size_t idx = include.rfind(incldir);
+    if (idx != std::string::npos)
+        idx += incldir.size();
+    // ..or if that doesn't work, foo.h in "*/foo.h"..
+    if (idx == std::string::npos || idx >= include.size())
+        idx = include.rfind("/") + 1;
+    // ..or if that doesn't work, just take it all.
+    if (idx == std::string::npos || idx >= include.size())
+        idx = 0;
+
+    header = include.substr(idx);
+    return true;
+}
+
 } // end namespace Utils
 
 picojson::value Hash::toJSON() const
