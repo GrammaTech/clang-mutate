@@ -152,3 +152,5 @@ std::string RenameFreeVar::getRewrittenString() const
     return ans;
 }
 
+std::set<std::string> RenameFreeVar::getIncludes() const
+{ return includes; }

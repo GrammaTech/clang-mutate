@@ -44,6 +44,7 @@ namespace clang_mutate
     static ASTEntryField UNBOUND_FUNS;
     static ASTEntryField MACROS;
     static ASTEntryField TYPES;
+    static ASTEntryField INCLUDES;
     static ASTEntryField STMT_LIST;
     static ASTEntryField OPCODE;
     static ASTEntryField SCOPES;
@@ -95,7 +96,8 @@ namespace clang_mutate
                            const Renames & renames,
                            const Macros & macros,
                            const std::set<Hash> & types,
-                           const ScopedNames & scoped_names);
+                           const ScopedNames & scoped_names,
+                           const std::set<std::string> & includes);
   private:
     ASTEntryFactory() {}
   };
@@ -122,7 +124,8 @@ namespace clang_mutate
                        const std::set<Hash> & types,
                        const std::vector<unsigned int> & stmt_list,
                        const std::string & opcode,
-                       const ScopedNames & scoped_names );
+                       const ScopedNames & scoped_names,
+                       const std::set<std::string> & includes);
 
     ASTNonBinaryEntry( clang::Stmt * s,
                        clang::Stmt * p,
@@ -131,7 +134,8 @@ namespace clang_mutate
                        const Renames & renames,
                        const Macros & macros,
                        const std::set<Hash> & types,
-                       const ScopedNames & scoped_names );
+                       const ScopedNames & scoped_names,
+                       const std::set<std::string> & includes);
 
     virtual ~ASTNonBinaryEntry();
 
@@ -154,6 +158,7 @@ namespace clang_mutate
     virtual std::vector<unsigned int> getStmtList() const;
     virtual std::string getOpcode() const;
     virtual ScopedNames getScopedNames() const;
+    virtual std::set<std::string> getIncludes() const;
     
     virtual std::string toString() const;
     virtual picojson::value toJSON(const std::set<ASTEntryField> &fields =
@@ -181,6 +186,7 @@ namespace clang_mutate
     std::vector<unsigned int> m_stmt_list;
     std::string m_opcode;
     ScopedNames m_scoped_names;
+    std::set<std::string> m_includes;
   };
 
   // AST entry with binary information
@@ -206,6 +212,7 @@ namespace clang_mutate
                     const std::vector<unsigned int> & stmt_list,
                     const std::string & opcode,
                     const ScopedNames & scoped_names,
+                    const std::set<std::string> & includes,
                     const std::string &binaryFileName,
                     const unsigned long beginAddress,
                     const unsigned long endAddress,
@@ -219,7 +226,8 @@ namespace clang_mutate
                     const Renames & renames,
                     const Macros & macros,
                     const std::set<Hash> & types,
-                    const ScopedNames & scoped_names );
+                    const ScopedNames & scoped_names,
+                    const std::set<std::string> & includes);
 
     virtual ~ASTBinaryEntry();
 

@@ -69,6 +69,9 @@ std::set<Hash> GetBindingCtx::required_types() const
     return ans;
 }
 
+std::set<std::string> GetBindingCtx::required_includes() const
+{ return includes; }
+
 std::set<Hash> BindingCtx::required_types() const
 {
     std::set<Hash> ans;
@@ -93,7 +96,17 @@ bool GetBindingCtx::VisitStmt(Stmt * expr)
     IdentifierInfo * id   = vdecl->getIdentifier();
     if (id != NULL && !ctx.is_bound(name)) {
       if (isa<FunctionDecl>(vdecl)) {
-	unbound_f.insert(BindingCtx::Binding(name, id));
+        std::string header;
+        if (Utils::in_system_header(vdecl->getLocation(),
+                                     ci->getSourceManager(),
+                                     header))
+        {
+          includes.insert(header);
+        }
+        else
+        {
+          unbound_f.insert(BindingCtx::Binding(name, id));
+        }
       }
       else {
 	unbound_v.insert(BindingCtx::Binding(name, id));

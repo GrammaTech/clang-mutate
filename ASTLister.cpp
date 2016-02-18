@@ -283,7 +283,8 @@ using namespace clang;
                                  get_bindings.free_functions()),
                     get_macros.result(),
                     get_bindings.required_types(),
-                    decl_scopes.get_names_in_scope(1000));
+                    decl_scopes.get_names_in_scope(1000),
+                    get_bindings.required_includes());
 
             ASTEntries.addEntry( NewASTEntry );
         } else {
@@ -299,7 +300,8 @@ using namespace clang;
                                  get_bindings.free_functions()),
                     get_macros.result(),
                     get_bindings.required_types(),
-                    decl_scopes.get_names_in_scope(1000));
+                    decl_scopes.get_names_in_scope(1000),
+                    get_bindings.required_includes());
 
             ASTEntries.addEntry( NewASTEntry );
         }

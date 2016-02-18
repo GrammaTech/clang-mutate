@@ -74,6 +74,7 @@ public:
       const std::vector<std::set<clang::IdentifierInfo*> > & scopes) const;
   std::set<clang::IdentifierInfo*> free_functions() const;
   std::set<Hash> required_types() const;
+  std::set<std::string> required_includes() const;
   
   void dump() const;
   
@@ -84,6 +85,7 @@ private:
   BindingCtx ctx;
   std::set<BindingCtx::Binding> unbound_v, unbound_f;
   std::set<Hash> addl_types;
+  std::set<std::string> includes;
   clang::CompilerInstance * ci;
 };
  

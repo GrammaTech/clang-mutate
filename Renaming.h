@@ -81,6 +81,8 @@ public:
   bool VisitStmt(clang::Stmt * stmt);
 
   std::string getRewrittenString() const;
+
+  std::set<std::string> getIncludes() const;
   
 private:
   clang::Rewriter & rewriter;
@@ -89,6 +91,7 @@ private:
   clang::SourceLocation end;
   typedef std::map<size_t, std::pair<size_t, std::string> > RewriteMap;
   RewriteMap rewrites;
+  std::set<std::string> includes;
 };
 
 #endif
