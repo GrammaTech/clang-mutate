@@ -58,6 +58,20 @@ bool in_system_header(clang::SourceLocation loc,
                       clang::SourceManager & sm,
                       std::string & header);
 
+template <typename T>
+std::set<T> set_union(const std::set<T> & xs,
+                      const std::set<T> & ys)
+{
+    std::set<T> ans = ys;
+    for (typename std::set<T>::const_iterator
+             it = xs.begin(); it != xs.end(); ++it)
+    {
+        if (ys.find(*it) == ys.end())
+            ans.insert(*it);
+    }
+    return ans;
+}
+
 } // end namespace Utils
 
 class Hash
