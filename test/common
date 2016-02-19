@@ -23,6 +23,8 @@ MACROS=etc/macros.c
 
 AUX=etc/aux.c
 
+NULLC=etc/null.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -34,6 +36,9 @@ run_macros(){
 
 run_aux(){
     clang-mutate "$@" $AUX --; }
+
+run_null(){
+    clang-mutate "$@" $NULLC --; }
 
 json_filter(){
     cat -|jshon -a -j|grep "\"${1}\":${2}\(,\|}\)"; }

@@ -1,0 +1,5 @@
+#!/bin/bash
+. $(dirname $0)/common
+
+run_null -json|json_filter counter 1|jshon -e includes -e 0 -u \
+    |grep -q stdlib
