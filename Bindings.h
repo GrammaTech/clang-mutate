@@ -3,6 +3,7 @@
 
 #include "Utils.h"
 #include "Function.h"
+#include "Variable.h"
 
 #include "clang/Basic/LLVM.h"
 #include "clang/AST/ASTConsumer.h"
@@ -71,7 +72,7 @@ public:
   bool VisitUnaryExprOrTypeTraitExpr(
       clang::UnaryExprOrTypeTraitExpr * expr);
 
-  std::set<std::pair<clang::IdentifierInfo*, size_t> > free_values(
+  std::set<VariableInfo> free_values(
       const std::vector<std::set<clang::IdentifierInfo*> > & scopes) const;
   std::set<FunctionInfo> free_functions() const;
   std::set<Hash> required_types() const;

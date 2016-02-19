@@ -134,21 +134,6 @@ ASTEntryField::fromJSONNames(const std::vector<std::string> &jsonNames) {
   return fields;
 }
 
-picojson::value renames_to_json(const Renames & renames, RenameKind k)
-{
-  std::vector<std::pair<std::string, unsigned int> > ans;
-  for (Renames::const_iterator it = renames.begin();
-       it != renames.end();
-       ++it)
-  {
-      if (it->kind == k) {
-          ans.push_back(std::make_pair(it->name,
-                                       it->index));
-      }
-  }
-  return to_json(ans);
-}
-
   std::set<ASTEntryField> ASTEntryField::getDefaultFields()
   {
     std::set<ASTEntryField> defaultFields;
@@ -515,11 +500,11 @@ picojson::value renames_to_json(const Renames & renames, RenameKind k)
 
     if (fields.find(ASTEntryField::UNBOUND_VALS) != fields.end())
         jsonObj[ASTEntryField::UNBOUND_VALS.getJSONName()] =
-            renames_to_json(m_renames, VariableRename);
+            to_json(m_renames.first);
 
     if (fields.find(ASTEntryField::UNBOUND_FUNS) != fields.end())
         jsonObj[ASTEntryField::UNBOUND_FUNS.getJSONName()] =
-            renames_to_json(m_renames, FunctionRename);
+            to_json(m_renames.second);
 
     if (fields.find(ASTEntryField::MACROS) != fields.end())
         jsonObj[ASTEntryField::MACROS.getJSONName()] =

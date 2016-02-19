@@ -138,10 +138,10 @@ bool GetBindingCtx::VisitExplicitCastExpr(
     return true;
 }
 
-std::set<std::pair<IdentifierInfo*, size_t> > GetBindingCtx::free_values(
+std::set<VariableInfo> GetBindingCtx::free_values(
     const std::vector<std::set<IdentifierInfo*> > & scopes) const
 {
-    std::set<std::pair<IdentifierInfo*, size_t> > ans;
+    std::set<VariableInfo> ans;
     for (std::set<BindingCtx::Binding>::const_iterator it = unbound_v.begin();
          it != unbound_v.end();
          ++it)
@@ -156,7 +156,7 @@ std::set<std::pair<IdentifierInfo*, size_t> > GetBindingCtx::free_values(
                 break;
             ++index;
         }
-        ans.insert(std::make_pair(it->second, index));
+        ans.insert(VariableInfo(it->second, index));
     }
     return ans;
 }

@@ -3,6 +3,7 @@
 
 #include "Json.h"
 #include "Function.h"
+#include "Variable.h"
 
 #include "clang/Basic/LLVM.h"
 #include "clang/AST/ASTConsumer.h"
@@ -62,11 +63,8 @@ RenameDatum mkFunctionRename(
     clang::IdentifierInfo * id,
     const std::string & name);
 
-typedef std::set<RenameDatum> Renames;
-
-Renames make_renames(
-    const std::set<std::pair<clang::IdentifierInfo*, size_t> > & free_vars,
-    const std::set<FunctionInfo> & free_funs);
+typedef std::pair<std::set<VariableInfo>,
+                  std::set<FunctionInfo> > Renames;
 
 class RenameFreeVar
   : public clang::RecursiveASTVisitor<RenameFreeVar>

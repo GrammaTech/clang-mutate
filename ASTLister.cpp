@@ -243,11 +243,6 @@ using namespace clang;
 
       ASTEntry* NewASTEntry = NULL;
 
-      GetMacros get_macros(Rewrite.getSourceMgr(),
-                           Rewrite.getLangOpts(),
-                           CI);
-      get_macros.TraverseStmt(S);
-
       // Test if we are in a new function
       // declaration.  If so, update the parent
       // map with the root statement of this function declaration.
@@ -260,6 +255,11 @@ using namespace clang;
                                  MainFileID,
                                  S))
       { 
+        GetMacros get_macros(Rewrite.getSourceMgr(),
+                             Rewrite.getLangOpts(),
+                             CI);
+        get_macros.TraverseStmt(S);
+
         Stmt * P = GetParentStmt(S);
         get_bindings.TraverseStmt(S);
         Spine[S] = GetNextCounter();
@@ -279,12 +279,13 @@ using namespace clang;
                     Spine,
                     Rewrite,
                     BinaryAddresses,
-                    make_renames(get_bindings.free_values(var_scopes),
-                                 get_bindings.free_functions()),
+                    Renames(get_bindings.free_values(var_scopes),
+                            get_bindings.free_functions()),
                     get_macros.result(),
                     get_bindings.required_types(),
                     decl_scopes.get_names_in_scope(1000),
-                    get_bindings.required_includes());
+                    Utils::set_union(get_bindings.required_includes(),
+                                     get_macros.required_includes()));
 
             ASTEntries.addEntry( NewASTEntry );
         } else {
@@ -296,12 +297,13 @@ using namespace clang;
                     P,
                     Spine,
                     Rewrite,
-                    make_renames(get_bindings.free_values(var_scopes),
-                                 get_bindings.free_functions()),
+                    Renames(get_bindings.free_values(var_scopes),
+                            get_bindings.free_functions()),
                     get_macros.result(),
                     get_bindings.required_types(),
                     decl_scopes.get_names_in_scope(1000),
-                    get_bindings.required_includes());
+                    Utils::set_union(get_bindings.required_includes(),
+                                     get_macros.required_includes()));
 
             ASTEntries.addEntry( NewASTEntry );
         }

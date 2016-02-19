@@ -32,28 +32,6 @@ static std::string ident_to_str(IdentifierInfo* ident, size_t id)
     return oss.str();
 }
 
-Renames make_renames(
-    const std::set<std::pair<IdentifierInfo*, size_t> > & free_vars,
-    const std::set<FunctionInfo> & free_funs)
-{
-    size_t next_id = 0;
-    Renames ans;
-    for (std::set<std::pair<IdentifierInfo*,size_t> >::const_iterator
-             it = free_vars.begin(); it != free_vars.end(); ++it)
-    {
-        ans.insert(mkVariableRename(it->first,
-                                    ident_to_str(it->first, next_id++),
-                                    it->second));
-    }
-    for (std::set<FunctionInfo>::const_iterator
-             it = free_funs.begin(); it != free_funs.end(); ++it)
-    {
-        IdentifierInfo * id = it->getId();
-        ans.insert(mkFunctionRename(id, ident_to_str(id, next_id++)));
-    }
-    return ans;
-}
-
 RenameFreeVar::RenameFreeVar(
     Stmt * the_stmt,
     Rewriter & r,
@@ -77,12 +55,22 @@ static bool find_identifier(const Renames & renames,
                             IdentifierInfo * id,
                             std::string & ans)
 {
-    for (Renames::const_iterator it = renames.begin();
-         it != renames.end();
-         ++it)
+    std::ostringstream oss;
+    for (std::set<VariableInfo>::const_iterator
+             it = renames.first.begin(); it != renames.first.end(); ++it)
     {
-        if (it->ident == id) {
-            ans = it->name;
+        if (it->getId() == id) {
+            oss << "(|" << it->getName() << "|)";
+            ans = oss.str();
+            return true;
+        }
+    }
+    for (std::set<FunctionInfo>::const_iterator
+             it = renames.second.begin(); it != renames.second.end(); ++it)
+    {
+        if (it->getId() == id) {
+            oss << "(|" << it->getName() << "|)";
+            ans = oss.str();
             return true;
         }
     }

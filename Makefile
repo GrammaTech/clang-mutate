@@ -8,7 +8,7 @@ LLVM_DWARFDUMP := llvm-dwarfdump$(LLVM_POSTFIX)
 CXXFLAGS := $(shell $(LLVM_CONFIG) --cxxflags) $(RTTIFLAG) $(PICOJSON_INCS) $(PICOJSON_DEFINES) -DLLVM_DWARFDUMP='"$(LLVM_DWARFDUMP)"'
 LLVMLDFLAGS := $(shell $(LLVM_CONFIG) --ldflags --libs) -ldl
 
-SOURCES = ASTMutate.cpp ASTLister.cpp ASTEntry.cpp ASTEntryList.cpp Function.cpp Bindings.cpp Renaming.cpp Scopes.cpp Macros.cpp TypeDBEntry.cpp AuxDB.cpp BinaryAddressMap.cpp Json.cpp Utils.cpp clang-mutate.cpp
+SOURCES = ASTMutate.cpp ASTLister.cpp ASTEntry.cpp ASTEntryList.cpp Function.cpp Variable.cpp Bindings.cpp Renaming.cpp Scopes.cpp Macros.cpp TypeDBEntry.cpp AuxDB.cpp BinaryAddressMap.cpp Json.cpp Utils.cpp clang-mutate.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 EXES = clang-mutate
 CLANGLIBS = \
@@ -79,7 +79,9 @@ TESTS =	help-text-appears				\
 	long-macro-is-found                             \
 	no-aux-gives-all-entries                        \
 	aux-includes-expected-entries                   \
-	aux-excludes-expected-entries
+	aux-excludes-expected-entries                   \
+	null-finds-stdlib                               \
+	null-has-no-macros
 
 etc/hello: etc/hello.c
 	$(CC) -g -O0 $< -o $@

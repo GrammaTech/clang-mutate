@@ -13,25 +13,24 @@ public:
 
     FunctionInfo(const FunctionInfo & that)
         : name(that.name)
-        , id(that.id)
+        , ident(that.ident)
         , returns_void(that.returns_void)
         , is_variadic(that.is_variadic)
         , num_params(that.num_params)
     {}
 
-    clang::IdentifierInfo * getId() const { return id; }
-    
-    bool operator==(const FunctionInfo & that) const
-    { return (id == that.id); }
+    const clang::IdentifierInfo * getId() const { return ident; }
+
+    std::string getName() const { return name; }
     
     bool operator<(const FunctionInfo & that) const
-    { return (id < that.id); }
+    { return ident < that.ident; }
 
     picojson::value toJSON() const;
     
 private:
     std::string name;
-    clang::IdentifierInfo * id;
+    const clang::IdentifierInfo * ident;
     bool returns_void;
     bool is_variadic;
     unsigned int num_params;
