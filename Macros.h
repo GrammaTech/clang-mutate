@@ -77,11 +77,14 @@ public:
 
   Macros result() const { return macros; }
 
+  std::set<std::string> required_includes() const { return includes; }
+
   bool toplevel_is_macro() const { return toplev_is_macro; }  
 
 private:
   clang::SourceManager & sm;
   Macros macros;
+  std::set<std::string> includes;
   const clang::LangOptions & langOpts;
   clang::CompilerInstance * CI;
   bool toplev_is_macro, is_first;

@@ -1,5 +1,6 @@
 
 #include "Macros.h"
+#include "Utils.h"
 
 #include "clang/Lex/Lexer.h"
 #include "clang/Lex/Preprocessor.h"
@@ -49,7 +50,14 @@ bool GetMacros::VisitStmt(clang::Stmt * stmt)
             }
             while (body.back() == '\n' || body.back() == '\r')
                 body.pop_back();
-            macros.insert(Macro(name.str(), body));
+
+            std::string header;
+            if (Utils::in_system_header(mi->getDefinitionLoc(), sm, header)) {
+                includes.insert(header);
+            }
+            else {
+                macros.insert(Macro(name.str(), body));
+            }
         }
     }
 
