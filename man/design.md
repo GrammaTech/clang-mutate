@@ -51,8 +51,15 @@ on the original file.
 
 # Batch
 
+Here "batch" means applying multiple transforms in a single run of the
+tool.  This is desirable because currently much of our time is spent
+repeatedly parsing headers.
+
 * Not straightforward, mainly because of the way LibTooling handles
   arguments.
+
+* Also, edits which hit the same pieces of the backing source buffer
+  can cause faults in clang.
 
 # Issues
 
