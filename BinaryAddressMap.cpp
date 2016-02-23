@@ -246,7 +246,17 @@ namespace clang_mutate{
         std::string nextLine = dwarfDumpDebugLine[currentline+1];
         FilenameLineNumAddressPair fileNameLineNumAddressPair = 
             parseAddressLine( line, nextLine, files );
-        filesMap[ fileNameLineNumAddressPair.first ].insert( fileNameLineNumAddressPair.second );
+
+        LineNumsToAddressesMap & ln2am = filesMap[fileNameLineNumAddressPair.first];
+        if (!ln2am.insert( fileNameLineNumAddressPair.second ).second)
+        {
+            // Already had an address range for this line; we need to expand it.
+            BeginEndAddressPair & range = ln2am[fileNameLineNumAddressPair.second.first];
+            if (range.first > fileNameLineNumAddressPair.second.second.first)
+                range.first = fileNameLineNumAddressPair.second.second.first;
+            if (range.second < fileNameLineNumAddressPair.second.second.second)
+                range.second = fileNameLineNumAddressPair.second.second.second;
+        };
       }
 
       currentline++;
@@ -405,7 +415,7 @@ namespace clang_mutate{
           // We found a match.  Return the starting and ending address for this line.
           LineNumsToAddressesMap::iterator lineNumsToAddressesMapIter = lineNumsToAddressesMap.find(lineNum);
 
-          beginEndAddresses.first = lineNumsToAddressesMapIter->second.first;
+          beginEndAddresses.first  = lineNumsToAddressesMapIter->second.first;
           beginEndAddresses.second = lineNumsToAddressesMapIter->second.second;
           break;
         }     
