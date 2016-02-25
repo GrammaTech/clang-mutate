@@ -256,7 +256,7 @@ namespace clang_mutate{
                 range.first = fileNameLineNumAddressPair.second.second.first;
             if (range.second < fileNameLineNumAddressPair.second.second.second)
                 range.second = fileNameLineNumAddressPair.second.second.second;
-        };
+        }
       }
 
       currentline++;
@@ -265,6 +265,50 @@ namespace clang_mutate{
     currentline--;
 
     return filesMap;
+  }
+
+  bool
+  BinaryAddressMap::lineRangeToAddressRange(
+      const std::string & filePath,
+      std::pair<unsigned int, unsigned int> lineRange,
+      BeginEndAddressPair & addrRange) const
+  {
+    bool found = false;
+
+    // Iterate over each compilation unit
+    for ( CompilationUnitMap::const_iterator
+              compilationUnitMapIter = m_compilationUnitMap.begin();
+          compilationUnitMapIter != m_compilationUnitMap.end();
+          compilationUnitMapIter++ )
+    {
+        FilesMap const& filesMap = compilationUnitMapIter->second;
+
+        // Check if file is in the files for this compilation unit
+        FilesMap::const_iterator fmsearch = filesMap.find( filePath );
+        if ( fmsearch == filesMap.end() )
+            continue;
+
+        LineNumsToAddressesMap const& ln2am = fmsearch->second;
+        LineNumsToAddressesMap::const_iterator search = ln2am.find(lineRange.first);
+
+        while (search != ln2am.end() && search->first <= lineRange.second) {
+            if (!found) {
+                // First address found in the given line range.
+                addrRange = search->second;
+                found = true;
+            }
+            else {
+                // Found another address range in the line range,
+                // expand the current address range.
+                if (search->second.first < addrRange.first)
+                    addrRange.first = search->second.first;
+                if (search->second.second > addrRange.second)
+                    addrRange.second = search->second.second;
+            }
+            ++search;
+        }
+    }
+    return found;
   }
 
   std::set< std::string > BinaryAddressMap::getSourcePaths( 

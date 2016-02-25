@@ -223,6 +223,7 @@ namespace clang_mutate
                     const std::map<clang::Stmt*, unsigned int> &spine,
                     clang::Rewriter& rewrite,
                     BinaryAddressMap& binaryAddressMap,
+                    const std::pair<unsigned long, unsigned long> addrRange,
                     const Renames & renames,
                     const Macros & macros,
                     const std::set<Hash> & types,

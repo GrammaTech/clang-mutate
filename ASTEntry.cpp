@@ -188,14 +188,18 @@ ASTEntryField::fromJSONNames(const std::vector<std::string> &jsonNames) {
     unsigned int beginSrcLine = beginLoc.getLine();
     unsigned int endSrcLine = endLoc.getLine();
 
-    if ( binaryAddressMap.canGetBeginAddressForLine( srcFileName, beginSrcLine) &&
-         binaryAddressMap.canGetEndAddressForLine( srcFileName, endSrcLine ) )
+    BinaryAddressMap::BeginEndAddressPair addrRange;
+    if ( binaryAddressMap.lineRangeToAddressRange(srcFileName,
+                                                  std::make_pair(beginSrcLine,
+                                                                 endSrcLine),
+                                                  addrRange))
     {
       return new ASTBinaryEntry( s,
                                  p,
                                  spine,
                                  rewrite,
                                  binaryAddressMap,
+                                 addrRange,
                                  renames,
                                  macros,
                                  types,
@@ -603,6 +607,7 @@ ASTEntryField::fromJSONNames(const std::vector<std::string> &jsonNames) {
     const std::map<clang::Stmt*, unsigned int> & spine,
     clang::Rewriter& rewrite,
     BinaryAddressMap& binaryAddressMap,
+    const std::pair<unsigned long, unsigned long> addrRange,
     const Renames & renames,
     const Macros & macros,
     const std::set<Hash> & types,
@@ -620,14 +625,8 @@ ASTEntryField::fromJSONNames(const std::vector<std::string> &jsonNames) {
                        includes)
   {
     m_binaryFilePath = binaryAddressMap.getBinaryPath();
-    m_beginAddress =
-        binaryAddressMap.getBeginAddressForLine(
-            getSrcFileName(),
-            getBeginSrcLine());
-    m_endAddress =
-        binaryAddressMap.getEndAddressForLine(
-            getSrcFileName(),
-            getEndSrcLine());
+    m_beginAddress = addrRange.first;
+    m_endAddress   = addrRange.second;
     m_binaryContents =
         binaryAddressMap.getBinaryContentsAsStr(
             m_beginAddress,

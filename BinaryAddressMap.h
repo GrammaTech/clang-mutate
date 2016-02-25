@@ -64,6 +64,10 @@ namespace clang_mutate{
     BeginEndAddressPair getBeginEndAddressesForLine( const std::string& filePath, 
                                                      unsigned int lineNum) const;
 
+    bool lineRangeToAddressRange( const std::string & filePath,
+                                  std::pair<unsigned int, unsigned int> lineRange,
+                                  BeginEndAddressPair & addrRange) const;
+
     // Get the raw contents of a binary from [startAddress, endAddress)
     // as a sequence of hex digits.
     Bytes getBinaryContents( unsigned long startAddress,
