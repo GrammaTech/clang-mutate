@@ -299,6 +299,38 @@ bool in_system_header(
     return true;
 }
 
+std::vector<std::string> split(const std::string & s)
+{
+    std::vector<std::string> ans;
+    std::string word;
+    std::istringstream iss(s, std::istringstream::in);
+    while (iss >> word)
+        ans.push_back(word);
+    return ans;
+}
+
+bool read_uint(const std::string & s, unsigned int & n)
+{
+    std::istringstream iss(s, std::istringstream::in);
+    return (iss >> n);
+}
+
+bool read_yesno(const std::string & s, bool & yesno)
+{
+    std::istringstream iss(s, std::istringstream::in);
+    std::string yn;
+    iss >> yn;
+    if (yn == "yes") {
+        yesno = true;
+        return true;
+    }
+    if (yn == "no") {
+        yesno = false;
+        return true;
+    }
+    return false;
+}
+
 } // end namespace Utils
 
 picojson::value Hash::toJSON() const

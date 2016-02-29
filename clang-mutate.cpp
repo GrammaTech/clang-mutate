@@ -14,6 +14,7 @@
 //===----------------------------------------------------------------------===//
 #include "ASTMutate.h"
 #include "ASTLister.h"
+#include "Interactive.h"
 #include "Utils.h"
 
 #include "clang/AST/ASTConsumer.h"
@@ -23,6 +24,8 @@
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/Support/CommandLine.h"
+
+#include <iostream>
 
 using namespace clang::driver;
 using namespace clang::tooling;
@@ -63,6 +66,7 @@ OPTION( Set         , bool        , "set"          , "set the text of stmt1 to v
 OPTION( Set2        , bool        , "set2"         , "set the text of stmt1 to value1 and stmt2 to value2");
 OPTION( SetRange    , bool        , "set-range"    , "set the range from the start of stmt1 to the end of stmt2 to value1");
 OPTION( SetFunc     , bool        , "set-func"     , "set the text of the function containing stmt1 to value1");
+OPTION( Interactive , bool        , "interactive"  , "run in interactive mode");
 OPTION( Stmt1       , unsigned int, "stmt1"        , "statement 1 for mutation ops");
 OPTION( Stmt2       , unsigned int, "stmt2"        , "statement 2 for mutation ops");
 OPTION( Value1      , std::string , "value1"       , "string value for mutation ops");
@@ -129,7 +133,9 @@ public:
             return clang_mutate::CreateASTSetter2(Stmt1, Value1, Stmt2, Value2);
         if (InsertV)
             return clang_mutate::CreateASTValueInserter(Stmt1, Value1);
-
+        if (Interactive)
+            return clang_mutate::CreateInteractive(Binary, DwarfFilepathMap, CI);
+        
         errs() << "Must supply one of:\n";
         errs() << "\tnumber\n";
         errs() << "\tids\n";
@@ -143,7 +149,8 @@ public:
         errs() << "\tset2\n";
         errs() << "\tset-range\n";
         errs() << "\tinsert-value\n";
-
+        errs() << "\tinteractive\n";
+        
         exit(EXIT_FAILURE);
   }
 
@@ -151,10 +158,17 @@ public:
 };
 }
 
+#include "FAF.h"
+
 int main(int argc, const char **argv) {
     CommonOptionsParser OptionsParser(argc, argv, ToolCategory);
     ClangTool Tool(OptionsParser.getCompilations(),
                    OptionsParser.getSourcePathList());
     ActionFactory Factory;
-    return Tool.run(newFrontendActionFactory<ActionFactory>(&Factory, &Factory).get());
+    int result = Tool.run(newFAF<ActionFactory>(&Factory, &Factory).get());
+
+    if (Interactive)
+        clang_mutate::runInteractiveSession(std::cin);
+    
+    return result;
 }

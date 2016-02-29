@@ -72,6 +72,12 @@ std::set<T> set_union(const std::set<T> & xs,
     return ans;
 }
 
+std::vector<std::string> split(const std::string & s);
+
+bool read_uint(const std::string & s, unsigned int & n);
+
+bool read_yesno(const std::string & s, bool & yesno);
+
 } // end namespace Utils
 
 class Hash
