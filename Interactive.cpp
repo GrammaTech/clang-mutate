@@ -43,6 +43,10 @@ void set(CompilerInstance * ci,
          AstTable & asts,
          std::set<std::pair<AstRef, std::string> > & replacements);
 
+void insert(CompilerInstance * ci,
+            AstTable & asts,
+            std::map<AstRef, std::vector<std::string> > & replacements);
+
 std::string getAstText(CompilerInstance * ci,
                        AstTable & asts,
                        AstRef ast);
@@ -205,6 +209,28 @@ void runInteractiveSession(std::istream & input)
             continue;
         }
 
+        if (cmd[0] == "insert") {
+            unsigned int tuid;
+            std::map<AstRef, std::vector<std::string> > insertions;
+            EXPECT(cmd.size() >= 4, "expected at least three arguments");
+            EXPECT(Utils::read_uint(cmd[1], tuid), "first argument must be a translation unit id.");
+            size_t i;
+            for (i = 2; i < cmd.size() - 1; i += 2) {
+                unsigned int ast;
+                EXPECT(Utils::read_uint(cmd[i], ast), "expected an AST id.");
+                std::string text = cmd[i + 1];
+                if (text[0] == '$') {
+                    EXPECT(vars.find(text) != vars.end(),
+                           "variable " << text << " not defined");
+                    text = vars[text];
+                }
+                insertions[ast].push_back(text);
+            }
+            EXPECT(i == cmd.size(), "incomplete final replacement pair.");
+            insert(TUs[tuid].first, TUs[tuid].second, insertions);
+            continue;
+        }
+
         if (cmd[0] == "swap") {
             unsigned int tuid;
             EXPECT(cmd.size() == 4, "expected exactly three arguments");
@@ -273,6 +299,28 @@ void set(CompilerInstance * ci,
           Utils::getImmediateMacroArgCallerRange(
               sm, asts[it->first].sourceRange());
         rewriter.ReplaceText(r, StringRef(it->second));
+    }
+
+    FileID file = sm.getMainFileID();
+    const RewriteBuffer * buf = rewriter.getRewriteBufferFor(file);
+    std::cout << std::string(buf->begin(), buf->end()) << DONE;
+}
+
+void insert(CompilerInstance * ci,
+            AstTable & asts,
+            std::map<AstRef, std::vector<std::string> > & replacements)
+{
+    SourceManager & sm = ci->getSourceManager();
+    Rewriter rewriter;
+    rewriter.setSourceMgr(sm, ci->getLangOpts());
+
+    for (auto it = replacements.rbegin(); it != replacements.rend(); ++it) {
+        SourceRange r = //normalizedSourceRange(asts[*it]);
+          Utils::getImmediateMacroArgCallerRange(
+              sm, asts[it->first].sourceRange());
+        for (auto jt = it->second.rbegin(); jt != it->second.rend(); ++jt) {
+            rewriter.InsertTextBefore(r.getBegin(), StringRef(*jt));
+        }
     }
 
     FileID file = sm.getMainFileID();
