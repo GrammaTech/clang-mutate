@@ -1,3 +1,16 @@
+#ifndef CLANG_MUTATE_FAF_H
+#define CLANG_MUTATE_FAF_H
+
+// This class is a replacement for clang's FrontendActionFactory,
+// with the property that the lifetimes of the CompilerInstances
+// are not managed by the factory.  Instead, instantiated
+// CompilerInstances are put into the global list TUs along with
+// their AstTables; clang_mutate is then the owner of these
+// instances.
+
+#include "AST.h"
+
+std::vector<clang::CompilerInstance*> TUs;
 
 class FAF : public FrontendActionFactory
 {
@@ -86,3 +99,5 @@ template <typename FactoryT>
    return std::unique_ptr<FAF>(
        new FAFAdapter(ConsumerFactory, Callbacks));
 }
+
+#endif

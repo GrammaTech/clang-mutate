@@ -5,7 +5,6 @@
 
 #include "clang/Basic/LLVM.h"
 #include "clang/AST/ASTConsumer.h"
-#include "clang/Frontend/CompilerInstance.h"
 
 #include <iostream>
 
@@ -17,8 +16,6 @@ CreateInteractive(clang::StringRef Binary,
                   clang::CompilerInstance * CI);
 
 void runInteractiveSession(std::istream & input);
-
-extern std::vector<std::pair<clang::CompilerInstance*, AstTable> > TUs;
 
 }
 

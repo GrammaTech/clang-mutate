@@ -26,7 +26,7 @@ std::map<std::string, bool> interactive_flags;
     (interactive_flags["ctrl"] ? std::string("\x17") : "") << std::endl
 #define CANCEL \
     (interactive_flags["ctrl"] ? std::string("\x18") : "") << std::endl
-#define EXPECT(p, msg) \
+#define EXPECT(p, msg)                                                  \
     if (!(p)) { std::cout << "** " << msg << CANCEL; continue; }
 
 std::vector<std::pair<CompilerInstance*, AstTable> > TUs;
@@ -36,7 +36,8 @@ void printSource(CompilerInstance * ci);
 
 void get(CompilerInstance * ci,
          AstTable & asts,
-         AstRef ast);
+         AstRef ast,
+         std::ostream & oss);
 
 void set(CompilerInstance * ci,
          AstTable & asts,
@@ -46,11 +47,11 @@ std::string getAstText(CompilerInstance * ci,
                        AstTable & asts,
                        AstRef ast);
 
-
 void runInteractiveSession(std::istream & input)
 {
+    std::map<std::string, std::string> vars;
     interactive_flags["ctrl"] = false;
-    
+
     std::cout << "***** begin clang-mutate interactive session *****" << std::endl;
     std::cout << "processed " << TUs.size() << " translation units" << std::endl;
 
@@ -60,10 +61,10 @@ void runInteractiveSession(std::istream & input)
         std::cout << "clang-mutate> " << std::flush;
         std::getline(input, cmdline);
         std::vector<std::string> cmd = Utils::split(cmdline);
-        
+
         if (cmd.size() == 0)
             continue;
-        
+
         if (cmd[0] == "quit")
             break;
 
@@ -78,7 +79,7 @@ void runInteractiveSession(std::istream & input)
             interactive_flags[cmd[1]] = yn;
             continue;
         }
-        
+
         if (cmd[0] == "info") {
             // Figure out how far to the right the table should go.
             size_t maxFilenameLength = 12;
@@ -105,7 +106,7 @@ void runInteractiveSession(std::istream & input)
   std::cout << "+------+--------+"; \
   for (size_t i = 0; i < maxFilenameLength; ++i) std::cout << "-";      \
   std::cout << "+" << std::endl;
-            
+
 #define PAD(k) \
   for (size_t i = k; i < maxFilenameLength; ++i) std::cout << " "; \
   std::cout << "|" << std::endl;
@@ -126,7 +127,7 @@ void runInteractiveSession(std::istream & input)
             HRULE;
             continue;
         }
-        
+
         if (cmd[0] == "print") {
             unsigned int n;
             EXPECT(cmd.size() == 2, "expected one argument");
@@ -140,14 +141,25 @@ void runInteractiveSession(std::istream & input)
 
         if (cmd[0] == "get") {
             unsigned int n;
-            EXPECT(cmd.size() == 3, "expected two arguments");
+            EXPECT(cmd.size() == 3 || cmd.size() == 5,
+                   "expected two arguments");
             EXPECT(Utils::read_uint(cmd[1], n), "argument must be a translation unit id.");
             EXPECT(n < TUs.size(),
                    "out of range, only " << TUs.size()
                                          << " translation units loaded.");
             unsigned int ast;
             EXPECT(Utils::read_uint(cmd[2], ast), "expected an AST id.");
-            get(TUs[n].first, TUs[n].second, ast);
+            std::ostringstream oss;
+            get(TUs[n].first, TUs[n].second, ast, oss);
+            std::string result = oss.str();
+
+            if (cmd.size() == 5) {
+                // 'as' clause, bind the results to a named variable.
+                EXPECT(cmd[3] == "as", "expected 'as'");
+                EXPECT(cmd[4][0] == '$', "variable name must start with '$'");
+                vars[cmd[4]] = result;
+            }
+            std::cout << result << DONE;
             continue;
         }
 
@@ -180,7 +192,13 @@ void runInteractiveSession(std::istream & input)
             for (i = 2; i < cmd.size() - 1; i += 2) {
                 unsigned int ast;
                 EXPECT(Utils::read_uint(cmd[i], ast), "expected an AST id.");
-                replacements.insert(std::make_pair(ast, cmd[i + 1]));
+                std::string text = cmd[i + 1];
+                if (text[0] == '$') {
+                    EXPECT(vars.find(text) != vars.end(),
+                           "variable " << text << " not defined");
+                    text = vars[text];
+                }
+                replacements.insert(std::make_pair(ast, text));
             }
             EXPECT(i == cmd.size(), "incomplete final replacement pair.");
             set(TUs[tuid].first, TUs[tuid].second, replacements);
@@ -236,9 +254,10 @@ std::string getAstText(
 
 void get(CompilerInstance * ci,
          AstTable & asts,
-         AstRef ast)
+         AstRef ast,
+         std::ostream & os)
 {
-    std::cout << getAstText(ci, asts, ast) << DONE;
+    os << getAstText(ci, asts, ast);
 }
 
 void set(CompilerInstance * ci,
@@ -300,7 +319,7 @@ class PrepareInteractiveSession
         }
         return true;
     }
-    
+
     bool TraverseStmt(Stmt * s)
     {
         size_t original_spine_size = spine.size();
@@ -319,7 +338,7 @@ class PrepareInteractiveSession
     CompilerInstance * ci;
     SourceManager & sm;
     AstTable & TU;
-    
+
     std::vector<AstRef> spine;
 };
 
@@ -331,7 +350,7 @@ clang_mutate::CreateInteractive(clang::StringRef Binary,
                                 clang::CompilerInstance * CI)
 {
     return std::unique_ptr<clang::ASTConsumer>(
-               new PrepareInteractiveSession(Binary, 
+               new PrepareInteractiveSession(Binary,
                                              DwarfFilepathMap,
                                              CI));
 }
