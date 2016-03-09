@@ -303,8 +303,6 @@ bool in_system_header(
 
 picojson::value Hash::toJSON() const
 {
-    std::ostringstream ss;
-    ss << std::hex << m_hash;
-    return to_json(ss.str());
+    return to_json(static_cast<int64_t>(m_hash));
 }
 
