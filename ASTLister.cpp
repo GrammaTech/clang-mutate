@@ -220,6 +220,7 @@ using namespace clang;
               CharSourceRange::getCharRange(r.getBegin(),
                                             r.getEnd().getLocWithOffset(1)),
               sm, opts, NULL);
+          std::string decl_name = D->getIdentifier()->getName().str();
 
           std::ostringstream ss;
           static unsigned int decl_id = 0;
@@ -227,6 +228,7 @@ using namespace clang;
           if (IncludeAux("decls")) {
               AuxDB::create(ss.str())
                   .set("decl_text"     , decl_text)
+                  .set("decl_name"     , decl_name)
                   .set("begin_src_line", beginLoc.getLine())
                   .set("begin_src_col" , beginLoc.getColumn())
                   .set("end_src_line"  , endLoc.getLine())
