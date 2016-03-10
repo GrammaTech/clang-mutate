@@ -1,10 +1,22 @@
+# Set personal or machine-local flags in a file named local.mk
+ifneq ("$(wildcard local.mk)","")
+include local.mk
+endif
+
+# Ensure LLVM_HOME ends in a "/".
+ifneq ("$(LLVM_HOME)","")
+ifneq ("$(LLVM_HOME)","$(dir $(LLVM_HOME))")
+	LLVM_HOME:=$(LLVM_HOME)/
+endif
+endif
+
 LLVM_POSTFIX ?=
-CXX := clang++$(LLVM_POSTFIX)
+CXX ?= $(LLVM_HOME)clang++$(LLVM_POSTFIX)
 RTTIFLAG := -fno-rtti
 PICOJSON_INCS := -I third-party/picojson-1.3.0
 PICOJSON_DEFINES := -D PICOJSON_USE_INT64
-LLVM_CONFIG := llvm-config$(LLVM_POSTFIX)
-LLVM_DWARFDUMP := llvm-dwarfdump$(LLVM_POSTFIX)
+LLVM_CONFIG := $(LLVM_HOME)llvm-config$(LLVM_POSTFIX)
+LLVM_DWARFDUMP := $(LLVM_HOME)llvm-dwarfdump$(LLVM_POSTFIX)
 CXXFLAGS := $(shell $(LLVM_CONFIG) --cxxflags) $(RTTIFLAG) $(PICOJSON_INCS) $(PICOJSON_DEFINES) -DLLVM_DWARFDUMP='"$(LLVM_DWARFDUMP)"'
 LLVMLDFLAGS := $(shell $(LLVM_CONFIG) --ldflags --libs) -ldl
 

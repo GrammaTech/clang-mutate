@@ -14,3 +14,5 @@ compile_commands.json
 *-swp.c
 tests.md
 tests.html
+
+local.mk
