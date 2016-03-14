@@ -8,7 +8,7 @@
 // their AstTables; clang_mutate is then the owner of these
 // instances.
 
-#include "AST.h"
+#include "TU.h"
 
 std::vector<clang::CompilerInstance*> TUs;
 
@@ -29,9 +29,8 @@ bool FAF::runInvocation(clang::CompilerInvocation * Invocation,
                         clang::DiagnosticConsumer * DiagConsumer)
 {
     clang::CompilerInstance * Compiler = new clang::CompilerInstance;
-    clang_mutate::AstTable astTable;
-    clang_mutate::TUs.push_back(std::make_pair(Compiler, astTable));
-    
+    clang_mutate::TUs.push_back(clang_mutate::TU(Compiler));
+        
     Compiler->setInvocation(Invocation);
     Compiler->setFileManager(Files);
     Compiler->createDiagnostics(DiagConsumer, /*ShouldOwnClient=*/false);

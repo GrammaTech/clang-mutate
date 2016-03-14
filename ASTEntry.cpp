@@ -320,7 +320,7 @@ ASTEntryField::fromJSONNames(const std::vector<std::string> &jsonNames) {
                static_cast<clang::BinaryOperator*>(s)->getOpcodeStr() :
                "";
 
-    RenameFreeVar renamer(s, rewrite, renames);
+    RenameFreeVar renamer(s, sm, rewrite.getLangOpts(), renames);
     m_srcText = renamer.getRewrittenString();
   }
 

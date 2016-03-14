@@ -106,11 +106,27 @@ bool ShouldVisitStmt(SourceManager & SM,
 {
     SourceRange r;
 
-    if (stmt->getStmtClass() == Stmt::NoStmtClass) {
+    if (stmt == NULL || stmt->getStmtClass() == Stmt::NoStmtClass) {
         return false;
     }
     else {    
         r = expandRange(SM, LangOpts, stmt->getSourceRange());
+        return SelectRange(SM, mainFileID, r);
+    }
+}
+
+bool ShouldVisitDecl(SourceManager & SM,
+                     const LangOptions & LangOpts,
+                     FileID mainFileID,
+                     clang::Decl * decl)
+{
+    SourceRange r;
+
+    if (decl == NULL) {
+        return false;
+    }
+    else {    
+        r = expandRange(SM, LangOpts, decl->getSourceRange());
         return SelectRange(SM, mainFileID, r);
     }
 }

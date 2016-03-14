@@ -550,7 +550,7 @@ namespace clang_mutate{
           out << "\t\t" << std::dec << lineNumsToAddressesMapIter->first 
               << ": " << std::hex << lineNumsToAddressesMapIter->second.first
               << ", " << std::hex << lineNumsToAddressesMapIter->second.second
-              << std::endl;
+              << std::dec << std::endl;
         }
       }
     }

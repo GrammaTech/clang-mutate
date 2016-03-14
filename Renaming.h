@@ -74,7 +74,13 @@ public:
   typedef clang::RecursiveASTVisitor<RenameFreeVar> Base;
   
   RenameFreeVar(clang::Stmt * the_stmt,
-                clang::Rewriter & r,
+                clang::SourceManager & _sm,
+                const clang::LangOptions & _langOpts,
+                const Renames & renames);
+  
+  RenameFreeVar(clang::Decl * the_decl,
+                clang::SourceManager & _sm,
+                const clang::LangOptions & _langOpts,
                 const Renames & renames);
   
   bool VisitStmt(clang::Stmt * stmt);
@@ -84,7 +90,8 @@ public:
   std::set<std::string> getIncludes() const;
   
 private:
-  clang::Rewriter & rewriter;
+  clang::SourceManager & sm;
+  const clang::LangOptions & langOpts;
   const Renames & renames;
   clang::SourceLocation begin;
   clang::SourceLocation end;

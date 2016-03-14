@@ -34,21 +34,44 @@ static std::string ident_to_str(IdentifierInfo* ident, size_t id)
 
 RenameFreeVar::RenameFreeVar(
     Stmt * the_stmt,
-    Rewriter & r,
+    SourceManager & _sm,
+    const LangOptions & _langOpts,
     const Renames & rn)
-    : rewriter(r)
+    : sm(_sm)
+    , langOpts(_langOpts)
     , renames(rn)
 {
     SourceRange sr = Utils::getImmediateMacroArgCallerRange(
-        rewriter.getSourceMgr(),
+        sm,
         the_stmt->getSourceRange());
 
     begin = sr.getBegin(); 
     end = Lexer::getLocForEndOfToken(sr.getEnd(), 
                                      0,
-                                     rewriter.getSourceMgr(),
-                                     rewriter.getLangOpts());
+                                     sm,
+                                     langOpts);
     TraverseStmt(the_stmt);
+}
+
+RenameFreeVar::RenameFreeVar(
+    Decl * the_decl,
+    SourceManager & _sm,
+    const LangOptions & _langOpts,
+    const Renames & rn)
+    : sm(_sm)
+    , langOpts(_langOpts)
+    , renames(rn)
+{
+    SourceRange sr = Utils::getImmediateMacroArgCallerRange(
+        sm,
+        the_decl->getSourceRange());
+
+    begin = sr.getBegin(); 
+    end = Lexer::getLocForEndOfToken(sr.getEnd(), 
+                                     0,
+                                     sm,
+                                     langOpts);
+    TraverseDecl(the_decl);
 }
 
 static bool find_identifier(const Renames & renames,
@@ -77,6 +100,23 @@ static bool find_identifier(const Renames & renames,
     return false;
 }
 
+bool getRangeSize(const CharSourceRange & r,
+                  const SourceManager & sm,
+                  const LangOptions & langOpts,
+                  int & result)
+{
+    SourceLocation sp_begin = sm.getSpellingLoc(r.getBegin());
+    SourceLocation sp_end   = sm.getSpellingLoc(r.getEnd());
+    std::pair<FileID, unsigned> begin = sm.getDecomposedLoc(sp_begin);
+    std::pair<FileID, unsigned> end   = sm.getDecomposedLoc(sp_end);
+    if (begin.first != end.first)
+        return false;
+    if (r.isTokenRange())
+        end.second += Lexer::MeasureTokenLength(sp_end, sm, langOpts);
+    result = end.second - begin.second;
+    return true;
+}
+
 bool RenameFreeVar::VisitStmt(Stmt * stmt)
 {
   if (isa<DeclRefExpr>(stmt)) {
@@ -87,7 +127,7 @@ bool RenameFreeVar::VisitStmt(Stmt * stmt)
     if (id != NULL && find_identifier(renames, id, name)) {
       SourceRange sr =
           Utils::getImmediateMacroArgCallerRange(
-              rewriter.getSourceMgr(),
+              sm,
               stmt->getSourceRange());
 
       // Not very efficient, but I didn't see a better way to
@@ -96,19 +136,19 @@ bool RenameFreeVar::VisitStmt(Stmt * stmt)
                                                                sr.getBegin());
       size_t offset = Lexer::getSourceText(
           srcRange,
-          rewriter.getSourceMgr(),
-          rewriter.getLangOpts(),
+          sm,
+          langOpts,
           NULL).size();
       std::string old_str;
       llvm::raw_string_ostream ss(old_str);
-      stmt->printPretty(ss, 0, PrintingPolicy(rewriter.getLangOpts()));
+      stmt->printPretty(ss, 0, PrintingPolicy(langOpts));
       old_str = ss.str();
       std::string new_str = name;
 
-      if (rewriter.getRangeSize(srcRange) != -1) {
-          // The srcRange will have size -1 when the statement is
-          // part of a macro expansion; in that case, we want to
-          // skip the rewriting.
+      int _;
+      // If the statement is part of a macro expansion, getRangeSize will
+      // return false; we want to skip the rewriting in this case.
+      if (getRangeSize(srcRange, sm, langOpts, _)) {
           rewrites[offset] = std::make_pair(old_str.size(), new_str);
       }
     }
@@ -120,8 +160,8 @@ std::string RenameFreeVar::getRewrittenString() const
 {
     std::string orig = Lexer::getSourceText(
         CharSourceRange::getCharRange(begin, end),
-        rewriter.getSourceMgr(),
-        rewriter.getLangOpts(),
+        sm,
+        langOpts,
         NULL);
     std::string ans;
     RewriteMap::const_iterator it = rewrites.begin();

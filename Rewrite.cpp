@@ -82,17 +82,13 @@ RewritingOp * printOriginalTo(std::ostream & os)
 RewritingOp * printModifiedTo(std::ostream & os)
 { return new PrintModifiedOp(os); }
 
-bool RewritingOp::run(
-    std::pair<CompilerInstance*, AstTable> & tu,
-    std::string & error_message) const
+bool RewritingOp::run(TU & tu, std::string & error_message) const
 {
-    CompilerInstance * ci = tu.first;
-    AstTable & asts = tu.second;
     NamedText vars;
     Rewriter rewriter;
-    SourceManager & sm = ci->getSourceManager();
-    rewriter.setSourceMgr(sm, ci->getLangOpts());
-    RewriterState state(rewriter, vars, ci, asts);
+    SourceManager & sm = tu.ci->getSourceManager();
+    rewriter.setSourceMgr(sm, tu.ci->getLangOpts());
+    RewriterState state(rewriter, vars, tu.ci, tu.astTable);
     execute(state);
     if (state.failed) {
         error_message = state.message;
@@ -176,8 +172,6 @@ void ChainedOp::print(std::ostream & o) const
 
 void ChainedOp::execute(RewriterState & state) const
 {
-    std::cerr << ">>> "; print(std::cerr); std::cerr << std::endl;
-    
     if (state.failed) return;
     for (auto p : m_ops) {
         // Execute some mutations in reverse-AstRef order

@@ -1,7 +1,7 @@
 #ifndef CLANG_MUTATE_REWRITER_H
 #define CLANG_MUTATE_REWRITER_H
 
-#include "AST.h"
+#include "TU.h"
 
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/SourceManager.h"
@@ -75,8 +75,7 @@ public:
 
     RewritingOp* then(const RewritingOp * that) const;
 
-    bool run(std::pair<clang::CompilerInstance*, AstTable> & tu,
-             std::string & error_message) const;
+    bool run(TU & tu, std::string & error_message) const;
 
     std::string string_value(const std::string & text,
                              RewriterState & state) const;

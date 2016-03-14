@@ -12,6 +12,9 @@ using namespace clang;
 
 bool GetMacros::VisitStmt(clang::Stmt * stmt)
 {
+    SourceManager & sm = CI->getSourceManager();
+    LangOptions & langOpts = CI->getLangOpts();
+    
     SourceRange R = stmt->getSourceRange();
 
     SourceLocation sb = sm.getSpellingLoc(R.getBegin());
