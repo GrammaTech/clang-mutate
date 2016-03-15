@@ -82,6 +82,9 @@ RewritingOp * printOriginalTo(std::ostream & os)
 RewritingOp * printModifiedTo(std::ostream & os)
 { return new PrintModifiedOp(os); }
 
+RewritingOp * annotateWith(Annotator * annotator)
+{ return new AnnotateOp(annotator); }
+    
 bool RewritingOp::run(TU & tu, std::string & error_message) const
 {
     NamedText vars;
@@ -270,6 +273,33 @@ void PrintModifiedOp::execute(RewriterState & state) const
     m_os << std::string(buf->begin(), buf->end());
 }
 
+void AnnotateOp::print(std::ostream & o) const
+{ o << "annotate(" << m_annotate->describe() << ")"; }
+
+void AnnotateOp::execute(RewriterState & state) const
+{
+    if (state.failed) return;
+    SourceManager & sm = state.ci->getSourceManager();
+    LangOptions & langOpts = state.ci->getLangOpts();
+    
+    for (auto & ast : state.asts) {
+        SourceRange r = // normalizedSourceRange(ast);
+            Utils::getImmediateMacroArgCallerRange(
+                state.ci->getSourceManager(),
+                ast.sourceRange());
+        SourceLocation end = r.getEnd();
+
+        state.rewriter.InsertText(r.getBegin(),
+                                  m_annotate->before(ast),
+                                  false);
+        
+        unsigned offset = Lexer::MeasureTokenLength(end, sm, langOpts);
+        state.rewriter.InsertText(end.getLocWithOffset(offset),
+                                  m_annotate->after(ast),
+                                  false);
+    }        
+}
+                       
 void GetOp::print(std::ostream & o) const
 { o << "get " << m_tgt << " as " << m_var; }
 

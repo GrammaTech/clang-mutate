@@ -9,10 +9,10 @@
 // instances.
 
 #include "TU.h"
+#include "clang/Frontend/FrontendActions.h"
+#include "clang/Tooling/Tooling.h"
 
-std::vector<clang::CompilerInstance*> TUs;
-
-class FAF : public FrontendActionFactory
+class FAF : public clang::tooling::FrontendActionFactory
 {
 public:
     ~FAF() override;
@@ -49,11 +49,13 @@ bool FAF::runInvocation(clang::CompilerInvocation * Invocation,
 
 template <typename FactoryT>
  inline std::unique_ptr<FAF> newFAF(
-     FactoryT *ConsumerFactory, SourceFileCallbacks *Callbacks) {
+     FactoryT *ConsumerFactory,
+     clang::tooling::SourceFileCallbacks *Callbacks)
+{
    class FAFAdapter : public FAF {
    public:
      explicit FAFAdapter(FactoryT *ConsumerFactory,
-                         SourceFileCallbacks *Callbacks)
+                         clang::tooling::SourceFileCallbacks *Callbacks)
        : ConsumerFactory(ConsumerFactory), Callbacks(Callbacks) {}
  
      clang::FrontendAction *create() override {
@@ -64,7 +66,7 @@ template <typename FactoryT>
      class ConsumerFactoryAdaptor : public clang::ASTFrontendAction {
      public:
        ConsumerFactoryAdaptor(FactoryT *ConsumerFactory,
-                              SourceFileCallbacks *Callbacks)
+                              clang::tooling::SourceFileCallbacks *Callbacks)
          : ConsumerFactory(ConsumerFactory), Callbacks(Callbacks) {}
  
        std::unique_ptr<clang::ASTConsumer>
@@ -89,10 +91,10 @@ template <typename FactoryT>
  
      private:
        FactoryT *ConsumerFactory;
-       SourceFileCallbacks *Callbacks;
+       clang::tooling::SourceFileCallbacks *Callbacks;
      };
      FactoryT *ConsumerFactory;
-     SourceFileCallbacks *Callbacks;
+     clang::tooling::SourceFileCallbacks *Callbacks;
    };
  
    return std::unique_ptr<FAF>(

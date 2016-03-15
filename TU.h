@@ -5,6 +5,9 @@
 #include "Scopes.h"
 #include "BinaryAddressMap.h"
 
+#include "clang/Basic/LLVM.h"
+#include "clang/AST/ASTConsumer.h"
+
 namespace clang_mutate {
     
 struct TU
@@ -18,6 +21,11 @@ struct TU
 
 extern std::vector<TU> TUs;
 
-};
+std::unique_ptr<clang::ASTConsumer>
+CreateTU(clang::StringRef Binary,
+         clang::StringRef DwarfFilepathMap,
+         clang::CompilerInstance * CI);
+
+} // end namespace clang_mutate
 
 #endif

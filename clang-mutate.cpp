@@ -15,6 +15,7 @@
 #include "ASTMutate.h"
 #include "ASTLister.h"
 #include "Interactive.h"
+#include "FAF.h"
 #include "Utils.h"
 
 #include "clang/AST/ASTConsumer.h"
@@ -26,6 +27,7 @@
 #include "llvm/Support/CommandLine.h"
 
 #include <iostream>
+#include <sstream>
 
 using namespace clang::driver;
 using namespace clang::tooling;
@@ -78,6 +80,8 @@ OPTION( Aux         , std::string , "aux"          , "comma-delimited list of au
 OPTION( Binary      , std::string , "binary"       , "binary with DWARF information for line->address mapping");
 OPTION( DwarfFilepathMap, std::string, "dwarf-filepath-mapping", "mapping of filepaths used in compilation -> new filepath");
 
+std::ostringstream MutateCmd;
+
 namespace {
 class ActionFactory : public SourceFileCallbacks {
 public:
@@ -95,46 +99,74 @@ public:
         if (!File2.empty())
             Value2 = Utils::filenameToContents(File2);
 
-        if (Number)
-            return clang_mutate::CreateASTNumberer();
-        if (Ids)
-            return clang_mutate::CreateASTIDS();
-        if (Annotate)
-            return clang_mutate::CreateASTAnnotator();
-        if (List)
-            return clang_mutate::CreateASTLister(Stmt1, 
-                                                 Fields,
-                                                 Aux,
-                                                 Binary, 
-                                                 DwarfFilepathMap,
-                                                 false, 
-                                                 CI);
-        if (Json)
-            return clang_mutate::CreateASTLister(Stmt1, 
+        if (Number) {
+            MutateCmd << "number 0" << std::endl;
+            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+        }
+        if (Ids) {
+            MutateCmd << "ids 0" << std::endl;
+            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+        }
+        if (Annotate) {
+            MutateCmd << "annotate 0" << std::endl;
+            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+        }
+
+        if (List) {
+            MutateCmd << "list 0" << std::endl;
+            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+        }
+
+        if (Json) {
+            MutateCmd << "json 0" << std::endl;
+            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+            /*
+              return clang_mutate::CreateASTLister(Stmt1, 
                                                  Fields,
                                                  Aux,
                                                  Binary, 
                                                  DwarfFilepathMap,
                                                  true, 
                                                  CI);
-        if (Cut)
-            return clang_mutate::CreateASTCutter(Stmt1);
-        if (SetRange)
-            return clang_mutate::CreateASTRangeSetter(Stmt1, Stmt2, Value1);
+            */
+        }
+        if (Cut) {
+            MutateCmd << "cut 0 " << Stmt1 << std::endl;
+            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+        }
+        if (SetRange) {
+            MutateCmd << "setrange 0 "
+                      << Stmt1 << " "
+                      << Stmt2 << " "
+                      << Value1 << std::endl;
+            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+        }
         if (SetFunc)
             return clang_mutate::CreateASTFuncSetter(Stmt1, Value1);
-        if (Insert)
-            return clang_mutate::CreateASTInserter(Stmt1, Stmt2);
-        if (Swap)
-            return clang_mutate::CreateASTSwapper(Stmt1, Stmt2);
+        if (Insert) {
+            MutateCmd << "get    0 " << Stmt1 << " as $stmt" << std::endl
+                      << "insert 0 " << Stmt2 << " $stmt" << std::endl;
+            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+        }
+        if (Swap) {
+            MutateCmd << "swap 0 " << Stmt1 << " " << Stmt2 << std::endl;
+            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+        }
         if (Set)
-            return clang_mutate::CreateASTSetter(Stmt1, Value1);
-        if (Set2)
-            return clang_mutate::CreateASTSetter2(Stmt1, Value1, Stmt2, Value2);
-        if (InsertV)
-            return clang_mutate::CreateASTValueInserter(Stmt1, Value1);
+            MutateCmd << "set 0 " << Stmt1 << " " << Value1 << std::endl;
+            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+        if (Set2) {
+            MutateCmd << "set 0 "
+                      << Stmt1 << " " << Value1 << " "
+                      << Stmt2 << " " << Value2 << std::endl;
+            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+        }
+        if (InsertV) {
+            MutateCmd << "insert 0 " << Stmt1 << " " << Value1 << std::endl;
+            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+        }
         if (Interactive)
-            return clang_mutate::CreateInteractive(Binary, DwarfFilepathMap, CI);
+            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
         
         errs() << "Must supply one of:\n";
         errs() << "\tnumber\n";
@@ -158,8 +190,6 @@ public:
 };
 }
 
-#include "FAF.h"
-
 int main(int argc, const char **argv) {
     CommonOptionsParser OptionsParser(argc, argv, ToolCategory);
     ClangTool Tool(OptionsParser.getCompilations(),
@@ -167,8 +197,17 @@ int main(int argc, const char **argv) {
     ActionFactory Factory;
     int result = Tool.run(newFAF<ActionFactory>(&Factory, &Factory).get());
 
-    if (Interactive)
+    if (Interactive) {
+        clang_mutate::interactive_flags["ctrl"  ] = false;
+        clang_mutate::interactive_flags["prompt"] = true;
         clang_mutate::runInteractiveSession(std::cin);
+    }
+    else {
+        clang_mutate::interactive_flags["ctrl"  ] = false;
+        clang_mutate::interactive_flags["prompt"] = false;
+        std::istringstream cmd(MutateCmd.str());
+        clang_mutate::runInteractiveSession(cmd);
+    }
     
     return result;
 }

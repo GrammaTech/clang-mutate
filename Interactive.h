@@ -3,19 +3,13 @@
 
 #include "AST.h"
 
-#include "clang/Basic/LLVM.h"
-#include "clang/AST/ASTConsumer.h"
-
 #include <iostream>
 
 namespace clang_mutate {  
 
-std::unique_ptr<clang::ASTConsumer>
-CreateInteractive(clang::StringRef Binary,
-                  clang::StringRef DwarfFilepathMap,
-                  clang::CompilerInstance * CI);
-
 void runInteractiveSession(std::istream & input);
+
+extern std::map<std::string, bool> interactive_flags;
 
 }
 

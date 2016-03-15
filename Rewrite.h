@@ -20,6 +20,7 @@ namespace clang_mutate
 // of these, sequenced by RewritingOp::then.  Or chain a bunch
 // together using ChainedOp's initializer-list constructor.
 class RewritingOp;
+class Annotator;
 RewritingOp * setText      (AstRef ast, const std::string & text);
 RewritingOp * setRangeText (AstRef ast1, AstRef ast2, const std::string & text);
 RewritingOp * insertBefore (AstRef ast, const std::string & text);
@@ -27,6 +28,7 @@ RewritingOp * getTextAs    (AstRef ast, const std::string & var );
 RewritingOp * echoTo          (std::ostream & os, const std::string & text);
 RewritingOp * printModifiedTo (std::ostream & os);
 RewritingOp * printOriginalTo (std::ostream & os);
+RewritingOp * annotateWith (Annotator * ann);
     
 typedef std::map<std::string, std::string> NamedText;
 
@@ -65,6 +67,7 @@ public:
                 , Op_PrintModified
                 , Op_PrintOriginal
                 , Op_SetRange
+                , Op_Annotate
     };
 
     virtual OpKind kind() const = 0;
@@ -123,6 +126,25 @@ public:
     void execute(RewriterState & state) const;
 private:
     std::ostream & m_os;
+};
+
+class Annotator {
+public:
+    virtual std::string before(const Ast & ast);
+    virtual std::string after (const Ast & ast);
+    virtual std::string describe();
+};
+
+class AnnotateOp : public RewritingOp
+{
+public:
+    AnnotateOp(Annotator * annotate) : m_annotate(annotate) {}
+    OpKind kind() const { return Op_Annotate; }
+    AstRef target() const { return NoAst; }
+    void print(std::ostream & o) const;
+    void execute(RewriterState & state) const;
+private:
+    Annotator * m_annotate;
 };
 
 class ChainedOp : public RewritingOp

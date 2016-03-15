@@ -1,9 +1,11 @@
 #ifndef CLANG_MUTATE_REQUIREMENTS_H
 #define CLANG_MUTATE_REQUIREMENTS_H
 
+#include "ASTRef.h"
 #include "Macros.h"
 #include "Function.h"
 #include "Variable.h"
+#include "Scopes.h"
 #include "Utils.h"
 #include "Bindings.h"
 
@@ -41,6 +43,9 @@ public:
     std::set<std::string>  includes()  const;
     std::set<Hash>         types()     const;
     std::set<Macro>        macros()    const;
+    std::string            text()      const;
+    AstRef                 parent()    const;
+    PTNode                 scopePos() const;
     
     bool VisitStmt(clang::Stmt * expr);
 
@@ -52,6 +57,15 @@ public:
     bool VisitDeclRefExpr(clang::DeclRefExpr * decl);
     
     bool toplevel_is_macro() const { return toplev_is_macro; }
+
+    void setText(const std::string & _text)
+    { m_text = _text; }
+
+    void setParent(AstRef p)
+    { m_parent = p; }
+
+    void setScopePos(PTNode pos)
+    { m_scope_pos = pos; }
     
 private:
 
@@ -64,7 +78,10 @@ private:
     std::set<std::string> m_includes;
     std::set<Hash> addl_types;
     std::set<Macro> m_macros;
-
+    std::string m_text;
+    AstRef m_parent;
+    PTNode m_scope_pos;
+    
     bool toplev_is_macro, is_first;
     BindingCtx ctx;
 

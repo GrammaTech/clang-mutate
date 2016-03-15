@@ -4,10 +4,13 @@
 #include <vector>
 #include <string>
 
+#include "ASTRef.h"
 #include "Hash.h"
 #include "PointedTree.h"
+#include "BinaryAddressMap.h"
 #include "Macros.h"
 #include "Renaming.h"
+#include "Requirements.h"
 
 #include "clang/AST/AST.h"
 #include "clang/Frontend/CompilerInstance.h"
@@ -16,8 +19,7 @@
 
 namespace clang_mutate {
 
-typedef size_t AstRef;
-const AstRef NoAst = 0;
+struct TU;
 
 class Ast
 {
@@ -70,6 +72,9 @@ public:
     std::string text() const
     { return m_text; }
 
+    std::string opcode() const
+    { return m_opcode; }
+
     void setFreeVariables(const std::set<VariableInfo> & vars)
     { m_free_vars = vars; }
 
@@ -81,6 +86,14 @@ public:
 
     std::set<FunctionInfo> freeFunctions() const
     { return m_free_funs; }
+
+    std::string srcFilename(TU & tu) const;
+
+    bool binaryAddressRange(
+        TU & tu, BinaryAddressMap::BeginEndAddressPair & addrRange) const;
+    
+    AstRef counter() const
+    { return m_counter; }
     
     AstRef parent() const
     { return m_parent; }
@@ -96,35 +109,11 @@ public:
     child_iterator end_children() const
     { return m_children.end(); }
 
-    Ast(clang::Stmt * _stmt, AstRef _parent)
-        : m_stmt(_stmt)
-        , m_decl(NULL)
-        , m_parent(_parent)
-        , m_children()
-        , m_class(std::string(_stmt->getStmtClassName()))
-        , m_range(_stmt->getSourceRange())
-        , m_guard(false)
-        , m_scope_pos(NoNode)
-        , m_macros()
-        , m_text()
-        , m_free_vars()
-        , m_free_funs()
-    {}
-
-    Ast(clang::Decl * _decl, AstRef _parent)
-        : m_stmt(NULL)
-        , m_decl(_decl)
-        , m_parent(_parent)
-        , m_children()
-        , m_class(std::string(_decl->getDeclKindName()))
-        , m_range(_decl->getSourceRange())
-        , m_guard(false)
-        , m_scope_pos(NoNode)
-        , m_macros()
-        , m_text()
-        , m_free_vars()
-        , m_free_funs()
-    {}
+    picojson::value toJSON(const std::set<std::string> & keys,
+                           TU & tu) const;
+                           
+    Ast(clang::Stmt * _stmt, AstRef _counter, AstRef _parent);
+    Ast(clang::Decl * _decl, AstRef _counter, AstRef _parent);
     
     void add_child(AstRef child)
     { m_children.push_back(child); }
@@ -132,6 +121,7 @@ public:
 private:
     clang::Stmt * m_stmt;
     clang::Decl * m_decl;
+    AstRef m_counter;
     AstRef m_parent;
     std::vector<AstRef> m_children;
 
@@ -158,35 +148,31 @@ private:
     std::string m_text;
     std::set<VariableInfo> m_free_vars;
     std::set<FunctionInfo> m_free_funs;
+    std::string m_opcode;
 };
 
 class AstTable
 {
 public:
-    AstRef create(clang::Stmt * stmt, AstRef parent)
-    {
-        asts.push_back(Ast(stmt, parent));
-        return asts.size();
-    }
+    AstRef create(clang::Stmt * stmt, Requirements & reqs)
+    { return impl_create(stmt, reqs); }
 
-    AstRef create(clang::Decl * decl, AstRef parent)
-    {
-        asts.push_back(Ast(decl, parent));
-        return asts.size();
-    }
-    
-    Ast& ast(AstRef ref)
-    {
-        assert (ref != 0 && ref <= count());
-        return asts[ref - 1];
-    }
+    AstRef create(clang::Decl * decl, Requirements & reqs)
+    { return impl_create(decl, reqs); }
 
-    Ast& operator[](AstRef ref) { return ast(ref); }
+    Ast& ast(AstRef ref);
+    Ast& operator[](AstRef ref);
 
-    size_t count()
-    { return asts.size(); }
-    
+    size_t count() const;
+
+    typedef std::vector<Ast>::iterator iterator;
+    iterator begin() { return asts.begin(); }
+    iterator end()   { return asts.end();   }
+
 private:
+    template <typename T>
+    AstRef impl_create(T * clang_obj, Requirements & reqs);
+
     std::vector<Ast> asts;
 };
 
