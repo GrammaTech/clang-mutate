@@ -53,38 +53,36 @@ void RewriterState::fail(const std::string & msg)
     message = msg;
 }
 
-RewritingOp * RewritingOp::then(const RewritingOp* that) const
-{
-    std::vector<const RewritingOp*> these;
-    these.push_back(this);
-    these.push_back(that);
-    return new ChainedOp(these);
-}
+RewritingOpPtr RewritingOp::then(RewritingOpPtr that)
+{ return new ChainedOp({this, that}); }
 
-RewritingOp * getTextAs(AstRef ast, const std::string & var)
+RewritingOpPtr getTextAs(AstRef ast, const std::string & var)
 { return new GetOp(ast, var); }
 
-RewritingOp * setText(AstRef ast, const std::string & text)
+RewritingOpPtr setText(AstRef ast, const std::string & text)
 { return new SetOp(ast, text); }
 
-RewritingOp * setRangeText (AstRef ast1, AstRef ast2, const std::string & text)
+RewritingOpPtr setRangeText (AstRef ast1, AstRef ast2, const std::string & text)
 { return new SetRangeOp(ast1, ast2, text); }
 
-RewritingOp * insertBefore(AstRef ast, const std::string & text)
+RewritingOpPtr insertBefore(AstRef ast, const std::string & text)
 { return new InsertOp(ast, text); }
 
-RewritingOp * echoTo(std::ostream & os, const std::string & text)
+RewritingOpPtr echoTo(std::ostream & os, const std::string & text)
 { return new EchoOp(text, os); }
 
-RewritingOp * printOriginalTo(std::ostream & os)
+RewritingOpPtr printOriginalTo(std::ostream & os)
 { return new PrintOriginalOp(os); }
 
-RewritingOp * printModifiedTo(std::ostream & os)
+RewritingOpPtr printModifiedTo(std::ostream & os)
 { return new PrintModifiedOp(os); }
 
-RewritingOp * annotateWith(Annotator * annotator)
+RewritingOpPtr annotateWith(Annotator * annotator)
 { return new AnnotateOp(annotator); }
-    
+
+RewritingOpPtr chain(const std::vector<RewritingOpPtr> & ops)
+{ return new ChainedOp(ops); }
+
 bool RewritingOp::run(TU & tu, std::string & error_message) const
 {
     NamedText vars;
@@ -117,11 +115,11 @@ std::string RewritingOp::string_value(
     return search->second;
 }
 
-void ChainedOp::merge(const RewritingOp * op)
+void ChainedOp::merge(RewritingOpPtr op)
 {
     switch (op->kind()) {
     case Op_Chain: {
-        const ChainedOp * ch = static_cast<const ChainedOp*>(op);
+        ref_ptr<ChainedOp> ch = static_pointer_cast<ChainedOp>(op);
         bool first = true;
         for (auto p : ch->m_ops) {
             if (first && m_ops.back().second.empty()) {

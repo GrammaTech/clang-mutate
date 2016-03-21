@@ -7,10 +7,13 @@
 using namespace clang_mutate;
 using namespace clang;
 
+AstRef AstTable::nextAstRef() const
+{ return asts.size() + 1; }
+
 template <typename T>
 AstRef AstTable::impl_create(T * clang_obj, Requirements & required)
 {
-    AstRef ref = asts.size() + 1;
+    AstRef ref = nextAstRef();
     asts.push_back(Ast(clang_obj, ref, required.parent()));
     if (required.parent() != NoAst)
         asts[required.parent()].add_child(ref);

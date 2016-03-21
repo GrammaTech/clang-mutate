@@ -3,6 +3,8 @@
 
 #include "TU.h"
 
+#include "ref_ptr.hpp"
+
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/AST/AST.h"
@@ -17,19 +19,21 @@ namespace clang_mutate
 {
 
 // Basic rewriting operations.  Build your rewriting action out
-// of these, sequenced by RewritingOp::then.  Or chain a bunch
+// of these, sequenced by ChainedOp::then.  Or chain a bunch
 // together using ChainedOp's initializer-list constructor.
 class RewritingOp;
+typedef ref_ptr<RewritingOp> RewritingOpPtr;
 class Annotator;
-RewritingOp * setText      (AstRef ast, const std::string & text);
-RewritingOp * setRangeText (AstRef ast1, AstRef ast2, const std::string & text);
-RewritingOp * insertBefore (AstRef ast, const std::string & text);
-RewritingOp * getTextAs    (AstRef ast, const std::string & var );
-RewritingOp * echoTo          (std::ostream & os, const std::string & text);
-RewritingOp * printModifiedTo (std::ostream & os);
-RewritingOp * printOriginalTo (std::ostream & os);
-RewritingOp * annotateWith (Annotator * ann);
-    
+RewritingOpPtr setText      (AstRef ast, const std::string & text);
+RewritingOpPtr setRangeText (AstRef ast1, AstRef ast2, const std::string & text);
+RewritingOpPtr insertBefore (AstRef ast, const std::string & text);
+RewritingOpPtr getTextAs    (AstRef ast, const std::string & var );
+RewritingOpPtr echoTo          (std::ostream & os, const std::string & text);
+RewritingOpPtr printModifiedTo (std::ostream & os);
+RewritingOpPtr printOriginalTo (std::ostream & os);
+RewritingOpPtr annotateWith (Annotator * ann);
+RewritingOpPtr chain (const std::vector<RewritingOpPtr> & ops);
+
 typedef std::map<std::string, std::string> NamedText;
 
 struct RewriterState
@@ -70,21 +74,25 @@ public:
                 , Op_Annotate
     };
 
+    RewritingOp() : count(0) {}
+    
     virtual OpKind kind() const = 0;
     virtual AstRef target() const = 0;
     virtual void print(std::ostream & o) const = 0;
     virtual void execute(RewriterState & state) const = 0;
     virtual ~RewritingOp() {}
-
-    RewritingOp* then(const RewritingOp * that) const;
+    
+    RewritingOpPtr then(RewritingOpPtr that);
 
     bool run(TU & tu, std::string & error_message) const;
 
     std::string string_value(const std::string & text,
                              RewriterState & state) const;
+
+    RefCounter count;
 };
 
-typedef std::vector<const RewritingOp*> RewritingOps;
+typedef std::vector<RewritingOpPtr> RewritingOps;
 
 class EchoOp : public RewritingOp
 {
@@ -93,6 +101,7 @@ public:
            std::ostream & os)
         : m_text(text)
         , m_os(os)
+        , RewritingOp()
     {}
     
     OpKind kind() const { return Op_Echo; }
@@ -107,7 +116,7 @@ private:
 class PrintOriginalOp : public RewritingOp
 {
 public:
-    PrintOriginalOp(std::ostream & os) : m_os(os) {}
+    PrintOriginalOp(std::ostream & os) : m_os(os), RewritingOp() {}
     OpKind kind() const { return Op_PrintOriginal; }
     AstRef target() const { return NoAst; }
     void print(std::ostream & o) const;
@@ -119,7 +128,7 @@ private:
 class PrintModifiedOp : public RewritingOp
 {
 public:
-    PrintModifiedOp(std::ostream & os) : m_os(os) {}
+    PrintModifiedOp(std::ostream & os) : m_os(os), RewritingOp() {}
     OpKind kind() const { return Op_PrintModified; }
     AstRef target() const { return NoAst; }
     void print(std::ostream & o) const;
@@ -138,7 +147,7 @@ public:
 class AnnotateOp : public RewritingOp
 {
 public:
-    AnnotateOp(Annotator * annotate) : m_annotate(annotate) {}
+    AnnotateOp(Annotator * annotate) : m_annotate(annotate), RewritingOp() {}
     OpKind kind() const { return Op_Annotate; }
     AstRef target() const { return NoAst; }
     void print(std::ostream & o) const;
@@ -147,19 +156,22 @@ private:
     Annotator * m_annotate;
 };
 
+// NOTE: ChainedOp takes ownership of it's member ops.
 class ChainedOp : public RewritingOp
 {
-    void merge(const RewritingOp * op);
+    void merge(RewritingOpPtr op);
     
 public:
     ChainedOp(const RewritingOps & ops)
         : m_ops(1)
-    { for (auto op : ops) merge(op); }
+        , RewritingOp()
+    { for (auto & op : ops) merge(op); }
 
-    ChainedOp(const std::initializer_list<const RewritingOp*> & ops)
+    ChainedOp(const std::initializer_list<RewritingOpPtr> & ops)
         : m_ops(1)
-    { for (auto op: ops) merge(op); }
-    
+        , RewritingOp()
+    { for (auto & op : ops) merge(op); }
+
     OpKind kind() const { return Op_Chain; }
     AstRef target() const { return NoAst; }
     void print(std::ostream & o) const;
@@ -171,8 +183,8 @@ private:
     // of two types: mutations, which should be applied from largest AstRef
     // to smallest, and IO-style actions like printing the resulting rewrite
     // buffer or reading original source text.
-    typedef std::map<AstRef, std::vector<const RewritingOp*> > Mutations;
-    typedef std::vector<const RewritingOp*> IO;
+    typedef std::map<AstRef, std::vector<RewritingOpPtr> > Mutations;
+    typedef std::vector<RewritingOpPtr> IO;
     std::vector<std::pair<Mutations, IO> > m_ops;
 };
 
@@ -180,7 +192,10 @@ class InsertOp : public RewritingOp
 {
 public:
     InsertOp(AstRef ast, const std::string & text)
-        : m_tgt(ast), m_text(text) {}
+        : m_tgt(ast)
+        , m_text(text)
+        , RewritingOp()
+    {}
     
     OpKind kind() const { return Op_Insert; }
     AstRef target() const { return m_tgt; }
@@ -196,8 +211,10 @@ class SetOp : public RewritingOp
 {
 public:
     SetOp(AstRef ast, const std::string & text)
-        : m_tgt(ast), m_text(text) {}
-    
+        : m_tgt(ast)
+        , m_text(text)
+        , RewritingOp()
+    {}
     OpKind kind() const { return Op_Set; }
     AstRef target() const { return m_tgt; }
     void print(std::ostream & o) const;
@@ -212,7 +229,10 @@ class SetRangeOp : public RewritingOp
 {
 public:
     SetRangeOp(AstRef ast1, AstRef ast2, const std::string & text)
-        : m_ast1(ast1), m_ast2(ast2), m_text(text)
+        : m_ast1(ast1)
+        , m_ast2(ast2)
+        , m_text(text)
+        , RewritingOp()
     {
         if (m_ast1 > m_ast2) {
             AstRef t = m_ast1;
@@ -236,8 +256,10 @@ class GetOp : public RewritingOp
 {
 public:  
     GetOp(AstRef ast, const std::string & var)
-        : m_tgt(ast), m_var(var) {}
-    
+        : m_tgt(ast)
+        , m_var(var)
+        , RewritingOp()
+    {}
     OpKind kind() const { return Op_Get; }    
     AstRef target() const { return m_tgt; }
     void print(std::ostream & o) const;

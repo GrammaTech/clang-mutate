@@ -4,9 +4,13 @@
 #include "AST.h"
 #include "Scopes.h"
 #include "BinaryAddressMap.h"
+#include "Json.h"
 
 #include "clang/Basic/LLVM.h"
 #include "clang/AST/ASTConsumer.h"
+
+#include <map>
+#include <vector>
 
 namespace clang_mutate {
     
@@ -17,6 +21,7 @@ struct TU
     AstTable astTable;
     BinaryAddressMap addrMap;
     Scope scopes;
+    std::map<std::string, std::vector<picojson::value> > aux;
 };
 
 extern std::vector<TU> TUs;

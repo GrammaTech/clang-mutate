@@ -12,8 +12,6 @@
 //  http://clang.llvm.org/docs/LibTooling.html for details.
 //
 //===----------------------------------------------------------------------===//
-#include "ASTMutate.h"
-#include "ASTLister.h"
 #include "Interactive.h"
 #include "FAF.h"
 #include "Utils.h"
@@ -141,8 +139,12 @@ public:
                       << Value1 << std::endl;
             return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
         }
-        if (SetFunc)
-            return clang_mutate::CreateASTFuncSetter(Stmt1, Value1);
+// FIXME FIXME FIXME FIXME FIXME
+// FIXME FIXME FIXME FIXME FIXME
+//        if (SetFunc)
+//            return clang_mutate::CreateASTFuncSetter(Stmt1, Value1);
+// FIXME FIXME FIXME FIXME FIXME
+// FIXME FIXME FIXME FIXME FIXME
         if (Insert) {
             MutateCmd << "get    0 " << Stmt1 << " as $stmt" << std::endl
                       << "insert 0 " << Stmt2 << " $stmt" << std::endl;

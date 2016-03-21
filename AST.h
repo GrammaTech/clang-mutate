@@ -163,6 +163,7 @@ public:
     Ast& ast(AstRef ref);
     Ast& operator[](AstRef ref);
 
+    AstRef nextAstRef() const;
     size_t count() const;
 
     typedef std::vector<Ast>::iterator iterator;

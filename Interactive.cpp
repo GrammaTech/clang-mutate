@@ -4,6 +4,8 @@
 #include "AST.h"
 #include "BinaryAddressMap.h"
 #include "Rewrite.h"
+#include "TypeDBEntry.h"
+#include "AuxDB.h"
 #include "Utils.h"
 
 #include <iostream>
@@ -115,6 +117,12 @@ void runInteractiveSession(std::istream & input)
             continue;
         }
 
+        if (cmd[0] == "types") {
+            EXPECT (cmd.size() == 1, "expected no arguments");
+            std::cout << to_json(TypeDBEntry::databaseToJSON()) << DONE;
+            continue;
+        }
+        
         if (cmd[0] == "info") {
             // Figure out how far to the right the table should go.
             size_t maxFilenameLength = 12;
@@ -293,7 +301,7 @@ void runInteractiveSession(std::istream & input)
             continue;
         }
         
-        if (cmd[0] == "json") {
+        if (cmd[0] == "aux") {
             unsigned int tuid;
             EXPECT (cmd.size() == 2, "expected one argument");
             EXPECT (Utils::read_uint(cmd[1], tuid),
@@ -302,12 +310,57 @@ void runInteractiveSession(std::istream & input)
                     "out of range, only " << TUs.size()
                                           << " translation units loaded.");
             TU & tu = TUs[tuid];
-
-            std::vector<picojson::value> ans;
-            std::set<std::string> all_keys;
-            for (auto & ast : tu.astTable)
-                ans.push_back(ast.toJSON(all_keys, tu));
+            std::map<std::string, picojson::value> ans;
+            for (auto it = tu.aux.begin(); it != tu.aux.end(); ++it)
+                ans[it->first] = to_json(it->second);
             std::cout << to_json(ans) << DONE;
+            continue;
+        }
+
+        if (cmd[0] == "json") {
+            unsigned int tuid;
+            EXPECT (cmd.size() >= 2, "expected at least one argument");
+            EXPECT (Utils::read_uint(cmd[1], tuid),
+                    "argument must be a translation unit id");
+            EXPECT (tuid < TUs.size(),
+                    "out of range, only " << TUs.size()
+                                          << " translation units loaded.");
+            TU & tu = TUs[tuid];
+            std::string sep = "";
+
+            std::cout << "[";
+            std::set<std::string> aux_keys;
+            if (cmd.size() == 2) {
+                aux_keys.insert("types");
+                aux_keys.insert("decls");
+                aux_keys.insert("protos");
+            }
+            if (cmd.size() > 2) {
+                for (size_t i = 2; i < cmd.size(); ++i) {
+                    aux_keys.insert(cmd[i]);
+                }
+            }
+            for (auto & aux_key : aux_keys) {
+                if (aux_key == "types") {
+                    for (auto & entry : TypeDBEntry::databaseToJSON()) {
+                        std::cout << sep << to_json(entry);
+                        sep = ",";
+                    }
+                }
+                else {
+                    for (auto & entry : tu.aux[aux_key]) {
+                        std::cout << sep << to_json(entry);
+                        sep = ",";
+                    }
+                }
+            }
+            
+            std::set<std::string> all_ast_keys;
+            for (auto & ast : tu.astTable) {
+                std::cout << sep << ast.toJSON(all_ast_keys, tu);
+                sep = ",";
+            }
+            std::cout << "]" << DONE;
             continue;
         }
         
@@ -383,8 +436,7 @@ void runInteractiveSession(std::istream & input)
                        << tu.astTable.count() << " ASTs.");
                 ops.push_back(setText(n, ""));
             }
-            ChainedOp op(ops);
-            if (op.then(printModifiedTo(std::cout))->run(tu, err))
+            if (chain(ops)->then(printModifiedTo(std::cout))->run(tu, err))
                 std::cout << DONE;
             else
                 std::cout << err << CANCEL;
@@ -393,7 +445,7 @@ void runInteractiveSession(std::istream & input)
 
         if (cmd[0] == "set" || cmd[0] == "s") {
             unsigned int tuid;
-            std::vector<const RewritingOp*> ops;
+            RewritingOps ops;
             EXPECT(cmd.size() >= 4, "expected at least three arguments");
             EXPECT(Utils::read_uint(cmd[1], tuid), "first argument must be a translation unit id.");
             size_t i;
@@ -409,8 +461,7 @@ void runInteractiveSession(std::istream & input)
                 ops.push_back(setText(ast, text));
             }
             EXPECT(i == cmd.size(), "incomplete final replacement pair.");
-            ChainedOp op(ops);
-            if (op.then(printModifiedTo(std::cout))->run(TUs[tuid], err))
+            if (chain(ops)->then(printModifiedTo(std::cout))->run(TUs[tuid], err))
                 std::cout << DONE;
             else
                 std::cout << err << CANCEL;
@@ -419,7 +470,7 @@ void runInteractiveSession(std::istream & input)
 
         if (cmd[0] == "setrange" || cmd[0] == "sr") {
             unsigned int tuid;
-            std::vector<const RewritingOp*> ops;
+            RewritingOps ops;
             EXPECT(cmd.size() >= 5, "expected at least four arguments");
             EXPECT(Utils::read_uint(cmd[1], tuid), "first argument must be a translation unit id.");
             size_t i;
@@ -437,8 +488,7 @@ void runInteractiveSession(std::istream & input)
                 ops.push_back(setRangeText(ast1, ast2, text));
             }
             EXPECT(i == cmd.size(), "incomplete final replacement pair.");
-            ChainedOp op(ops);
-            if (op.then(printModifiedTo(std::cout))->run(TUs[tuid], err))
+            if (chain(ops)->then(printModifiedTo(std::cout))->run(TUs[tuid], err))
                 std::cout << DONE;
             else
                 std::cout << err << CANCEL;
@@ -447,7 +497,7 @@ void runInteractiveSession(std::istream & input)
 
         if (cmd[0] == "insert" || cmd[0] == "i") {
             unsigned int tuid;
-            std::vector<const RewritingOp*> ops;
+            RewritingOps ops;
             EXPECT(cmd.size() >= 4, "expected at least three arguments");
             EXPECT(Utils::read_uint(cmd[1], tuid), "first argument must be a translation unit id.");
             size_t i;
@@ -463,8 +513,7 @@ void runInteractiveSession(std::istream & input)
                 ops.push_back(insertBefore(ast, text));
             }
             EXPECT(i == cmd.size(), "incomplete final replacement pair.");
-            ChainedOp op(ops);
-            if (op.then(printModifiedTo(std::cout))->run(TUs[tuid], err))
+            if (chain(ops)->then(printModifiedTo(std::cout))->run(TUs[tuid], err))
                 std::cout << DONE;
             else
                 std::cout << err << CANCEL;
@@ -479,14 +528,14 @@ void runInteractiveSession(std::istream & input)
             EXPECT(Utils::read_uint(cmd[2], ast1), "expected an AST id.");
             EXPECT(Utils::read_uint(cmd[3], ast2), "expected an AST id.");
             TU & tu = TUs[tuid];
-            ChainedOp op = {
+            RewritingOpPtr op = chain({
                 getTextAs (ast1, "$x"),
                 getTextAs (ast2, "$y"),
                 setText   (ast1, "$y"),
                 setText   (ast2, "$x"),
                 printModifiedTo (std::cout)
-            };
-            if (op.run(tu, err))
+                    });
+            if (op->run(tu, err))
                 std::cout << DONE;
             else
                 std::cout << err << CANCEL;
