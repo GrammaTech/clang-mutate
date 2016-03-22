@@ -49,6 +49,11 @@ clang::SourceRange
 getImmediateMacroArgCallerRange(clang::SourceManager & SM,
                                 clang::SourceRange r);
 
+clang::SourceRange
+normalizeSourceRange(clang::SourceRange r,
+                     bool is_full_stmt,
+                     clang::SourceManager & sm,
+                     const clang::LangOptions & langOpts);
 
 bool SelectRange(clang::SourceManager & SM,
                  clang::FileID mainFileID,

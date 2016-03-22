@@ -211,3 +211,15 @@ AstRef Requirements::parent() const
 
 PTNode Requirements::scopePos() const
 { return m_scope_pos; }
+
+SourceRange Requirements::sourceRange() const
+{ return m_source_range; }
+
+SourceRange Requirements::normalizedSourceRange() const
+{ return m_normalized_source_range; }
+
+clang::PresumedLoc Requirements::beginLoc() const
+{ return m_begin_ploc; }
+
+clang::PresumedLoc Requirements::endLoc() const
+{ return m_end_ploc; }

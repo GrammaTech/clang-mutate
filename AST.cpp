@@ -14,9 +14,16 @@ template <typename T>
 AstRef AstTable::impl_create(T * clang_obj, Requirements & required)
 {
     AstRef ref = nextAstRef();
-    asts.push_back(Ast(clang_obj, ref, required.parent()));
-    if (required.parent() != NoAst)
-        asts[required.parent()].add_child(ref);
+    AstRef parent = required.parent();
+    asts.push_back(Ast(clang_obj,
+                       ref,
+                       required.parent(),
+                       required.sourceRange(),
+                       required.normalizedSourceRange(),
+                       required.beginLoc(),
+                       required.endLoc()));
+    if (parent != NoAst)
+        asts[parent].add_child(ref);
 
     Ast & newAst = ast(ref);
     newAst.setIncludes(required.includes());
@@ -26,6 +33,15 @@ AstRef AstTable::impl_create(T * clang_obj, Requirements & required)
     newAst.setFreeVariables(required.variables());
     newAst.setFreeFunctions(required.functions());
     newAst.setText(required.text());
+    
+    if (parent != NoAst && asts[parent].isStmt() && newAst.isStmt()) {
+        newAst.setCanHaveAssociatedBytes
+            (Utils::ShouldAssociateBytesWithStmt(newAst.asStmt(),
+                                                 asts[parent].asStmt()));
+    }
+    else {
+        newAst.setCanHaveAssociatedBytes(false);
+    }
     
     return ref;
 }
@@ -68,12 +84,9 @@ bool Ast::binaryAddressRange(
     if (tu.addrMap.isEmpty())
         return false;
     
-    SourceRange r = sourceRange();
     SourceManager & sm = tu.ci->getSourceManager();
-    clang::PresumedLoc beginLoc = sm.getPresumedLoc(r.getBegin());
-    clang::PresumedLoc   endLoc = sm.getPresumedLoc(r.getEnd());
-    unsigned int beginSrcLine = beginLoc.getLine();
-    unsigned int   endSrcLine = endLoc.getLine();
+    unsigned int beginSrcLine = m_begin_loc.getLine();
+    unsigned int   endSrcLine = m_end_loc.getLine();
     
     return tu.addrMap.lineRangeToAddressRange(
         srcFilename(tu),
@@ -120,10 +133,10 @@ picojson::value Ast::toJSON(
     SET_JSON("scopes", tu.scopes.get_names_in_scope_from(scopePosition(),
                                                          1000));
 
-    SET_JSON("begin_src_line", sm.getSpellingLineNumber   (r.getBegin()));
-    SET_JSON("begin_src_col" , sm.getSpellingColumnNumber (r.getBegin()));
-    SET_JSON("end_src_line"  , sm.getSpellingLineNumber   (r.getEnd()  ));
-    SET_JSON("end_src_col"   , sm.getSpellingColumnNumber (r.getEnd()  ));
+    SET_JSON("begin_src_line", m_begin_loc.getLine());
+    SET_JSON("begin_src_col" , m_begin_loc.getColumn());
+    SET_JSON("end_src_line"  , m_end_loc.getLine());
+    SET_JSON("end_src_col"   , m_end_loc.getColumn());
 
     std::ostringstream oss;
     std::string err;
@@ -137,7 +150,7 @@ picojson::value Ast::toJSON(
     SET_JSON("src_text", text());
     
     BinaryAddressMap::BeginEndAddressPair addrRange;
-    if (binaryAddressRange(tu, addrRange)) {
+    if (canHaveAssociatedBytes() && binaryAddressRange(tu, addrRange)) {
         SET_JSON("binary_file_path", tu.addrMap.getBinaryPath());
         SET_JSON("begin_addr", addrRange.first);
         SET_JSON("end_addr", addrRange.second);
@@ -150,14 +163,23 @@ picojson::value Ast::toJSON(
     return to_json(ans);
 }
                            
-Ast::Ast(Stmt * _stmt, AstRef _counter, AstRef _parent)
+Ast::Ast(Stmt * _stmt,
+         AstRef _counter,
+         AstRef _parent,
+         SourceRange r,
+         SourceRange nr,
+         PresumedLoc pBegin,
+         PresumedLoc pEnd)
     : m_stmt(_stmt)
     , m_decl(NULL)
     , m_counter(_counter)
     , m_parent(_parent)
     , m_children()
     , m_class(std::string(_stmt->getStmtClassName()))
-    , m_range(_stmt->getSourceRange())
+    , m_range(r)
+    , m_normalized_range(nr)
+    , m_begin_loc(pBegin)
+    , m_end_loc(pEnd)
     , m_guard(false)
     , m_scope_pos(NoNode)
     , m_macros()
@@ -172,14 +194,23 @@ Ast::Ast(Stmt * _stmt, AstRef _counter, AstRef _parent)
     }
 }
 
-Ast::Ast(Decl * _decl, AstRef _counter, AstRef _parent)
+Ast::Ast(Decl * _decl,
+         AstRef _counter,
+         AstRef _parent,
+         SourceRange r,
+         SourceRange nr,
+         PresumedLoc pBegin,
+         PresumedLoc pEnd)
     : m_stmt(NULL)
     , m_decl(_decl)
     , m_counter(_counter)
     , m_parent(_parent)
     , m_children()
     , m_class(std::string(_decl->getDeclKindName()))
-    , m_range(_decl->getSourceRange())
+    , m_range(r)
+    , m_normalized_range(nr)
+    , m_begin_loc(pBegin)
+    , m_end_loc(pEnd)
     , m_guard(false)
     , m_scope_pos(NoNode)
     , m_macros()

@@ -38,14 +38,18 @@ public:
         clang::CompilerInstance * _ci,
         const std::vector<std::vector<std::string> > & scopes);
     
-    std::set<VariableInfo> variables() const;
-    std::set<FunctionInfo> functions() const;
-    std::set<std::string>  includes()  const;
-    std::set<Hash>         types()     const;
-    std::set<Macro>        macros()    const;
-    std::string            text()      const;
-    AstRef                 parent()    const;
-    PTNode                 scopePos() const;
+    std::set<VariableInfo> variables()   const;
+    std::set<FunctionInfo> functions()   const;
+    std::set<std::string>  includes()    const;
+    std::set<Hash>         types()       const;
+    std::set<Macro>        macros()      const;
+    std::string            text()        const;
+    AstRef                 parent()      const;
+    PTNode                 scopePos()    const;
+    clang::SourceRange     sourceRange() const;
+    clang::SourceRange     normalizedSourceRange() const;
+    clang::PresumedLoc     beginLoc()    const;
+    clang::PresumedLoc     endLoc()      const;
     
     bool VisitStmt(clang::Stmt * expr);
 
@@ -66,6 +70,17 @@ public:
 
     void setScopePos(PTNode pos)
     { m_scope_pos = pos; }
+
+    void setSourceRange(clang::PresumedLoc pBegin,
+                        clang::PresumedLoc pEnd,
+                        clang::SourceRange r,
+                        clang::SourceRange nr)
+    {
+        m_begin_ploc = pBegin;
+        m_end_ploc = pEnd;
+        m_source_range = r;
+        m_normalized_source_range = nr;
+    }
     
 private:
 
@@ -81,6 +96,10 @@ private:
     std::string m_text;
     AstRef m_parent;
     PTNode m_scope_pos;
+    clang::PresumedLoc m_begin_ploc;
+    clang::PresumedLoc m_end_ploc;
+    clang::SourceRange m_source_range;
+    clang::SourceRange m_normalized_source_range;
     
     bool toplev_is_macro, is_first;
     BindingCtx ctx;

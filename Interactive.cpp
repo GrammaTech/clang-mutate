@@ -106,6 +106,11 @@ void runInteractiveSession(std::istream & input)
         if (cmd[0] == "quit" || cmd[0] == "q")
             break;
 
+        if (cmd[0] == "clear") {
+            vars.clear();
+            continue;
+        }
+            
         if (cmd[0] == "configure") {
             EXPECT (cmd.size() == 3, "expected two arguments");
             bool yn;

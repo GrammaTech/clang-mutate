@@ -98,6 +98,16 @@ bool SelectRange(SourceManager & SM,
            !SM.isMacroBodyExpansion(loc);
 }
 
+SourceRange normalizeSourceRange(SourceRange r,
+                                 bool is_full_stmt,
+                                 SourceManager & sm,
+                                 const LangOptions & langOpts)
+{
+    return getImmediateMacroArgCallerRange(
+        sm,
+        is_full_stmt ? expandRange(sm, langOpts, r) : r);
+}
+
 
 bool ShouldVisitStmt(SourceManager & SM,
                      const LangOptions & LangOpts,

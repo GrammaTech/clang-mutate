@@ -130,6 +130,19 @@ class BuildTU
         AstRef parent = spine.back();
         required.setParent(parent);
         required.setScopePos(decl_scopes.current_scope_position());
+
+        SourceRange sr = clang_obj->getSourceRange();
+        bool is_full_stmt =
+            parent == NoAst ||
+            asts[parent].className() == "CompoundStmt";
+        SourceRange nsr = Utils::normalizeSourceRange(sr,
+                                                      is_full_stmt,
+                                                      sm,
+                                                      ci->getLangOpts());
+        required.setSourceRange(sm.getPresumedLoc(sr.getBegin()),
+                                sm.getPresumedLoc(sr.getEnd()),
+                                sr,
+                                nsr);
         
         AstRef ast = asts.create(clang_obj, required);
         spine.push_back(ast);

@@ -33,9 +33,7 @@ std::string getAstText(
     AstRef ast)
 {
     SourceManager & sm = ci->getSourceManager();
-    SourceRange r = //normalizedSourceRange(asts[*it]); <- see Renaming.cpp:42
-        Utils::getImmediateMacroArgCallerRange(
-            sm, asts[ast].sourceRange());
+    SourceRange r = asts[ast].normalizedSourceRange();
     SourceLocation begin = r.getBegin();
     SourceLocation end = Lexer::getLocForEndOfToken(r.getEnd(),
                                                     0,
@@ -196,10 +194,7 @@ void InsertOp::print(std::ostream & o) const
 void InsertOp::execute(RewriterState & state) const
 {
     if (!valid_ast(state, m_tgt, "insert")) return;
-    SourceRange r = // normalizedSourceRange(asts[m_tgt]);
-        Utils::getImmediateMacroArgCallerRange(
-            state.ci->getSourceManager(),
-            state.asts[m_tgt].sourceRange());
+    SourceRange r = state.asts[m_tgt].normalizedSourceRange();
     state.rewriter.InsertTextBefore(
         r.getBegin(),
         StringRef(string_value(m_text, state)));
@@ -211,10 +206,7 @@ void SetOp::print(std::ostream & o) const
 void SetOp::execute(RewriterState & state) const
 {
     if (!valid_ast(state, m_tgt, "set")) return;
-    SourceRange r = // normalizedSourceRange(asts[m_tgt]);
-        Utils::getImmediateMacroArgCallerRange(
-            state.ci->getSourceManager(),
-            state.asts[m_tgt].sourceRange());
+    SourceRange r = state.asts[m_tgt].normalizedSourceRange();
     state.rewriter.ReplaceText(r, StringRef(string_value(m_text, state)));
 }
 
@@ -228,14 +220,8 @@ void SetRangeOp::execute(RewriterState & state) const
 {
     if (!valid_ast(state, m_ast1, "setrange")) return;
     if (!valid_ast(state, m_ast2, "setrange")) return;
-    SourceRange r1 = // normalizedSourceRange(asts[m_tgt]);
-        Utils::getImmediateMacroArgCallerRange(
-            state.ci->getSourceManager(),
-            state.asts[m_ast1].sourceRange());
-    SourceRange r2 = // normalizedSourceRange(asts[m_tgt]);
-        Utils::getImmediateMacroArgCallerRange(
-            state.ci->getSourceManager(),
-            state.asts[m_ast2].sourceRange());
+    SourceRange r1 = state.asts[m_ast1].normalizedSourceRange();
+    SourceRange r2 = state.asts[m_ast2].normalizedSourceRange();
     SourceRange r(r1.getBegin(), r2.getEnd());
     state.rewriter.ReplaceText(r, StringRef(string_value(m_text, state)));
 }
@@ -281,10 +267,7 @@ void AnnotateOp::execute(RewriterState & state) const
     LangOptions & langOpts = state.ci->getLangOpts();
     
     for (auto & ast : state.asts) {
-        SourceRange r = // normalizedSourceRange(ast);
-            Utils::getImmediateMacroArgCallerRange(
-                state.ci->getSourceManager(),
-                ast.sourceRange());
+        SourceRange r = ast.normalizedSourceRange();
         SourceLocation end = r.getEnd();
 
         state.rewriter.InsertText(r.getBegin(),

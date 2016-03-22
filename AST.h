@@ -33,6 +33,9 @@ public:
     clang::SourceRange sourceRange() const
     { return m_range; }
 
+    clang::SourceRange normalizedSourceRange() const
+    { return m_normalized_range; }
+
     std::string className() const
     { return m_class; }
 
@@ -87,6 +90,12 @@ public:
     std::set<FunctionInfo> freeFunctions() const
     { return m_free_funs; }
 
+    void setCanHaveAssociatedBytes(bool yn)
+    { m_can_have_bytes = yn; }
+
+    bool canHaveAssociatedBytes() const
+    { return m_can_have_bytes; }
+    
     std::string srcFilename(TU & tu) const;
 
     bool binaryAddressRange(
@@ -112,8 +121,21 @@ public:
     picojson::value toJSON(const std::set<std::string> & keys,
                            TU & tu) const;
                            
-    Ast(clang::Stmt * _stmt, AstRef _counter, AstRef _parent);
-    Ast(clang::Decl * _decl, AstRef _counter, AstRef _parent);
+    Ast(clang::Stmt * _stmt,
+        AstRef _counter,
+        AstRef _parent,
+        clang::SourceRange r,
+        clang::SourceRange nr,
+        clang::PresumedLoc pBegin,
+        clang::PresumedLoc pEnd);
+
+    Ast(clang::Decl * _decl,
+        AstRef _counter,
+        AstRef _parent,
+        clang::SourceRange r,
+        clang::SourceRange nr,
+        clang::PresumedLoc pBegin,
+        clang::PresumedLoc pEnd);
     
     void add_child(AstRef child)
     { m_children.push_back(child); }
@@ -138,8 +160,11 @@ private:
     // making it harder to notice bugs where we try to
     // access vanished data.
     //
-    std::string m_class;
+    std::string m_class;    
     clang::SourceRange m_range;
+    clang::SourceRange m_normalized_range;
+    clang::PresumedLoc m_begin_loc;
+    clang::PresumedLoc m_end_loc;
     bool m_guard;
     std::set<Hash> m_types;
     std::set<std::string> m_includes;
@@ -149,6 +174,7 @@ private:
     std::set<VariableInfo> m_free_vars;
     std::set<FunctionInfo> m_free_funs;
     std::string m_opcode;
+    bool m_can_have_bytes;
 };
 
 class AstTable
