@@ -92,10 +92,12 @@ public:
     }
 
     std::unique_ptr<clang::ASTConsumer> newASTConsumer() {
-        if (!File1.empty())
+        if (!File1.empty()) {
             Value1 = Utils::filenameToContents(File1);
-        if (!File2.empty())
+        }
+        if (!File2.empty()) {
             Value2 = Utils::filenameToContents(File2);
+        }
 
         if (Number) {
             MutateCmd << "number 0" << std::endl;
@@ -118,15 +120,6 @@ public:
         if (Json) {
             MutateCmd << "json 0" << std::endl;
             return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
-            /*
-              return clang_mutate::CreateASTLister(Stmt1, 
-                                                 Fields,
-                                                 Aux,
-                                                 Binary, 
-                                                 DwarfFilepathMap,
-                                                 true, 
-                                                 CI);
-            */
         }
         if (Cut) {
             MutateCmd << "cut 0 " << Stmt1 << std::endl;
@@ -136,7 +129,7 @@ public:
             MutateCmd << "setrange 0 "
                       << Stmt1 << " "
                       << Stmt2 << " "
-                      << Value1 << std::endl;
+                      << Utils::escape(Value1) << std::endl;
             return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
         }
 // FIXME FIXME FIXME FIXME FIXME
@@ -154,21 +147,25 @@ public:
             MutateCmd << "swap 0 " << Stmt1 << " " << Stmt2 << std::endl;
             return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
         }
-        if (Set)
-            MutateCmd << "set 0 " << Stmt1 << " " << Value1 << std::endl;
+        if (Set) {
+            MutateCmd << "set 0 " << Stmt1 << " "
+                      << Utils::escape(Value1) << std::endl;
             return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+        }
         if (Set2) {
             MutateCmd << "set 0 "
-                      << Stmt1 << " " << Value1 << " "
-                      << Stmt2 << " " << Value2 << std::endl;
+                      << Stmt1 << " " << Utils::escape(Value1) << " "
+                      << Stmt2 << " " << Utils::escape(Value2) << std::endl;
             return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
         }
         if (InsertV) {
-            MutateCmd << "insert 0 " << Stmt1 << " " << Value1 << std::endl;
+            MutateCmd << "insert 0 " << Stmt1 << " "
+                      << Utils::escape(Value1) << std::endl;
             return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
         }
-        if (Interactive)
+        if (Interactive) {
             return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+        }
         
         errs() << "Must supply one of:\n";
         errs() << "\tnumber\n";

@@ -26,6 +26,9 @@ template <typename T> Reversed<T> reversed(const T & x)
 
 namespace Utils {
 
+std::string escape  (const std::string & s);
+std::string unescape(const std::string & s);
+
 clang::SourceLocation
 findSemiAfterLocation(clang::SourceManager & SM,
                       const clang::LangOptions & LangOpts,
@@ -97,7 +100,7 @@ std::set<T> set_union(const std::set<T> & xs,
     return ans;
 }
 
-std::vector<std::string> split(const std::string & s);
+std::vector<std::string> tokenize(const std::string & s);
 
 bool read_uint(const std::string & s, unsigned int & n);
 

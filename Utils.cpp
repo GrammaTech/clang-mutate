@@ -325,12 +325,106 @@ bool in_system_header(
     return true;
 }
 
-std::vector<std::string> split(const std::string & s)
+std::string escape(const std::string & s)
+{
+    std::string ans("\"");
+    for (size_t i = 0; i < s.size(); ++i) {
+        switch (s[i]) {
+        case '\t': ans.append("\\t");  continue;
+        case '\n': ans.append("\\n");  continue;
+        case '\r': ans.append("\\r");  continue;
+        case '\\': ans.append("\\\\"); continue;
+        case '\"': ans.append("\\\""); continue;
+        case '\'': ans.append("\\\'"); continue;
+        default:   ans.push_back(s[i]);
+        }
+    }
+    ans.push_back('\"');
+    return ans;
+}
+
+std::string unescape(const std::string & s)
+{
+    size_t last = s.size() - 1;
+    if (s.empty() || s[0] != '\"' || s[last] != '\"')
+        return s;
+    std::string ans;
+    bool in_escape = false;
+    for (size_t i = 1; i < last; ++i) {
+        if (in_escape) {
+            char c;
+            switch (s[i]) {
+            case  't': c = '\t'; break;
+            case  'n': c = '\n'; break;
+            case  'r': c = '\r'; break;
+            case '\\': c = '\\'; break;
+            case '\"': c = '\"'; break;
+            case '\'': c = '\''; break;
+            default:   c = s[i]; break;
+            }
+            ans.push_back(c);
+            in_escape = false;
+            continue;
+        }
+        if (s[i] == '\\') {
+            in_escape = true;
+            continue;
+        }
+        ans.push_back(s[i]);
+    }
+    if (in_escape)
+        ans.push_back('\\');
+    return ans;
+}
+
+std::vector<std::string> tokenize(const std::string & s)
 {
     std::vector<std::string> ans;
-    std::string word;
+    char c;
     std::istringstream iss(s, std::istringstream::in);
-    while (iss >> word)
+    bool in_word = false;
+    std::string word;
+    bool escaped = false;
+    bool in_quotes = false;
+    size_t i;
+    for (i = 0; i < s.size(); ++i) {
+        c = s[i];
+        if (in_quotes) {
+            if (c == '\"' && !escaped) {
+                word.push_back(c);
+                ans.push_back(unescape(word));
+                word = "";
+                in_quotes = false;
+                escaped = false;
+                in_word = false;
+                continue;
+            }
+            if (escaped) {
+                escaped = false;
+            }
+            else if (c == '\\') {
+                escaped = true;
+            }
+            word.push_back(c);
+            continue;
+        }
+        if (isspace(c)) {
+            if (!in_word)
+                continue;
+            in_word = false;
+            ans.push_back(word);
+            word = "";
+            continue;
+        }
+        if (!in_word) {
+            in_word = true;
+            escaped = false;
+            in_quotes = (c == '\"');
+            word = "";
+        }
+        word.push_back(c);
+    }
+    if (in_word)
         ans.push_back(word);
     return ans;
 }

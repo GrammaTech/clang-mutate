@@ -23,7 +23,7 @@ AstRef AstTable::impl_create(T * clang_obj, Requirements & required)
                        required.beginLoc(),
                        required.endLoc()));
     if (parent != NoAst)
-        asts[parent].add_child(ref);
+        ast(parent).add_child(ref);
 
     Ast & newAst = ast(ref);
     newAst.setIncludes(required.includes());
@@ -33,11 +33,16 @@ AstRef AstTable::impl_create(T * clang_obj, Requirements & required)
     newAst.setFreeVariables(required.variables());
     newAst.setFreeFunctions(required.functions());
     newAst.setText(required.text());
+
+    Stmt * parentStmt = parent == NoAst
+       ? NULL
+        : ast(parent).asStmt();
     
-    if (parent != NoAst && asts[parent].isStmt() && newAst.isStmt()) {
-        newAst.setCanHaveAssociatedBytes
-            (Utils::ShouldAssociateBytesWithStmt(newAst.asStmt(),
-                                                 asts[parent].asStmt()));
+    if (newAst.isStmt()) {
+        bool has_bytes = Utils::ShouldAssociateBytesWithStmt(
+            newAst.asStmt(),
+            parentStmt);
+        newAst.setCanHaveAssociatedBytes(has_bytes);
     }
     else {
         newAst.setCanHaveAssociatedBytes(false);

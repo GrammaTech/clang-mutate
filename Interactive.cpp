@@ -98,8 +98,8 @@ void runInteractiveSession(std::istream & input)
             std::cout << "clang-mutate> " << std::flush;
         if (!std::getline(input, cmdline))
             break;
-        std::vector<std::string> cmd = Utils::split(cmdline);
-
+        std::vector<std::string> cmd = Utils::tokenize(cmdline);
+        
         if (cmd.size() == 0)
             continue;
 
@@ -456,13 +456,15 @@ void runInteractiveSession(std::istream & input)
             size_t i;
             for (i = 2; i < cmd.size() - 1; i += 2) {
                 unsigned int ast;
-                EXPECT(Utils::read_uint(cmd[i], ast), "expected an AST id.");
+                EXPECT(Utils::read_uint(cmd[i], ast),
+                       "expected an AST id, got \"" << cmd[i] << "\"");
                 std::string text = cmd[i + 1];
                 if (text[0] == '$') {
                     auto search = vars.find(text);
                     EXPECT(search != vars.end(), "variable " << text << " is unbound.");
                     text = search->second;
                 }
+                std::cerr << "   " << ast << " : \"" << text << "\"" << std::endl;
                 ops.push_back(setText(ast, text));
             }
             EXPECT(i == cmd.size(), "incomplete final replacement pair.");
