@@ -23,10 +23,12 @@ LLVMLDFLAGS := $(shell $(LLVM_CONFIG) --ldflags --libs) -ldl
 SOURCES = ASTMutate.cpp ASTLister.cpp ASTEntry.cpp ASTEntryList.cpp Function.cpp Variable.cpp Bindings.cpp Renaming.cpp Scopes.cpp Macros.cpp TypeDBEntry.cpp AuxDB.cpp BinaryAddressMap.cpp Json.cpp Utils.cpp clang-mutate.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 EXES = clang-mutate
-CLANGLIBS = \
+SYSLIBS = \
 	-lpthread \
 	-lz \
-	-ltinfo \
+	-ltinfo
+
+CLANGLIBS = \
 	-lclangFrontend \
 	-lclangSerialization \
 	-lclangDriver \
@@ -47,7 +49,7 @@ all: $(EXES)
 	$(CXX) -o $@ $<
 
 clang-mutate: $(OBJECTS)
-	$(CXX) -o $@ $^ $(CLANGLIBS) $(LLVMLDFLAGS)
+	$(CXX) -o $@ $^ $(CLANGLIBS) $(LLVMLDFLAGS) $(SYSLIBS)
 
 clean:
 	-rm -f $(EXES) $(OBJECTS) compile_commands.json a.out etc/hello etc/loop *~
