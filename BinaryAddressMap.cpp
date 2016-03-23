@@ -8,6 +8,7 @@
 
 #include <cstdlib>
 #include <cstdio>
+#include <climits>
 #include <iomanip>
 #include <map>
 #include <string>
@@ -170,7 +171,7 @@ namespace clang_mutate{
     const std::string& directory,
     const std::string& fileName)
   {
-    char buffer[1024] = { '\0' };
+    char buffer[PATH_MAX] = { '\0' };
 
     if ( realpath( (directory + "/" + fileName).c_str(), buffer) ) {
       return buffer;
