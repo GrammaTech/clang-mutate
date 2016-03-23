@@ -339,9 +339,14 @@ void runInteractiveSession(std::istream & input)
                 aux_keys.insert("decls");
                 aux_keys.insert("protos");
             }
+            size_t index;
             if (cmd.size() > 2) {
-                for (size_t i = 2; i < cmd.size(); ++i) {
-                    aux_keys.insert(cmd[i]);
+                for (index = 2; index < cmd.size(); ++index) {
+                    if (cmd[index] == "keys:") {
+                        ++index;
+                        break;
+                    }
+                    aux_keys.insert(cmd[index]);
                 }
             }
             for (auto & aux_key : aux_keys) {
@@ -359,9 +364,14 @@ void runInteractiveSession(std::istream & input)
                 }
             }
             
-            std::set<std::string> all_ast_keys;
+            std::set<std::string> ast_keys;
+            if (cmd.size() > 2) {
+                for ( ; index < cmd.size(); ++index) {
+                    ast_keys.insert(cmd[index]);
+                }
+            }
             for (auto & ast : tu.astTable) {
-                std::cout << sep << ast.toJSON(all_ast_keys, tu);
+                std::cout << sep << ast.toJSON(ast_keys, tu);
                 sep = ",";
             }
             std::cout << "]" << DONE;
@@ -371,7 +381,7 @@ void runInteractiveSession(std::istream & input)
         if (cmd[0] == "ast" || cmd[0] == "a") {
             unsigned int tuid;
             unsigned int ast;
-            EXPECT (cmd.size() == 3, "expected two arguments");
+            EXPECT (cmd.size() >= 3, "expected at least two arguments");
             EXPECT (Utils::read_uint(cmd[1], tuid),
                     "argument must be a translation unit id");
             EXPECT (tuid < TUs.size(),
@@ -385,8 +395,11 @@ void runInteractiveSession(std::istream & input)
             EXPECT(ast <= asts.count(),
                    "out of range, only " << asts.count() << " ASTs.");
 
-            std::set<std::string> all_keys;
-            std::cout << asts[ast].toJSON(all_keys, tu) << DONE;
+            std::set<std::string> ast_keys;
+            for (size_t index = 3; index < cmd.size(); ++index) {
+                ast_keys.insert(cmd[index]);
+            }
+            std::cout << asts[ast].toJSON(ast_keys, tu) << DONE;
             continue;
         }
         
@@ -479,6 +492,7 @@ void runInteractiveSession(std::istream & input)
             RewritingOps ops;
             EXPECT(cmd.size() >= 5, "expected at least four arguments");
             EXPECT(Utils::read_uint(cmd[1], tuid), "first argument must be a translation unit id.");
+            TU & tu = TUs[tuid];
             size_t i;
             for (i = 2; i < cmd.size() - 1; i += 3) {
                 unsigned int ast1;
@@ -491,7 +505,9 @@ void runInteractiveSession(std::istream & input)
                     EXPECT(search != vars.end(), "variable " << text << " is unbound.");
                     text = search->second;
                 }
-                ops.push_back(setRangeText(ast1, ast2, text));
+                ops.push_back(setRangeText(tu.astTable[ast1],
+                                           tu.astTable[ast2],
+                                           text));
             }
             EXPECT(i == cmd.size(), "incomplete final replacement pair.");
             if (chain(ops)->then(printModifiedTo(std::cout))->run(TUs[tuid], err))
@@ -501,6 +517,36 @@ void runInteractiveSession(std::istream & input)
             continue;
         }
 
+        if (cmd[0] == "setfunc") {
+            unsigned int tuid;
+            RewritingOps ops;
+            EXPECT(cmd.size() == 4, "expected three arguments");
+            EXPECT(Utils::read_uint(cmd[1], tuid), "first argument must be a translation unit id.");
+            TU & tu = TUs[tuid];
+            unsigned int ast;
+            EXPECT(Utils::read_uint(cmd[2], ast), "expected an AST id.");
+            std::string text = cmd[3];
+            if (text[0] == '$') {
+                auto search = vars.find(text);
+                EXPECT(search != vars.end(), "variable " << text << " is unbound.");
+                text = search->second;
+            }
+
+            // Find a function decl with body = ast, or fail.
+            auto fsearch = tu.function_ranges.find(ast);
+            EXPECT(fsearch != tu.function_ranges.end(),
+                   "AST " << ast << " is not a function body.");
+            RewritingOpPtr op = chain({
+                    setRangeText(fsearch->second, text),
+                    printModifiedTo(std::cout)
+                        });
+            if (op->run(tu, err))
+                std::cout << DONE;
+            else
+                std::cout << err << CANCEL;
+            continue;
+        }
+        
         if (cmd[0] == "insert" || cmd[0] == "i") {
             unsigned int tuid;
             RewritingOps ops;

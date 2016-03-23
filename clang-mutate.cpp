@@ -124,10 +124,28 @@ public:
         }
 
         if (Json) {
-            if (Stmt1)
-                MutateCmd << "ast 0 " << Stmt1 << std::endl;
-            else
-                MutateCmd << "json 0" << std::endl;
+            if (Stmt1) {
+                MutateCmd << "echo [" << std::endl;
+                MutateCmd << "ast 0 " << Stmt1;
+            }
+            else {
+                MutateCmd << "json 0";
+            }
+            if (!Aux.empty()) {
+                for (auto & aux : Utils::split(Aux, ',')) {
+                    MutateCmd << " " << aux;
+                }
+            }
+            if (!Fields.empty()) {
+                MutateCmd << " keys:";
+                for (auto & key : Utils::split(Fields, ',')) {
+                    MutateCmd << " " << key;
+                }
+            }
+            MutateCmd << std::endl;
+            if (Stmt1) {
+                MutateCmd << "echo ]" << std::endl;
+            }
             return clang_mutate::CreateTU(CI);
         }
         if (Cut) {
@@ -141,12 +159,12 @@ public:
                       << Utils::escape(Value1) << std::endl;
             return clang_mutate::CreateTU(CI);
         }
-// FIXME FIXME FIXME FIXME FIXME
-// FIXME FIXME FIXME FIXME FIXME
-//        if (SetFunc)
-//            return clang_mutate::CreateASTFuncSetter(Stmt1, Value1);
-// FIXME FIXME FIXME FIXME FIXME
-// FIXME FIXME FIXME FIXME FIXME
+        if (SetFunc) {
+            MutateCmd << "setfunc 0 "
+                      << Stmt1 << " "
+                      << Utils::escape(Value1) << std::endl;
+            return clang_mutate::CreateTU(CI);
+        }
         if (Insert) {
             MutateCmd << "get    0 " << Stmt1 << " as $stmt" << std::endl
                       << "insert 0 " << Stmt2 << " $stmt" << std::endl;

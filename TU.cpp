@@ -38,6 +38,7 @@ class BuildTU
         , decl_scopes(TUs.back().scopes)
         , protos(TUs.back().aux["protos"])
         , decls(TUs.back().aux["decls"])
+        , function_ranges(TUs.back().function_ranges)
     {}
 
     ~BuildTU() {}
@@ -108,6 +109,8 @@ class BuildTU
                          .set("args", args)
                          .set("varargs", F->isVariadic())
                          .toJSON());
+        function_ranges[body_ast] =
+            SourceRange(begin, body->getSourceRange().getEnd());
     }
 
     template <typename T>
@@ -284,6 +287,7 @@ class BuildTU
     Scope & decl_scopes;
     std::vector<picojson::value> & protos;
     std::vector<picojson::value> & decls;
+    std::map<AstRef, SourceRange> & function_ranges;
     std::vector<std::pair<Decl*,AstRef> > functions;
     size_t decl_depth;
 };

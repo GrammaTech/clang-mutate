@@ -60,8 +60,25 @@ RewritingOpPtr getTextAs(AstRef ast, const std::string & var)
 RewritingOpPtr setText(AstRef ast, const std::string & text)
 { return new SetOp(ast, text); }
 
-RewritingOpPtr setRangeText (AstRef ast1, AstRef ast2, const std::string & text)
-{ return new SetRangeOp(ast1, ast2, text); }
+RewritingOpPtr setRangeText (Ast & ast1, Ast & ast2, const std::string & text)
+{
+    SourceRange r;
+    AstRef endAst;
+    if (ast1.counter() > ast2.counter()) {
+        r = SourceRange(ast2.normalizedSourceRange().getBegin(),
+                        ast1.normalizedSourceRange().getEnd());
+        endAst = ast1.counter();
+    }
+    else {
+        r = SourceRange(ast1.normalizedSourceRange().getBegin(),
+                        ast2.normalizedSourceRange().getEnd());
+        endAst = ast2.counter();
+    }
+    return new SetRangeOp(r, endAst, text);
+}
+
+RewritingOpPtr setRangeText (SourceRange r, const std::string & text)
+{ return new SetRangeOp(r, NoAst, text); }
 
 RewritingOpPtr insertBefore(AstRef ast, const std::string & text)
 { return new InsertOp(ast, text); }
@@ -219,19 +236,13 @@ void SetOp::execute(RewriterState & state) const
 
 void SetRangeOp::print(std::ostream & o) const
 {
-    o << "setrange " << m_ast1 << " -- " << m_ast2
-      << " to " << quote_string(m_text);
+    o << "setrange {??} " << " to " << quote_string(m_text);
 }
 
 void SetRangeOp::execute(RewriterState & state) const
 {
-    if (!valid_ast(state, m_ast1, "setrange")) return;
-    if (!valid_ast(state, m_ast2, "setrange")) return;
-    SourceRange r1 = state.asts[m_ast1].normalizedSourceRange();
-    SourceRange r2 = state.asts[m_ast2].normalizedSourceRange();
-    SourceRange r(r1.getBegin(), r2.getEnd());
-    state.rewriter.ReplaceText(r,
-                               StringRef(string_value(m_text, m_ast2 ,state)));
+    state.rewriter.ReplaceText(
+        m_range, StringRef(string_value(m_text, m_endAst, state)));
 }
 
 void EchoOp::print(std::ostream & o) const

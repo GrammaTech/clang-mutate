@@ -25,7 +25,8 @@ class RewritingOp;
 typedef ref_ptr<RewritingOp> RewritingOpPtr;
 class Annotator;
 RewritingOpPtr setText      (AstRef ast, const std::string & text);
-RewritingOpPtr setRangeText (AstRef ast1, AstRef ast2, const std::string & text);
+RewritingOpPtr setRangeText (Ast & ast1, Ast & ast2, const std::string & text);
+RewritingOpPtr setRangeText (clang::SourceRange r, const std::string & text);
 RewritingOpPtr insertBefore (AstRef ast, const std::string & text);
 RewritingOpPtr getTextAs    (AstRef ast, const std::string & var );
 RewritingOpPtr echoTo          (std::ostream & os, const std::string & text);
@@ -229,27 +230,23 @@ private:
 class SetRangeOp : public RewritingOp
 {
 public:
-    SetRangeOp(AstRef ast1, AstRef ast2, const std::string & text)
-        : m_ast1(ast1)
-        , m_ast2(ast2)
+    SetRangeOp(clang::SourceRange r,
+               AstRef endAst,
+               const std::string & text)
+        : m_range(r)
+        , m_endAst(endAst)
         , m_text(text)
         , RewritingOp()
-    {
-        if (m_ast1 > m_ast2) {
-            AstRef t = m_ast1;
-            m_ast1 = m_ast2;
-            m_ast2 = t;
-        }
-    }
+    {}
     
     OpKind kind() const { return Op_SetRange; }
-    AstRef target() const { return m_ast1; }
+    AstRef target() const { return m_endAst; }
     void print(std::ostream & o) const;
     void execute(RewriterState & state) const;
 
 private:
-    AstRef m_ast1;
-    AstRef m_ast2;
+    clang::SourceRange m_range;
+    AstRef m_endAst;
     std::string m_text;
 };
 

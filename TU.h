@@ -22,6 +22,7 @@ struct TU
     BinaryAddressMap addrMap;
     Scope scopes;
     std::map<std::string, std::vector<picojson::value> > aux;
+    std::map<AstRef, clang::SourceRange> function_ranges;
 };
 
 extern std::vector<TU> TUs;
