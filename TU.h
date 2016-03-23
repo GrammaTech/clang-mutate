@@ -27,9 +27,7 @@ struct TU
 extern std::vector<TU> TUs;
 
 std::unique_ptr<clang::ASTConsumer>
-CreateTU(clang::StringRef Binary,
-         clang::StringRef DwarfFilepathMap,
-         clang::CompilerInstance * CI);
+CreateTU(clang::CompilerInstance * CI);
 
 } // end namespace clang_mutate
 

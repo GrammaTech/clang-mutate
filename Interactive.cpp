@@ -215,7 +215,6 @@ void runInteractiveSession(std::istream & input)
                 : std::string("");
             TUs[tuid].addrMap = BinaryAddressMap(binaryPath,
                                                  dwarfFilepathMapping);
-            TUs[tuid].addrMap.dump(std::cout);
             continue;
         }
 

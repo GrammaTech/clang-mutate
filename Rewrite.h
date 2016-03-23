@@ -87,6 +87,7 @@ public:
     bool run(TU & tu, std::string & error_message) const;
 
     std::string string_value(const std::string & text,
+                             AstRef tgt,
                              RewriterState & state) const;
 
     RefCounter count;

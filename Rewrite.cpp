@@ -98,10 +98,16 @@ bool RewritingOp::run(TU & tu, std::string & error_message) const
 
 std::string RewritingOp::string_value(
     const std::string & text,
+    AstRef tgt,
     RewriterState & state) const
 {
-    if (state.failed || text.empty() || text[0] != '$')
+    if (state.failed || text.empty())
         return text;
+    if (text[0] != '$') {
+        return (tgt != NoAst && state.asts[tgt].isFullStmt())
+            ? Utils::extendTextForFullStmt(text)
+            : text;
+    }
     // Look up variable binding or fail.
     auto search = state.vars.find(text);
     if (search == state.vars.end()) {
@@ -197,7 +203,7 @@ void InsertOp::execute(RewriterState & state) const
     SourceRange r = state.asts[m_tgt].normalizedSourceRange();
     state.rewriter.InsertTextBefore(
         r.getBegin(),
-        StringRef(string_value(m_text, state)));
+        StringRef(string_value(m_text, m_tgt, state)));
 }
 
 void SetOp::print(std::ostream & o) const
@@ -207,7 +213,8 @@ void SetOp::execute(RewriterState & state) const
 {
     if (!valid_ast(state, m_tgt, "set")) return;
     SourceRange r = state.asts[m_tgt].normalizedSourceRange();
-    state.rewriter.ReplaceText(r, StringRef(string_value(m_text, state)));
+    state.rewriter.ReplaceText(r,
+                               StringRef(string_value(m_text, m_tgt, state)));
 }
 
 void SetRangeOp::print(std::ostream & o) const
@@ -223,7 +230,8 @@ void SetRangeOp::execute(RewriterState & state) const
     SourceRange r1 = state.asts[m_ast1].normalizedSourceRange();
     SourceRange r2 = state.asts[m_ast2].normalizedSourceRange();
     SourceRange r(r1.getBegin(), r2.getEnd());
-    state.rewriter.ReplaceText(r, StringRef(string_value(m_text, state)));
+    state.rewriter.ReplaceText(r,
+                               StringRef(string_value(m_text, m_ast2 ,state)));
 }
 
 void EchoOp::print(std::ostream & o) const
@@ -232,7 +240,7 @@ void EchoOp::print(std::ostream & o) const
 void EchoOp::execute(RewriterState & state) const
 {
     if (state.failed) return;
-    m_os << string_value(m_text, state);
+    m_os << string_value(m_text, NoAst, state);
 }
 
 void PrintOriginalOp::print(std::ostream & o) const

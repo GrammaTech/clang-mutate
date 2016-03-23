@@ -253,6 +253,14 @@ bool IsGuardStmt(Stmt *S, Stmt *P)
     return false;
 }
 
+std::string extendTextForFullStmt(const std::string & text)
+{
+    size_t last = text.size() - 1;
+    if (text.empty() || text[last] == '}' || text[last] == ';')
+        return text;
+    return text + ";";
+}
+
 std::string filenameToContents(const std::string & str)
 {
     std::stringstream buffer;

@@ -92,6 +92,12 @@ public:
     }
 
     std::unique_ptr<clang::ASTConsumer> newASTConsumer() {
+
+        if (!Binary.empty()) {
+            MutateCmd << "binary 0 " << Binary
+                      << " " << DwarfFilepathMap << std::endl;
+        }
+        
         if (!File1.empty()) {
             Value1 = Utils::filenameToContents(File1);
         }
@@ -101,36 +107,39 @@ public:
 
         if (Number) {
             MutateCmd << "number 0" << std::endl;
-            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+            return clang_mutate::CreateTU(CI);
         }
         if (Ids) {
             MutateCmd << "ids 0" << std::endl;
-            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+            return clang_mutate::CreateTU(CI);
         }
         if (Annotate) {
             MutateCmd << "annotate 0" << std::endl;
-            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+            return clang_mutate::CreateTU(CI);
         }
 
         if (List) {
             MutateCmd << "list 0" << std::endl;
-            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+            return clang_mutate::CreateTU(CI);
         }
 
         if (Json) {
-            MutateCmd << "json 0" << std::endl;
-            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+            if (Stmt1)
+                MutateCmd << "ast 0 " << Stmt1 << std::endl;
+            else
+                MutateCmd << "json 0" << std::endl;
+            return clang_mutate::CreateTU(CI);
         }
         if (Cut) {
             MutateCmd << "cut 0 " << Stmt1 << std::endl;
-            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+            return clang_mutate::CreateTU(CI);
         }
         if (SetRange) {
             MutateCmd << "setrange 0 "
                       << Stmt1 << " "
                       << Stmt2 << " "
                       << Utils::escape(Value1) << std::endl;
-            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+            return clang_mutate::CreateTU(CI);
         }
 // FIXME FIXME FIXME FIXME FIXME
 // FIXME FIXME FIXME FIXME FIXME
@@ -141,30 +150,30 @@ public:
         if (Insert) {
             MutateCmd << "get    0 " << Stmt1 << " as $stmt" << std::endl
                       << "insert 0 " << Stmt2 << " $stmt" << std::endl;
-            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+            return clang_mutate::CreateTU(CI);
         }
         if (Swap) {
             MutateCmd << "swap 0 " << Stmt1 << " " << Stmt2 << std::endl;
-            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+            return clang_mutate::CreateTU(CI);
         }
         if (Set) {
             MutateCmd << "set 0 " << Stmt1 << " "
                       << Utils::escape(Value1) << std::endl;
-            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+            return clang_mutate::CreateTU(CI);
         }
         if (Set2) {
             MutateCmd << "set 0 "
                       << Stmt1 << " " << Utils::escape(Value1) << " "
                       << Stmt2 << " " << Utils::escape(Value2) << std::endl;
-            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+            return clang_mutate::CreateTU(CI);
         }
         if (InsertV) {
             MutateCmd << "insert 0 " << Stmt1 << " "
                       << Utils::escape(Value1) << std::endl;
-            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+            return clang_mutate::CreateTU(CI);
         }
         if (Interactive) {
-            return clang_mutate::CreateTU(Binary, DwarfFilepathMap, CI);
+            return clang_mutate::CreateTU(CI);
         }
         
         errs() << "Must supply one of:\n";

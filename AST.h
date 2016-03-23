@@ -100,6 +100,12 @@ public:
 
     bool binaryAddressRange(
         TU & tu, BinaryAddressMap::BeginEndAddressPair & addrRange) const;
+
+    bool isFullStmt() const
+    { return m_full_stmt; }
+
+    void setIsFullStmt(bool yn)
+    { m_full_stmt = yn; }
     
     AstRef counter() const
     { return m_counter; }
@@ -174,6 +180,7 @@ private:
     std::set<VariableInfo> m_free_vars;
     std::set<FunctionInfo> m_free_funs;
     std::string m_opcode;
+    bool m_full_stmt;
     bool m_can_have_bytes;
 };
 

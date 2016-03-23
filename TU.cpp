@@ -31,23 +31,14 @@ class BuildTU
     typedef std::set<clang::IdentifierInfo*> VarScope;
     
   public:
-    BuildTU(StringRef Binary,
-            StringRef DwarfFilepathMap,
-            CompilerInstance * _ci)
-        : Binary(Binary)
-        , BinaryAddresses(Binary, DwarfFilepathMap)
-        , ci(_ci)
+    BuildTU(CompilerInstance * _ci)
+        : ci(_ci)
         , sm(_ci->getSourceManager())
         , asts(TUs.back().astTable)
         , decl_scopes(TUs.back().scopes)
         , protos(TUs.back().aux["protos"])
         , decls(TUs.back().aux["decls"])
-    {
-        if (!Binary.empty()) {
-            TUs.back().addrMap = BinaryAddressMap(Binary,
-                                                  DwarfFilepathMap);
-        }
-    }
+    {}
 
     ~BuildTU() {}
 
@@ -283,8 +274,6 @@ class BuildTU
     }
 
   private:
-    StringRef Binary;
-    BinaryAddressMap BinaryAddresses;
     CompilerInstance * ci;
     SourceManager & sm;
     AstTable & asts;
@@ -302,12 +291,5 @@ class BuildTU
 } // namespace clang_mutate
 
 std::unique_ptr<clang::ASTConsumer>
-clang_mutate::CreateTU(clang::StringRef Binary,
-                       clang::StringRef DwarfFilepathMap,
-                       clang::CompilerInstance * CI)
-{
-    return std::unique_ptr<clang::ASTConsumer>(
-               new BuildTU(Binary,
-                           DwarfFilepathMap,
-                           CI));
-}
+clang_mutate::CreateTU(clang::CompilerInstance * CI)
+{ return std::unique_ptr<clang::ASTConsumer>(new BuildTU(CI)); }

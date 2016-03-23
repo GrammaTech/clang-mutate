@@ -34,6 +34,12 @@ AstRef AstTable::impl_create(T * clang_obj, Requirements & required)
     newAst.setFreeFunctions(required.functions());
     newAst.setText(required.text());
 
+    bool is_full_stmt =
+        (parent == NoAst && newAst.isStmt()) ||
+        (parent != NoAst && (ast(parent).isDecl() ||
+                             ast(parent).className() == "CompoundStmt"));
+    newAst.setIsFullStmt(is_full_stmt);
+    
     Stmt * parentStmt = parent == NoAst
        ? NULL
         : ast(parent).asStmt();
@@ -118,10 +124,7 @@ picojson::value Ast::toJSON(
     SET_JSON("is_decl", isDecl());
     SET_JSON("guard_stmt", isGuard());
 
-    bool is_full_stmt = (parent() == NoAst && isStmt()) ||
-        (parent() != NoAst && (asts[parent()].isDecl() ||
-                               asts[parent()].className() == "CompoundStmt"));
-    SET_JSON("full_stmt", is_full_stmt);
+    SET_JSON("full_stmt", isFullStmt());
     
     if (className() == "CompoundStmt")
         SET_JSON("stmt_list", children());
@@ -192,6 +195,7 @@ Ast::Ast(Stmt * _stmt,
     , m_free_vars()
     , m_free_funs()
     , m_opcode("")
+    , m_full_stmt(false)
 {
     if (isa<BinaryOperator>(m_stmt)) {
         m_opcode = static_cast<BinaryOperator*>(m_stmt)
@@ -223,4 +227,5 @@ Ast::Ast(Decl * _decl,
     , m_free_vars()
     , m_free_funs()
     , m_opcode("")
+    , m_full_stmt(false)
 {}
