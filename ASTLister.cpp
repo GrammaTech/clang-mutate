@@ -137,7 +137,7 @@ using namespace clang;
     }
 
     unsigned int GetNextCounter() {
-        return Spine.size() + 1;
+        return ASTEntries.size() + 1;
     }
 
     void RegisterFunctionDecl(const FunctionDecl * F)

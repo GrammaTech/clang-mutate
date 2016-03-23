@@ -60,6 +60,10 @@ namespace clang_mutate
     return m_astEntries.size() == 0;
   }
 
+  std::vector<ASTEntry*>::size_type ASTEntryList::size() const {
+    return m_astEntries.size();
+  }
+
   std::string ASTEntryList::toString(unsigned int counter) const
   {
     std::stringstream ret;

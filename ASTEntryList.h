@@ -29,6 +29,7 @@ namespace clang_mutate
     ASTEntry* getEntry(unsigned int counter) const;
 
     bool isEmpty() const;
+    std::vector<ASTEntry*>::size_type size() const;
 
     std::string toString(unsigned int counter = -1) const;
     picojson::value toJSON(unsigned int counter = -1,
