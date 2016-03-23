@@ -28,7 +28,9 @@ RewritingOpPtr setText      (AstRef ast, const std::string & text);
 RewritingOpPtr setRangeText (Ast & ast1, Ast & ast2, const std::string & text);
 RewritingOpPtr setRangeText (clang::SourceRange r, const std::string & text);
 RewritingOpPtr insertBefore (AstRef ast, const std::string & text);
-RewritingOpPtr getTextAs    (AstRef ast, const std::string & var );
+RewritingOpPtr getTextAs    (AstRef ast,
+                             const std::string & var,
+                             bool normalized = false);
 RewritingOpPtr echoTo          (std::ostream & os, const std::string & text);
 RewritingOpPtr printModifiedTo (std::ostream & os);
 RewritingOpPtr printOriginalTo (std::ostream & os);
@@ -253,9 +255,10 @@ private:
 class GetOp : public RewritingOp
 {
 public:  
-    GetOp(AstRef ast, const std::string & var)
+GetOp(AstRef ast, const std::string & var, bool normalized)
         : m_tgt(ast)
         , m_var(var)
+        , m_normalized(normalized)
         , RewritingOp()
     {}
     OpKind kind() const { return Op_Get; }    
@@ -266,6 +269,7 @@ public:
 private:
     AstRef m_tgt;
     std::string m_var;
+    bool m_normalized;
 };
 
 

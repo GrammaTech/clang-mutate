@@ -30,10 +30,13 @@ bool valid_ast(RewriterState & state, AstRef ast, const std::string & op)
 std::string getAstText(
     CompilerInstance * ci,
     AstTable & asts,
-    AstRef ast)
+    AstRef ast,
+    bool normalized)
 {
     SourceManager & sm = ci->getSourceManager();
-    SourceRange r = asts[ast].normalizedSourceRange();
+    SourceRange r = normalized
+        ? asts[ast].normalizedSourceRange()
+        : asts[ast].sourceRange();
     SourceLocation begin = r.getBegin();
     SourceLocation end = Lexer::getLocForEndOfToken(r.getEnd(),
                                                     0,
@@ -54,8 +57,10 @@ void RewriterState::fail(const std::string & msg)
 RewritingOpPtr RewritingOp::then(RewritingOpPtr that)
 { return new ChainedOp({this, that}); }
 
-RewritingOpPtr getTextAs(AstRef ast, const std::string & var)
-{ return new GetOp(ast, var); }
+RewritingOpPtr getTextAs(AstRef ast,
+                         const std::string & var,
+                         bool normalized)
+{ return new GetOp(ast, var, normalized); }
 
 RewritingOpPtr setText(AstRef ast, const std::string & text)
 { return new SetOp(ast, text); }
@@ -120,8 +125,9 @@ std::string RewritingOp::string_value(
 {
     if (state.failed || text.empty())
         return text;
+    bool should_normalize = (tgt == NoAst || state.asts[tgt].isFullStmt());
     if (text[0] != '$') {
-        return (tgt != NoAst && state.asts[tgt].isFullStmt())
+        return should_normalize
             ? Utils::extendTextForFullStmt(text)
             : text;
     }
@@ -133,7 +139,9 @@ std::string RewritingOp::string_value(
         state.fail(oss.str());
         return text;
     }
-    return search->second;
+    return should_normalize
+        ? Utils::extendTextForFullStmt(search->second)
+        : search->second;
 }
 
 void ChainedOp::merge(RewritingOpPtr op)
@@ -301,12 +309,12 @@ void AnnotateOp::execute(RewriterState & state) const
 }
                        
 void GetOp::print(std::ostream & o) const
-{ o << "get " << m_tgt << " as " << m_var; }
+{ o << (m_normalized ? "get' " : "get ") << m_tgt << " as " << m_var; }
 
 void GetOp::execute(RewriterState & state) const
 {
     if (!valid_ast(state, m_tgt, "get")) return;
-    state.vars[m_var] = getAstText(state.ci, state.asts, m_tgt);
+    state.vars[m_var] = getAstText(state.ci, state.asts, m_tgt, m_normalized);
 }
 
 } // end namespace clang_mutate

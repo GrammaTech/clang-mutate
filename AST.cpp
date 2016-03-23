@@ -148,7 +148,7 @@ picojson::value Ast::toJSON(
     std::ostringstream oss;
     std::string err;
     ChainedOp op = {
-        getTextAs (counter(), "$result"),
+        getTextAs (counter(), "$result", true),
         echoTo    (oss, "$result")
     };
     op.run(tu, err);

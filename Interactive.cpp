@@ -334,7 +334,7 @@ void runInteractiveSession(std::istream & input)
 
             std::cout << "[";
             std::set<std::string> aux_keys;
-            if (cmd.size() == 2) {
+            if (cmd.size() == 2 || (cmd.size() > 2 && cmd[2] == "keys:")) {
                 aux_keys.insert("types");
                 aux_keys.insert("decls");
                 aux_keys.insert("protos");
@@ -403,7 +403,8 @@ void runInteractiveSession(std::istream & input)
             continue;
         }
         
-        if (cmd[0] == "get") {
+        if (cmd[0] == "get" || cmd[0] == "get'") {
+            bool normalized = (cmd[0] == "get'");
             unsigned int tuid;
             EXPECT(cmd.size() == 3 || cmd.size() == 5,
                    "expected two arguments");
@@ -421,7 +422,7 @@ void runInteractiveSession(std::istream & input)
                 
             std::ostringstream oss;
             ChainedOp op = {
-                getTextAs (ast, "$result"),
+                getTextAs (ast, "$result", normalized),
                 echoTo    (oss, "$result")
             };
             op.run(TUs[tuid], err);
@@ -476,7 +477,6 @@ void runInteractiveSession(std::istream & input)
                     EXPECT(search != vars.end(), "variable " << text << " is unbound.");
                     text = search->second;
                 }
-                std::cerr << "   " << ast << " : \"" << text << "\"" << std::endl;
                 ops.push_back(setText(ast, text));
             }
             EXPECT(i == cmd.size(), "incomplete final replacement pair.");
