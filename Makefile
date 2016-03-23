@@ -11,7 +11,7 @@ endif
 endif
 
 LLVM_POSTFIX ?=
-CXX ?= $(LLVM_HOME)clang++$(LLVM_POSTFIX)
+CXX = $(LLVM_HOME)clang++$(LLVM_POSTFIX)
 RTTIFLAG := -fno-rtti
 PICOJSON_INCS := -I third-party/picojson-1.3.0
 PICOJSON_DEFINES := -D PICOJSON_USE_INT64
