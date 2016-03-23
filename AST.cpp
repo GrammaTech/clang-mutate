@@ -83,9 +83,8 @@ size_t AstTable::count() const
 std::string Ast::srcFilename(TU & tu) const
 {
     SourceManager & sm = tu.ci->getSourceManager();
-    return realpath(
-        sm.getFileEntryForID(sm.getMainFileID())->getName(),
-        NULL);
+    return Utils::safe_realpath(
+        sm.getFileEntryForID(sm.getMainFileID())->getName());
 }
 
 bool Ast::binaryAddressRange(

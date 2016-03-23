@@ -29,6 +29,8 @@ namespace Utils {
 std::string escape  (const std::string & s);
 std::string unescape(const std::string & s);
 
+std::string safe_realpath(const std::string & filename);
+
 clang::SourceLocation
 findSemiAfterLocation(clang::SourceManager & SM,
                       const clang::LangOptions & LangOpts,

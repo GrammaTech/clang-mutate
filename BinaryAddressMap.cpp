@@ -171,26 +171,19 @@ namespace clang_mutate{
     const std::string& directory,
     const std::string& fileName)
   {
-    char buffer[PATH_MAX] = { '\0' };
-
-    if ( realpath( (directory + "/" + fileName).c_str(), buffer) ) {
-      return buffer;
-    }
-    else if (m_dwarfFilepathMap.find( buffer ) != m_dwarfFilepathMap.end()) {
-      return m_dwarfFilepathMap[buffer];
+    std::string rp = Utils::safe_realpath(directory + "/" + fileName);
+    if (!rp.empty()) {
+      return rp;
     }
     else {
       for ( std::set<std::string>::const_iterator sourcePathIter = sourcePaths.begin();
             sourcePathIter != sourcePaths.end();
             sourcePathIter++ )
       {
-        if ( realpath ((*sourcePathIter + "/" + directory + "/" + fileName).c_str(), 
-                        buffer) ) {
-          return buffer;
+        rp = Utils::safe_realpath(*sourcePathIter + "/" + directory + "/" + fileName);
+        if (!rp.empty()) {
+          return rp;
         } 
-        else if (m_dwarfFilepathMap.find( buffer ) != m_dwarfFilepathMap.end()) {
-          return m_dwarfFilepathMap[buffer];
-        }
       }
     }
 
@@ -377,9 +370,7 @@ namespace clang_mutate{
   BinaryAddressMap::BinaryAddressMap(const std::string &binary,
                                      const std::string &dwarfFilepathMapping)
   {
-    char realpath_buffer[1024];
-    m_binaryPath = (realpath(binary.c_str(), realpath_buffer) == NULL) ? 
-                   "" : realpath_buffer;
+    m_binaryPath = Utils::safe_realpath(binary);
 
     parseDwarfFilepathMapping(dwarfFilepathMapping);
  

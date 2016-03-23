@@ -8,6 +8,17 @@ using namespace clang;
 
 namespace Utils {
 
+std::string safe_realpath(const std::string & filename)
+{
+    char * buf = realpath(filename.c_str(), NULL);
+    if (buf != NULL) {
+        std::string ans(buf);
+        free(buf);
+        return ans;
+    }
+    return "";
+}
+
 // This function adapted from clang/lib/ARCMigrate/Transforms.cpp
 SourceLocation
 findSemiAfterLocation(SourceManager & SM,
