@@ -29,10 +29,14 @@ public:
     
     bool isStmt() const { return (m_stmt != NULL); }
     clang::Stmt * asStmt() const { return m_stmt; }
-    
+
+    // The source range for the statement itself, not including
+    // any trailing semicolon.
     clang::SourceRange sourceRange() const
     { return m_range; }
 
+    // The source range for the statement plus any trailing
+    // semicolon, if this is a full statement.
     clang::SourceRange normalizedSourceRange() const
     { return m_normalized_range; }
 

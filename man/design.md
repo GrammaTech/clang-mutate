@@ -19,10 +19,59 @@ variable declarations will be *Stmt*'s.
     \-Decl (function, typedefs, globals, structures)
        \- Stmt (function bodies, maybe right hand sides of globals)
 
+clang-mutate maintains a global table of translation units, defined in
+TU.h.  Each translation unit (TU) manages the data for a single compiled
+file, including:
+* The clang CompilerInstance for the compilation.
+* A table of clang-mutate ASTs.
+* An optional BinaryAddressMap, when DWARF information is available.
+* Data about the variables in scope at each program point.
+* JSON entries for auxiliary database information.
+
+The AST table for a TU is constructed during a single traversal of a
+clang translation unit; since some of clang's information about a
+compilation is transient, all data that we want to keep around is
+stored to the clang-mutate AST representation during this traversal.
+
+Later, mutation operations are described relative to the clang-mutate
+ASTs for a TU, and implemented using the clang rewrite buffers managed
+by the translation unit's CompilerInstance.  These rewrite buffers
+can be reset, allowing clang-mutate to generate multiple variants
+from a single source file without re-parsing the original source.
+
 # Locations
 
 There are two types of locations.  *Source locations* and *defining
 locations*.
+
+# Full statements
+
+A *full statement* is an AST whose parent is either a block statement
+(class "CompoundStmt") or NoAst (for top-level declarations).
+
+# Source ranges
+
+clang-mutate's AST has two source ranges associated to it.  The
+*source range* is the range in the original source file that covers
+the text of the statement, not including any trailing semicolon. So
+the source range for "x + y;" contains the text "x + y", and the
+source range for "if (x) { y; }" is all of "if (x) { y; }".
+
+The *normalized source range* will also include the trailing semicolon
+for full statements, as appropriate.
+
+## Source range asymmetry
+
+When the user gets the text of a statement, the text for the source range
+is always returned.  When a mutation targets a statement, the normalized
+range is used for the target. That is, if AST #17 in TU 0 is the full
+statement "x + y;", then "get 0 17" produces "x + y", but "set 0 17" will
+overwrite all of "x + y;".
+
+To compensate for this asymmetry, the mutations will default to adding
+a semicolon to the mutation text when the mutation target is a full
+statement and the text does not end with ';' or '}'.  This ensures that
+the composition of get and set is idempotent (maybe modulo whitespace?).
 
 # Conditional defines
 
