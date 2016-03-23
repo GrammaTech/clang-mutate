@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <ostream>
 #include <sstream>
 #include <set>
 #include <unistd.h>
@@ -20,9 +21,11 @@ using namespace clang;
 std::map<std::string, bool> interactive_flags;
 
 #define DONE   \
-    (interactive_flags["ctrl"] ? std::string("\x17") : "") << std::endl
+    (interactive_flags["ctrl"] ? std::string("\x17") : "") \
+    << (interactive_flags["prompt"] ? "\n" : "") << std::flush
 #define CANCEL \
-    (interactive_flags["ctrl"] ? std::string("\x18") : "") << std::endl
+    (interactive_flags["ctrl"] ? std::string("\x18") : "") \
+    << (interactive_flags["prompt"] ? "\n" : "") << std::flush
 
 #define EXPECT(p, msg)                                                  \
     if (!(p)) { std::cout << "** " << msg << CANCEL; continue; }
@@ -301,7 +304,7 @@ void runInteractiveSession(std::istream & input)
                 }
                 std::cout << msg << std::endl;
             }
-            std::cout << DONE;
+            std::cout << DONE << "|";
             continue;
         }
         
@@ -433,8 +436,11 @@ void runInteractiveSession(std::istream & input)
                 EXPECT(cmd[3] == "as", "expected 'as'");
                 EXPECT(cmd[4][0] == '$', "variable name must start with '$'");
                 vars[cmd[4]] = result;
+                std::cout << DONE;
             }
-            std::cout << result << DONE;
+            else {
+                std::cout << result << DONE;
+            }
             continue;
         }
 
