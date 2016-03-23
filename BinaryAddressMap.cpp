@@ -171,19 +171,27 @@ namespace clang_mutate{
     const std::string& directory,
     const std::string& fileName)
   {
-    std::string rp = Utils::safe_realpath(directory + "/" + fileName);
-    if (!rp.empty()) {
-      return rp;
+    std::string path = directory + "/" + fileName;
+    std::string rpath = Utils::safe_realpath(path);
+    if (!rpath.empty()) {
+      return rpath;
+    }
+    else if (m_dwarfFilepathMap.find(path) != m_dwarfFilepathMap.end()) {
+      return m_dwarfFilepathMap[path];
     }
     else {
       for ( std::set<std::string>::const_iterator sourcePathIter = sourcePaths.begin();
             sourcePathIter != sourcePaths.end();
             sourcePathIter++ )
       {
-        rp = Utils::safe_realpath(*sourcePathIter + "/" + directory + "/" + fileName);
-        if (!rp.empty()) {
-          return rp;
+        path = *sourcePathIter + "/" + directory + "/" + fileName;
+        rpath = Utils::safe_realpath(path);
+        if (!rpath.empty()) {
+          return rpath;
         } 
+        else if (m_dwarfFilepathMap.find(path) != m_dwarfFilepathMap.end()) {
+          return m_dwarfFilepathMap[path];
+        }
       }
     }
 
