@@ -10,6 +10,7 @@
 
 #include "TU.h"
 #include "clang/Frontend/FrontendActions.h"
+#include "clang/Frontend/PCHContainerOperations.h"
 #include "clang/Tooling/Tooling.h"
 
 class FAF : public clang::tooling::FrontendActionFactory
@@ -17,15 +18,17 @@ class FAF : public clang::tooling::FrontendActionFactory
 public:
     ~FAF() override;
 
-    bool runInvocation(clang::CompilerInvocation * Invocation,
-                       clang::FileManager * Files,
-                       clang::DiagnosticConsumer * DiagConsumer) override;
+    virtual bool runInvocation(clang::CompilerInvocation * Invocation,
+                               clang::FileManager * Files,
+                               std::shared_ptr<clang::PCHContainerOperations> PCHContainerOps,
+                               clang::DiagnosticConsumer * DiagConsumer) override;
 };
 
 FAF::~FAF() {}
 
 bool FAF::runInvocation(clang::CompilerInvocation * Invocation,
                         clang::FileManager * Files,
+                        std::shared_ptr<clang::PCHContainerOperations> PCHContainerOps,
                         clang::DiagnosticConsumer * DiagConsumer)
 {
     clang::CompilerInstance * Compiler = new clang::CompilerInstance;
