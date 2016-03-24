@@ -123,9 +123,18 @@ std::string RewritingOp::string_value(
     AstRef tgt,
     RewriterState & state) const
 {
+    return string_value(text,
+                        state,
+                        (tgt == NoAst || state.asts[tgt].isFullStmt()));
+}
+
+std::string RewritingOp::string_value(
+    const std::string & text,
+    RewriterState & state,
+    bool should_normalize) const
+{
     if (state.failed || text.empty())
         return text;
-    bool should_normalize = (tgt == NoAst || state.asts[tgt].isFullStmt());
     if (text[0] != '$') {
         return should_normalize
             ? Utils::extendTextForFullStmt(text)
@@ -259,7 +268,7 @@ void EchoOp::print(std::ostream & o) const
 void EchoOp::execute(RewriterState & state) const
 {
     if (state.failed) return;
-    m_os << string_value(m_text, NoAst, state);
+    m_os << string_value(m_text, state);
 }
 
 void PrintOriginalOp::print(std::ostream & o) const

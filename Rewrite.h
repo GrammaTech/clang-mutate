@@ -93,6 +93,10 @@ public:
                              AstRef tgt,
                              RewriterState & state) const;
 
+    std::string string_value(const std::string & text,
+                             RewriterState & state,
+                             bool should_normalize = false) const;
+
     RefCounter count;
 };
 
