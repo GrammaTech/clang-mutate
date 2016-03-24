@@ -464,7 +464,7 @@ std::vector<std::string> tokenize(const std::string & s)
 bool read_uint(const std::string & s, unsigned int & n)
 {
     std::istringstream iss(s, std::istringstream::in);
-    return (iss >> n);
+    return (bool)(iss >> n);
 }
 
 bool read_yesno(const std::string & s, bool & yesno)
