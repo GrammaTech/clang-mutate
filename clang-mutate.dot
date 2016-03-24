@@ -1,0 +1,68 @@
+digraph ClangMutate
+{
+        node [shape=box,style=filled,fillcolor=lightblue];
+        rankdir=LR;
+        
+        clangmutate [label="clang-mutate.cpp\nTop-level driver,\nargument parsing"];
+        tu [label="TU.h, TU.cpp\nTranslation Unit\nPerforms traversal of clang's IR to construct new instances.\nManages data associated to a single source file:\nAST table, scopes, CompilerInstance, etc."];
+        astref [label="AstRef.h\nOpaque reference to an AST\nwithin a TU"];
+        ast [label="AST.h, AST.cpp\nOur representation of\nclang Stmts and Decls"];
+        pt [label="PointedTree.h\nA stack data structure that\nsupports snapshots."];
+        aux [label="AuxDB.h, AuxDB.cpp\nExtra JSON database entries"];
+        bam [label="BinaryAddressMap.h, BinaryAddressMap.cpp\nManages mapping from source positions\nto binary positions"];
+        faf [label="FAF.h\nCustomized verison of clang's\nFrontendActionFactory that allows the\ncaller to manage the new CompilerInstances."];
+        req [label="Requirements.h, Requirements.cpp\nManages the data required to build an AST."];
+        
+        input [shape=note, label="input.c",fillcolor=white];
+        output [shape=note, label="stdout",fillcolor=white];
+        ci [shape=oval, label="clang::CompilerInstance",fillcolor=yellow];
+
+        scopes [label="Scopes.h, Scopes.cpp\nFind identifiers in scope at a point."];
+        bindings [label="Bindings.h, Bindings.cpp\nFind free variables in an expression.\nAlso finds required #includes, macros, and types."];
+        
+        buildtu [label="BuildTU (in TU.cpp)\nTraverses the clang IR to construct new TU instances.\nShould extract all information from clang that may be needed by later mutations."];
+
+        asttable [label="AstTable (in AST.cpp)\nManages the ASTs within one translation unit."];
+        function [label="Function.h, Function.cpp\nRepresentation of clang::FunctionDecl"];
+        variable [label="Variable.h, Variable.cpp\nRepresentation of clang::IdentifierInfo"];
+        
+        libtooling [shape=oval, label="clang::libtooling",fillcolor=yellow];
+        clangir [shape=note, label="clang IR\nSome aspects are transient, and become\ninvalid after the source file is processed.",fillcolor=lightgreen];
+        buffer [shape=note, label="clang rewrite buffers\nAppear to remain valid even after\nthe source files have been processed.",fillcolor=lightgreen];
+        interactive [label="Interactive.h, Interactive.cpp\nREPL-based access to mutations."];
+        rewrite [label="Rewrite.h, Rewrite.cpp\nBasic rewriting operations.\nOperations can be chained together to\ncreate more interesting mutations."];
+        renaming [label="Renaming.h, Renaming.cpp\nRename free identifiers in a code snippet."];
+        macros [label="Macros.h, Macros.cpp\nFind macros in a code snippet."];
+        types [label="TypeDBEntry.h, TypeDBEntry.cpp\nData about custom type definitions."];
+        hash [label="Hash.h\nSerializable hashes."]
+        json [label="Json.h, Json.cpp\nUtilities for JSON serialization,\nmostly wrapping picojson."];
+        utils [lable="Utils.h, Utils.cpp\nGeneral utilities."];
+        
+               
+        clangmutate -> libtooling;
+        libtooling -> faf -> ci -> clangir -> buildtu;
+        ci -> buffer;
+        
+        input -> ci;
+        
+        buildtu -> tu;
+        asttable -> tu;
+        
+        pt -> scopes -> req;
+        function -> req;
+        variable -> req;
+        macros -> req;
+        renaming -> bindings -> req;
+        
+        buildtu -> req -> ast -> asttable;
+        astref -> ast;
+        aux -> tu;
+        bam -> tu;
+        
+        hash -> types -> req;
+        
+        clangmutate -> interactive -> rewrite;
+        tu -> interactive;
+        buffer -> rewrite -> output;
+        
+}
