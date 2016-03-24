@@ -19,19 +19,6 @@ RenameDatum mkFunctionRename(
     const std::string & name)
 { return RenameDatum(id, name, 0, FunctionRename); }
 
-static std::string ident_to_str(IdentifierInfo* ident, size_t id)
-{
-    std::string name = ident->getName().str();
-    std::ostringstream oss;
-    oss << "(|";
-    if (name != "")
-        oss << name;
-    else
-        oss << id; // can this happen?
-    oss << "|)";
-    return oss.str();
-}
-
 RenameFreeVar::RenameFreeVar(
     Stmt * the_stmt,
     SourceManager & _sm,

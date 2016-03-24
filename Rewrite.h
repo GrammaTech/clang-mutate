@@ -107,9 +107,9 @@ class EchoOp : public RewritingOp
 public:
     EchoOp(const std::string & text,
            std::ostream & os)
-        : m_text(text)
+        : RewritingOp()
+        , m_text(text)
         , m_os(os)
-        , RewritingOp()
     {}
     
     OpKind kind() const { return Op_Echo; }
@@ -124,7 +124,7 @@ private:
 class PrintOriginalOp : public RewritingOp
 {
 public:
-    PrintOriginalOp(std::ostream & os) : m_os(os), RewritingOp() {}
+    PrintOriginalOp(std::ostream & os) : RewritingOp(), m_os(os) {}
     OpKind kind() const { return Op_PrintOriginal; }
     AstRef target() const { return NoAst; }
     void print(std::ostream & o) const;
@@ -136,7 +136,7 @@ private:
 class PrintModifiedOp : public RewritingOp
 {
 public:
-    PrintModifiedOp(std::ostream & os) : m_os(os), RewritingOp() {}
+    PrintModifiedOp(std::ostream & os) : RewritingOp(), m_os(os) {}
     OpKind kind() const { return Op_PrintModified; }
     AstRef target() const { return NoAst; }
     void print(std::ostream & o) const;
@@ -147,6 +147,8 @@ private:
 
 class Annotator {
 public:
+    virtual ~Annotator() {}
+
     virtual std::string before(const Ast & ast);
     virtual std::string after (const Ast & ast);
     virtual std::string describe();
@@ -155,7 +157,7 @@ public:
 class AnnotateOp : public RewritingOp
 {
 public:
-    AnnotateOp(Annotator * annotate) : m_annotate(annotate), RewritingOp() {}
+    AnnotateOp(Annotator * annotate) : RewritingOp(), m_annotate(annotate) {}
     OpKind kind() const { return Op_Annotate; }
     AstRef target() const { return NoAst; }
     void print(std::ostream & o) const;
@@ -171,13 +173,13 @@ class ChainedOp : public RewritingOp
     
 public:
     ChainedOp(const RewritingOps & ops)
-        : m_ops(1)
-        , RewritingOp()
+        : RewritingOp()
+        , m_ops(1)
     { for (auto & op : ops) merge(op); }
 
     ChainedOp(const std::initializer_list<RewritingOpPtr> & ops)
-        : m_ops(1)
-        , RewritingOp()
+        : RewritingOp()
+        , m_ops(1)
     { for (auto & op : ops) merge(op); }
 
     OpKind kind() const { return Op_Chain; }
@@ -200,9 +202,9 @@ class InsertOp : public RewritingOp
 {
 public:
     InsertOp(AstRef ast, const std::string & text)
-        : m_tgt(ast)
+        : RewritingOp()
+        , m_tgt(ast)
         , m_text(text)
-        , RewritingOp()
     {}
     
     OpKind kind() const { return Op_Insert; }
@@ -219,9 +221,9 @@ class SetOp : public RewritingOp
 {
 public:
     SetOp(AstRef ast, const std::string & text)
-        : m_tgt(ast)
+        : RewritingOp()
+        , m_tgt(ast)
         , m_text(text)
-        , RewritingOp()
     {}
     OpKind kind() const { return Op_Set; }
     AstRef target() const { return m_tgt; }
@@ -239,10 +241,10 @@ public:
     SetRangeOp(clang::SourceRange r,
                AstRef endAst,
                const std::string & text)
-        : m_range(r)
+        : RewritingOp()
+        , m_range(r)
         , m_endAst(endAst)
         , m_text(text)
-        , RewritingOp()
     {}
     
     OpKind kind() const { return Op_SetRange; }
@@ -260,10 +262,10 @@ class GetOp : public RewritingOp
 {
 public:  
 GetOp(AstRef ast, const std::string & var, bool normalized)
-        : m_tgt(ast)
+        : RewritingOp()
+        , m_tgt(ast)
         , m_var(var)
         , m_normalized(normalized)
-        , RewritingOp()
     {}
     OpKind kind() const { return Op_Get; }    
     AstRef target() const { return m_tgt; }

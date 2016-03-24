@@ -39,6 +39,8 @@ std::map<std::string, bool> interactive_flags;
 class ClassAnnotator : public Annotator
 {
 public:
+    virtual ~ClassAnnotator() {}
+
     std::string before(const Ast & ast) {
         std::ostringstream oss;
         oss << "/* " << ast.counter()
@@ -60,6 +62,8 @@ ClassAnnotator classAnnotator;
 class CounterAnnotator : public Annotator
 {
 public:
+    virtual ~CounterAnnotator() {}
+
     std::string before(const Ast & ast) {
         std::ostringstream oss;
         oss << "/* " << ast.counter() << "[ */";

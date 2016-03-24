@@ -94,7 +94,6 @@ bool Ast::binaryAddressRange(
     if (tu.addrMap.isEmpty())
         return false;
     
-    SourceManager & sm = tu.ci->getSourceManager();
     unsigned int beginSrcLine = m_begin_loc.getLine();
     unsigned int   endSrcLine = m_end_loc.getLine();
     
@@ -109,10 +108,6 @@ picojson::value Ast::toJSON(
     TU & tu) const
 {
     std::map<std::string, picojson::value> ans;
-    
-    SourceManager & sm = tu.ci->getSourceManager();
-    AstTable & asts = tu.astTable;
-    SourceRange r = sourceRange();
     
     SET_JSON("counter", counter());
     SET_JSON("parent_counter", parent());
