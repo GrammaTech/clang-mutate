@@ -344,6 +344,19 @@ bool in_system_header(
     return true;
 }
 
+std::string ltrim(const std::string & s, const std::string & t){
+    std::string trimmed(s);
+    return trimmed.substr(trimmed.find_first_not_of(t));
+}
+
+std::string rtrim(const std::string & s, const std::string & t){
+    std::string trimmed(s);
+    return trimmed.substr(0, trimmed.find_last_not_of(t) + 1);
+}
+
+std::string trim(const std::string & s, const std::string & t){
+    return ltrim(rtrim(s, t), t);
+}
 std::string escape(const std::string & s)
 {
     std::string ans("\"");

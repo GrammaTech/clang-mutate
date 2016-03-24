@@ -28,6 +28,9 @@ namespace Utils {
 
 std::string escape  (const std::string & s);
 std::string unescape(const std::string & s);
+std::string ltrim   (const std::string & s, const std::string & t);
+std::string rtrim   (const std::string & s, const std::string & t);
+std::string trim    (const std::string & s, const std::string & t);
 
 std::string safe_realpath(const std::string & filename);
 
