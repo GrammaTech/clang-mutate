@@ -167,14 +167,18 @@ class BuildTU
         return true;
     }
 
-    bool VisitNamedDecl(NamedDecl * d) {
+    bool VisitValueDecl(NamedDecl * d) {
         if (!Utils::ShouldVisitDecl(sm, ci->getLangOpts(),
                                     sm.getMainFileID(), d))
         {
             return true;
         }
 
-        SourceRange r = d->getSourceRange();
+        SourceRange r = Utils::normalizeSourceRange(
+            d->getSourceRange(),
+            true,
+            sm,
+            ci->getLangOpts());
         if (decl_depth == 1 &&
             d->getIdentifier() != NULL &&
             Utils::SelectRange(sm, sm.getMainFileID(), r))
