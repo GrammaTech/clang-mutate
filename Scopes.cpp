@@ -83,56 +83,6 @@ Scope::get_names_in_scope() const
     return ans;
 }
 
-DeclScope::DeclScope()
-{
-    // Is there some top-level IdentifierInfo* that could be used
-    // here instead of NULL?
-    enter_scope(NULL);
-}
-    
-void DeclScope::declare(const IdentifierInfo* id)
-{
-    if (id != NULL)
-        scopes.back().second.push_back(id);
-}
-    
-void DeclScope::enter_scope(Stmt * stmt)
-{
-    std::vector<const IdentifierInfo*> empty;
-    scopes.push_back(std::make_pair(stmt, empty));
-}
-
-void DeclScope::exit_scope()
-{
-    scopes.pop_back();
-}
-
-Stmt * DeclScope::current_scope() const
-{
-    return scopes.rbegin()->first;
-}
-
-std::vector<std::vector<std::string> >
-DeclScope::get_names_in_scope(size_t length) const
-{
-    std::vector<std::vector<std::string> > ans;
-    if (length == 0)
-        return ans;
-    std::vector<BlockScope>::const_reverse_iterator s;
-    std::vector<const IdentifierInfo*>::const_reverse_iterator v;
-    for (s = scopes.rbegin(); s != scopes.rend(); ++s) {
-        ans.push_back(std::vector<std::string>());
-        if (length == 0)
-            continue; // empty scopes if we hit the length limit.
-        for (v = s->second.rbegin(); v != s->second.rend(); ++v) {
-            ans.back().push_back((*v)->getName().str());
-            if (--length == 0)
-                break;
-        }
-    }
-    return ans;
-}
-
 bool begins_scope(Stmt * stmt)
 {
     if (stmt == NULL)
