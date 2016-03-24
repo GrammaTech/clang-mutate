@@ -36,7 +36,7 @@ digraph ClangMutate
         types [label="TypeDBEntry.h, TypeDBEntry.cpp\nData about custom type definitions."];
         hash [label="Hash.h\nSerializable hashes."]
         json [label="Json.h, Json.cpp\nUtilities for JSON serialization,\nmostly wrapping picojson."];
-        utils [lable="Utils.h, Utils.cpp\nGeneral utilities."];
+        utils [label="Utils.h, Utils.cpp\nGeneral utilities."];
         
                
         clangmutate -> libtooling;
