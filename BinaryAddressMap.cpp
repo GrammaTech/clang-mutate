@@ -171,7 +171,7 @@ namespace clang_mutate{
     const std::string& directory,
     const std::string& fileName)
   {
-    std::string path = directory + "/" + fileName;
+    std::string path = Utils::rtrim(directory, "/") + "/" + fileName;
     std::string rpath = Utils::safe_realpath(path);
     if (!rpath.empty()) {
       return rpath;
@@ -184,7 +184,9 @@ namespace clang_mutate{
             sourcePathIter != sourcePaths.end();
             sourcePathIter++ )
       {
-        path = *sourcePathIter + "/" + directory + "/" + fileName;
+        path = Utils::rtrim(*sourcePathIter, "/") + "/" +
+               Utils::rtrim(directory, "/") + "/" +
+               fileName;
         rpath = Utils::safe_realpath(path);
         if (!rpath.empty()) {
           return rpath;
