@@ -8,6 +8,7 @@
 #include "Scopes.h"
 #include "Utils.h"
 #include "Bindings.h"
+#include "Renaming.h"
 
 #include "clang/Basic/LLVM.h"
 #include "clang/AST/ASTConsumer.h"
@@ -50,6 +51,7 @@ public:
     clang::SourceRange     normalizedSourceRange() const;
     clang::PresumedLoc     beginLoc()    const;
     clang::PresumedLoc     endLoc()      const;
+    Replacements           replacements() const;
     
     bool VisitStmt(clang::Stmt * expr);
 
@@ -81,6 +83,9 @@ public:
         m_source_range = r;
         m_normalized_source_range = nr;
     }
+
+    void setReplacements(const Replacements & r)
+    { m_replacements = r; }
     
 private:
 
@@ -100,7 +105,7 @@ private:
     clang::PresumedLoc m_end_ploc;
     clang::SourceRange m_source_range;
     clang::SourceRange m_normalized_source_range;
-    
+    Replacements m_replacements;
     bool toplev_is_macro, is_first;
     BindingCtx ctx;
 

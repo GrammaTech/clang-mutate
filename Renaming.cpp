@@ -136,7 +136,7 @@ bool RenameFreeVar::VisitStmt(Stmt * stmt)
       // If the statement is part of a macro expansion, getRangeSize will
       // return false; we want to skip the rewriting in this case.
       if (getRangeSize(srcRange, sm, langOpts, _)) {
-          rewrites[offset] = std::make_pair(old_str.size(), new_str);
+          replacements.add(offset, old_str.size(), new_str);
       }
     }
   }
@@ -150,10 +150,23 @@ std::string RenameFreeVar::getRewrittenString() const
         sm,
         langOpts,
         NULL);
+    return replacements.apply_to(orig);
+}
+
+std::set<std::string> RenameFreeVar::getIncludes() const
+{ return includes; }
+
+void Replacements::add(size_t offset,
+                       size_t size,
+                       const std::string & s)
+{ replacements[offset] = std::make_pair(size, s); }
+
+std::string Replacements::apply_to(const std::string & orig) const
+{
     std::string ans;
-    RewriteMap::const_iterator it = rewrites.begin();
+    auto it = replacements.begin();
     for (size_t p = 0; p < orig.size(); ++p) {
-        if (it != rewrites.end() && p == it->first) {
+        if (it != replacements.end() && p == it->first) {
             p += it->second.first - 1; // - 1 compensates ++p
             ans.append(it->second.second);
             ++it;
@@ -163,6 +176,3 @@ std::string RenameFreeVar::getRewrittenString() const
     }
     return ans;
 }
-
-std::set<std::string> RenameFreeVar::getIncludes() const
-{ return includes; }

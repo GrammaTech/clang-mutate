@@ -124,6 +124,7 @@ class BuildTU
         AstRef parent = spine.back();
         required.setParent(parent);
         required.setScopePos(decl_scopes.current_scope_position());
+        required.setReplacements(renamer.getReplacements());
 
         SourceRange sr = clang_obj->getSourceRange();
         bool is_full_stmt =

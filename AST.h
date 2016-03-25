@@ -11,6 +11,7 @@
 #include "Macros.h"
 #include "Renaming.h"
 #include "Requirements.h"
+#include "Renaming.h"
 
 #include "clang/AST/AST.h"
 #include "clang/Frontend/CompilerInstance.h"
@@ -73,11 +74,8 @@ public:
     void setScopePosition(PTNode pos)
     { m_scope_pos = pos; }
 
-    void setText(const std::string & text)
-    { m_text = text; }
-        
-    std::string text() const
-    { return m_text; }
+    void setReplacements(const Replacements & r)
+    { m_replacements = r; }
 
     std::string opcode() const
     { return m_opcode; }
@@ -180,12 +178,12 @@ private:
     std::set<std::string> m_includes;
     PTNode m_scope_pos;
     std::set<Macro> m_macros;
-    std::string m_text;
     std::set<VariableInfo> m_free_vars;
     std::set<FunctionInfo> m_free_funs;
     std::string m_opcode;
     bool m_full_stmt;
     bool m_can_have_bytes;
+    Replacements m_replacements;
 };
 
 class AstTable

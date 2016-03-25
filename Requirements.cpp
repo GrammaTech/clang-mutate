@@ -223,3 +223,6 @@ clang::PresumedLoc Requirements::beginLoc() const
 
 clang::PresumedLoc Requirements::endLoc() const
 { return m_end_ploc; }
+
+Replacements Requirements::replacements() const
+{ return m_replacements; }

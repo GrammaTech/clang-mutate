@@ -23,6 +23,15 @@
 // do substitution.
 //#define ALLOW_FREE_FUNCTIONS
 
+class Replacements
+{
+public:
+    void add(size_t offset, size_t size, const std::string & s);
+    std::string apply_to(const std::string & input) const;
+private:
+    std::map<size_t, std::pair<size_t, std::string> > replacements;
+};
+
 enum RenameKind
 {
     FunctionRename,
@@ -88,6 +97,9 @@ public:
   std::string getRewrittenString() const;
 
   std::set<std::string> getIncludes() const;
+
+  Replacements getReplacements() const
+  { return replacements; }
   
 private:
   clang::SourceManager & sm;
@@ -95,8 +107,7 @@ private:
   const Renames & renames;
   clang::SourceLocation begin;
   clang::SourceLocation end;
-  typedef std::map<size_t, std::pair<size_t, std::string> > RewriteMap;
-  RewriteMap rewrites;
+  Replacements replacements;
   std::set<std::string> includes;
 };
 

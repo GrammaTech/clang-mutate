@@ -32,7 +32,7 @@ AstRef AstTable::impl_create(T * clang_obj, Requirements & required)
     newAst.setScopePosition(required.scopePos());
     newAst.setFreeVariables(required.variables());
     newAst.setFreeFunctions(required.functions());
-    newAst.setText(required.text());
+    newAst.setReplacements(required.replacements());
 
     bool is_full_stmt =
         (parent == NoAst && newAst.isStmt()) ||
@@ -140,16 +140,30 @@ picojson::value Ast::toJSON(
     SET_JSON("end_src_line"  , m_end_loc.getLine());
     SET_JSON("end_src_col"   , m_end_loc.getColumn());
 
-    std::ostringstream oss;
-    std::string err;
-    ChainedOp op = {
-        getTextAs (counter(), "$result", true),
-        echoTo    (oss, "$result")
-    };
-    op.run(tu, err);
-    SET_JSON("orig_text", oss.str());
+    // Get the original, normalized source text.
+    {
+        std::ostringstream oss;
+        std::string err;
+        ChainedOp op = {
+            getTextAs (counter(), "$result", true),
+            echoTo    (oss, "$result")
+        };
+        op.run(tu, err);
+        SET_JSON("orig_text", oss.str());
+    }
 
-    SET_JSON("src_text", text());
+    // Get the un-normalized source text, with free
+    // variables and functions renamed via x -> (|x|)
+    {
+        std::ostringstream oss;
+        std::string err;
+        ChainedOp op = {
+            getTextAs (counter(), "$result"),
+            echoTo    (oss, "$result")
+        };
+        op.run(tu, err);
+        SET_JSON("src_text", m_replacements.apply_to(oss.str()));
+    }
     
     BinaryAddressMap::BeginEndAddressPair addrRange;
     if (canHaveAssociatedBytes() && binaryAddressRange(tu, addrRange)) {
@@ -164,7 +178,7 @@ picojson::value Ast::toJSON(
     
     return to_json(ans);
 }
-                           
+
 Ast::Ast(Stmt * _stmt,
          AstRef _counter,
          AstRef _parent,
@@ -185,11 +199,12 @@ Ast::Ast(Stmt * _stmt,
     , m_guard(false)
     , m_scope_pos(NoNode)
     , m_macros()
-    , m_text()
     , m_free_vars()
     , m_free_funs()
     , m_opcode("")
     , m_full_stmt(false)
+    , m_can_have_bytes(false)
+    , m_replacements()
 {
     if (isa<BinaryOperator>(m_stmt)) {
         m_opcode = static_cast<BinaryOperator*>(m_stmt)
@@ -217,9 +232,10 @@ Ast::Ast(Decl * _decl,
     , m_guard(false)
     , m_scope_pos(NoNode)
     , m_macros()
-    , m_text()
     , m_free_vars()
     , m_free_funs()
     , m_opcode("")
     , m_full_stmt(false)
+    , m_can_have_bytes(false)
+    , m_replacements()
 {}
