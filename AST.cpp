@@ -11,7 +11,8 @@ AstRef AstTable::nextAstRef() const
 { return asts.size() + 1; }
 
 template <typename T>
-AstRef AstTable::impl_create(T * clang_obj, Requirements & required)
+AstRef AstTable::impl_create(T * clang_obj, Requirements & required,
+                             ASTContext * context)
 {
     AstRef ref = nextAstRef();
     AstRef parent = required.parent();
@@ -54,11 +55,17 @@ AstRef AstTable::impl_create(T * clang_obj, Requirements & required)
         newAst.setCanHaveAssociatedBytes(false);
     }
     
+    if (newAst.isDecl() && isa<FieldDecl>(newAst.asDecl())) {
+        newAst.setFieldDeclProperties(context);
+    }
+
     return ref;
 }
 
-template AstRef AstTable::impl_create<Stmt>(Stmt * stmt, Requirements & reqs);
-template AstRef AstTable::impl_create<Decl>(Decl * stmt, Requirements & reqs);
+template AstRef AstTable::impl_create<Stmt>(Stmt * stmt, Requirements & reqs,
+                                            ASTContext * context);
+template AstRef AstTable::impl_create<Decl>(Decl * stmt, Requirements & reqs,
+                                            ASTContext * context);
 
 Ast& AstTable::ast(AstRef ref)
 {
@@ -101,6 +108,30 @@ bool Ast::binaryAddressRange(
         srcFilename(tu),
         std::make_pair(beginSrcLine, endSrcLine),
         addrRange);
+}
+
+void Ast::setFieldDeclProperties(ASTContext * context)
+{
+    FieldDecl *D = static_cast<FieldDecl *>(asDecl());
+
+    m_field_decl = true;
+    m_field_name = D->getNameAsString();
+
+    QualType Type = D->getType();
+
+    if (Type->isArrayType()) {
+        const ConstantArrayType *AT = context->getAsConstantArrayType(Type);
+        m_base_type = AT->getElementType().getAsString();
+        m_array_length = AT->getSize().getLimitedValue();
+    }
+    else {
+        m_base_type = Type.getAsString();
+    }
+
+    if (D->isBitField()) {
+        m_bit_field = true;
+        m_bit_field_width = D->getBitWidthValue(*context);
+    }
 }
 
 picojson::value Ast::toJSON(
@@ -176,6 +207,15 @@ picojson::value Ast::toJSON(
                      addrRange.second));
     }
     
+    if (m_field_decl) {
+        SET_JSON("field_name", m_field_name);
+        SET_JSON("base_type", m_base_type);
+        if (m_bit_field)
+            SET_JSON("bit_field_width", m_bit_field_width);
+        if (m_array_length > 1)
+            SET_JSON("array_length", m_array_length);
+    }
+
     return to_json(ans);
 }
 
@@ -205,6 +245,12 @@ Ast::Ast(Stmt * _stmt,
     , m_full_stmt(false)
     , m_can_have_bytes(false)
     , m_replacements()
+    , m_field_decl(false)
+    , m_field_name()
+    , m_base_type()
+    , m_bit_field(false)
+    , m_bit_field_width(0)
+    , m_array_length(0)
 {
     if (isa<BinaryOperator>(m_stmt)) {
         m_opcode = static_cast<BinaryOperator*>(m_stmt)
@@ -238,4 +284,10 @@ Ast::Ast(Decl * _decl,
     , m_full_stmt(false)
     , m_can_have_bytes(false)
     , m_replacements()
+    , m_field_decl(false)
+    , m_field_name()
+    , m_base_type()
+    , m_bit_field(false)
+    , m_bit_field_width(0)
+    , m_array_length(0)
 {}

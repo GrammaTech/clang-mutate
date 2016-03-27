@@ -109,6 +109,8 @@ public:
     void setIsFullStmt(bool yn)
     { m_full_stmt = yn; }
     
+    void setFieldDeclProperties(clang::ASTContext * context);
+
     AstRef counter() const
     { return m_counter; }
     
@@ -184,16 +186,26 @@ private:
     bool m_full_stmt;
     bool m_can_have_bytes;
     Replacements m_replacements;
+
+    // Properties for struct field decls
+    bool m_field_decl;
+    std::string m_field_name;
+    std::string m_base_type;
+    bool m_bit_field;
+    unsigned m_bit_field_width;
+    unsigned long m_array_length;
 };
 
 class AstTable
 {
 public:
-    AstRef create(clang::Stmt * stmt, Requirements & reqs)
-    { return impl_create(stmt, reqs); }
+    AstRef create(clang::Stmt * stmt, Requirements & reqs,
+                  clang::ASTContext * context)
+    { return impl_create(stmt, reqs, context); }
 
-    AstRef create(clang::Decl * decl, Requirements & reqs)
-    { return impl_create(decl, reqs); }
+    AstRef create(clang::Decl * decl, Requirements & reqs,
+                  clang::ASTContext * context)
+    { return impl_create(decl, reqs, context); }
 
     Ast& ast(AstRef ref);
     Ast& operator[](AstRef ref);
@@ -207,7 +219,8 @@ public:
 
 private:
     template <typename T>
-    AstRef impl_create(T * clang_obj, Requirements & reqs);
+        AstRef impl_create(T * clang_obj, Requirements & reqs,
+                           clang::ASTContext * context);
 
     std::vector<Ast> asts;
 };

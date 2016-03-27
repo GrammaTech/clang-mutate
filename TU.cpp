@@ -45,6 +45,7 @@ class BuildTU
 
     virtual void HandleTranslationUnit(ASTContext &Context)
     {
+        this->Context = &Context;
         spine.clear();
         spine.push_back(NoAst);
 
@@ -139,7 +140,7 @@ class BuildTU
                                 sr,
                                 nsr);
         
-        AstRef ast = asts.create(clang_obj, required);
+        AstRef ast = asts.create(clang_obj, required, Context);
         spine.push_back(ast);
         return ast;
     }
@@ -282,6 +283,7 @@ class BuildTU
     }
 
   private:
+    ASTContext * Context;
     CompilerInstance * ci;
     SourceManager & sm;
     AstTable & asts;
