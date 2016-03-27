@@ -16,8 +16,10 @@ namespace clang_mutate {
     
 struct TU
 {
-    TU(clang::CompilerInstance * _ci) : ci(_ci), astTable(), addrMap() {}
+    TU(clang::CompilerInstance * _ci)
+        : ci(_ci), astTable(), addrMap() {}
     clang::CompilerInstance * ci;
+    bool allowDeclAsts;
     AstTable astTable;
     BinaryAddressMap addrMap;
     Scope scopes;
@@ -28,7 +30,7 @@ struct TU
 extern std::vector<TU> TUs;
 
 std::unique_ptr<clang::ASTConsumer>
-CreateTU(clang::CompilerInstance * CI);
+CreateTU(clang::CompilerInstance * CI, bool AllowDeclAsts);
 
 } // end namespace clang_mutate
 

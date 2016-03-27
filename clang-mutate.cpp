@@ -78,6 +78,7 @@ OPTION( Aux         , std::string , "aux"          , "comma-delimited list of au
 OPTION( Silent      , bool        , "silent"       , "do not print prompts in interactive mode");
 OPTION( Binary      , std::string , "binary"       , "binary with DWARF information for line->address mapping");
 OPTION( DwarfFilepathMap, std::string, "dwarf-filepath-mapping", "mapping of filepaths used in compilation -> new filepath");
+OPTION( Decls       , bool        , "decls"        , "create ASTs for decls");
 
 std::ostringstream MutateCmd;
 
@@ -108,20 +109,20 @@ public:
 
         if (Number) {
             MutateCmd << "number 0" << std::endl;
-            return clang_mutate::CreateTU(CI);
+            return clang_mutate::CreateTU(CI, Decls);
         }
         if (Ids) {
             MutateCmd << "ids 0" << std::endl;
-            return clang_mutate::CreateTU(CI);
+            return clang_mutate::CreateTU(CI, Decls);
         }
         if (Annotate) {
             MutateCmd << "annotate 0" << std::endl;
-            return clang_mutate::CreateTU(CI);
+            return clang_mutate::CreateTU(CI, Decls);
         }
 
         if (List) {
             MutateCmd << "list 0" << std::endl;
-            return clang_mutate::CreateTU(CI);
+            return clang_mutate::CreateTU(CI, Decls);
         }
 
         if (Json) {
@@ -147,52 +148,52 @@ public:
             if (Stmt1) {
                 MutateCmd << "echo ]" << std::endl;
             }
-            return clang_mutate::CreateTU(CI);
+            return clang_mutate::CreateTU(CI, Decls);
         }
         if (Cut) {
             MutateCmd << "cut 0 " << Stmt1 << std::endl;
-            return clang_mutate::CreateTU(CI);
+            return clang_mutate::CreateTU(CI, Decls);
         }
         if (SetRange) {
             MutateCmd << "setrange 0 "
                       << Stmt1 << " "
                       << Stmt2 << " "
                       << Utils::escape(Value1) << std::endl;
-            return clang_mutate::CreateTU(CI);
+            return clang_mutate::CreateTU(CI, Decls);
         }
         if (SetFunc) {
             MutateCmd << "setfunc 0 "
                       << Stmt1 << " "
                       << Utils::escape(Value1) << std::endl;
-            return clang_mutate::CreateTU(CI);
+            return clang_mutate::CreateTU(CI, Decls);
         }
         if (Insert) {
             MutateCmd << "get    0 " << Stmt1 << " as $stmt" << std::endl
                       << "insert 0 " << Stmt2 << " $stmt" << std::endl;
-            return clang_mutate::CreateTU(CI);
+            return clang_mutate::CreateTU(CI, Decls);
         }
         if (Swap) {
             MutateCmd << "swap 0 " << Stmt1 << " " << Stmt2 << std::endl;
-            return clang_mutate::CreateTU(CI);
+            return clang_mutate::CreateTU(CI, Decls);
         }
         if (Set) {
             MutateCmd << "set 0 " << Stmt1 << " "
                       << Utils::escape(Value1) << std::endl;
-            return clang_mutate::CreateTU(CI);
+            return clang_mutate::CreateTU(CI, Decls);
         }
         if (Set2) {
             MutateCmd << "set 0 "
                       << Stmt1 << " " << Utils::escape(Value1) << " "
                       << Stmt2 << " " << Utils::escape(Value2) << std::endl;
-            return clang_mutate::CreateTU(CI);
+            return clang_mutate::CreateTU(CI, Decls);
         }
         if (InsertV) {
             MutateCmd << "insert 0 " << Stmt1 << " "
                       << Utils::escape(Value1) << std::endl;
-            return clang_mutate::CreateTU(CI);
+            return clang_mutate::CreateTU(CI, Decls);
         }
         if (Interactive) {
-            return clang_mutate::CreateTU(CI);
+            return clang_mutate::CreateTU(CI, Decls);
         }
         
         errs() << "Must supply one of:\n";

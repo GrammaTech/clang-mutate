@@ -41,8 +41,9 @@ class BuildTU
     typedef std::set<clang::IdentifierInfo*> VarScope;
     
   public:
-    BuildTU(CompilerInstance * _ci)
+    BuildTU(CompilerInstance * _ci, bool _allowDeclAsts)
         : ci(_ci)
+        , allowDeclAsts(_allowDeclAsts)
         , sm(_ci->getSourceManager())
         , asts(TUs.back().astTable)
         , decl_scopes(TUs.back().scopes)
@@ -227,11 +228,9 @@ class BuildTU
                 decl_scopes.declare(static_cast<VarDecl*>(d)->getIdentifier());
             Requirements reqs(ci, decl_scopes.get_names_in_scope());
             reqs.TraverseDecl(d);
-#ifdef ALLOW_DECL_ASTS
+            if (allowDeclAsts)
             makeAst(d, reqs);
-#else
             processFunctionDecl(d, asts.nextAstRef());
-#endif
         }
         return true;
     }
@@ -308,10 +307,11 @@ class BuildTU
     std::map<AstRef, SourceRange> & function_ranges;
     std::vector<std::pair<Decl*,AstRef> > functions;
     size_t decl_depth;
+    bool allowDeclAsts;
 };
 
 } // namespace clang_mutate
 
 std::unique_ptr<clang::ASTConsumer>
-clang_mutate::CreateTU(clang::CompilerInstance * CI)
-{ return std::unique_ptr<clang::ASTConsumer>(new BuildTU(CI)); }
+clang_mutate::CreateTU(clang::CompilerInstance * CI, bool AllowDeclAsts)
+{ return std::unique_ptr<clang::ASTConsumer>(new BuildTU(CI, AllowDeclAsts)); }
