@@ -22,6 +22,16 @@ using namespace clang;
 
 std::vector<TU> TUs;
 
+template <class T>
+bool is_stmt(T *clang_obj) {
+    return false;
+}
+
+template <>
+bool is_stmt(Stmt *clang_obj) {
+    return true;
+}
+
 class BuildTU
     : public ASTConsumer
     , public RecursiveASTVisitor<BuildTU>
@@ -129,8 +139,9 @@ class BuildTU
 
         SourceRange sr = clang_obj->getSourceRange();
         bool is_full_stmt =
-            parent == NoAst ||
-            asts[parent].className() == "CompoundStmt";
+            (parent == NoAst && is_stmt(clang_obj)) ||
+            (parent != NoAst && (asts[parent].isDecl() ||
+                                 asts[parent].className() == "CompoundStmt"));
         SourceRange nsr = Utils::normalizeSourceRange(sr,
                                                       is_full_stmt,
                                                       sm,
