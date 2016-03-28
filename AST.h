@@ -199,13 +199,11 @@ private:
 class AstTable
 {
 public:
-    AstRef create(clang::Stmt * stmt, Requirements & reqs,
-                  clang::ASTContext * context)
-    { return impl_create(stmt, reqs, context); }
+    AstRef create(clang::Stmt * stmt, Requirements & reqs)
+    { return impl_create(stmt, reqs); }
 
-    AstRef create(clang::Decl * decl, Requirements & reqs,
-                  clang::ASTContext * context)
-    { return impl_create(decl, reqs, context); }
+    AstRef create(clang::Decl * decl, Requirements & reqs)
+    { return impl_create(decl, reqs); }
 
     Ast& ast(AstRef ref);
     Ast& operator[](AstRef ref);
@@ -219,8 +217,7 @@ public:
 
 private:
     template <typename T>
-        AstRef impl_create(T * clang_obj, Requirements & reqs,
-                           clang::ASTContext * context);
+        AstRef impl_create(T * clang_obj, Requirements & reqs);
 
     std::vector<Ast> asts;
 };

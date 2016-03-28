@@ -11,8 +11,7 @@ AstRef AstTable::nextAstRef() const
 { return asts.size() + 1; }
 
 template <typename T>
-AstRef AstTable::impl_create(T * clang_obj, Requirements & required,
-                             ASTContext * context)
+AstRef AstTable::impl_create(T * clang_obj, Requirements & required)
 {
     AstRef ref = nextAstRef();
     AstRef parent = required.parent();
@@ -56,16 +55,14 @@ AstRef AstTable::impl_create(T * clang_obj, Requirements & required,
     }
     
     if (newAst.isDecl() && isa<FieldDecl>(newAst.asDecl())) {
-        newAst.setFieldDeclProperties(context);
+        newAst.setFieldDeclProperties(required.astContext());
     }
 
     return ref;
 }
 
-template AstRef AstTable::impl_create<Stmt>(Stmt * stmt, Requirements & reqs,
-                                            ASTContext * context);
-template AstRef AstTable::impl_create<Decl>(Decl * stmt, Requirements & reqs,
-                                            ASTContext * context);
+template AstRef AstTable::impl_create<Stmt>(Stmt * stmt, Requirements & reqs);
+template AstRef AstTable::impl_create<Decl>(Decl * stmt, Requirements & reqs);
 
 Ast& AstTable::ast(AstRef ref)
 {

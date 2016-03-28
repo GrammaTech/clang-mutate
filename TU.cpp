@@ -152,7 +152,7 @@ class BuildTU
                                 sr,
                                 nsr);
         
-        AstRef ast = asts.create(clang_obj, required, Context);
+        AstRef ast = asts.create(clang_obj, required);
         spine.push_back(ast);
         return ast;
     }
@@ -162,7 +162,7 @@ class BuildTU
         if (Utils::ShouldVisitStmt(sm, ci->getLangOpts(),
                                    sm.getMainFileID(), s))
         {
-            Requirements reqs(ci, decl_scopes.get_names_in_scope());
+            Requirements reqs(ci, Context, decl_scopes.get_names_in_scope());
             reqs.TraverseStmt(s);
             
             AstRef ast = makeAst(s, reqs);
@@ -226,7 +226,7 @@ class BuildTU
         {
             if (isa<VarDecl>(d))
                 decl_scopes.declare(static_cast<VarDecl*>(d)->getIdentifier());
-            Requirements reqs(ci, decl_scopes.get_names_in_scope());
+            Requirements reqs(ci, Context, decl_scopes.get_names_in_scope());
             reqs.TraverseDecl(d);
             if (allowDeclAsts)
             makeAst(d, reqs);

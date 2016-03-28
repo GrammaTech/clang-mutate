@@ -37,6 +37,7 @@ public:
 
     Requirements(
         clang::CompilerInstance * _ci,
+        clang::ASTContext * astContext,
         const std::vector<std::vector<std::string> > & scopes);
     
     std::set<VariableInfo> variables()   const;
@@ -87,12 +88,16 @@ public:
     void setReplacements(const Replacements & r)
     { m_replacements = r; }
     
+    clang::ASTContext * astContext()
+    { return m_ast_context; }
+
 private:
 
     void gatherMacro(clang::Stmt * stmt);
     void addAddlType(const clang::QualType & qt);
 
     clang::CompilerInstance * ci;
+    clang::ASTContext * m_ast_context;
     std::set<BindingCtx::Binding> m_vars;
     std::set<FunctionInfo> m_funs;
     std::set<std::string> m_includes;
