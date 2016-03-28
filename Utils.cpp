@@ -267,7 +267,9 @@ bool IsGuardStmt(Stmt *S, Stmt *P)
 std::string extendTextForFullStmt(const std::string & text)
 {
     size_t last = text.size() - 1;
-    if (text.empty() || text[last] == '}' || text[last] == ';')
+    while (last > 0 && isspace(text[last]))
+        --last;
+    if (text.empty() || last == 0 || text[last] == '}' || text[last] == ';')
         return text;
     return text + ";";
 }

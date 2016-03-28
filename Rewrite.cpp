@@ -67,19 +67,10 @@ RewritingOpPtr setText(AstRef ast, const std::string & text)
 
 RewritingOpPtr setRangeText (Ast & ast1, Ast & ast2, const std::string & text)
 {
-    SourceRange r;
-    AstRef endAst;
-    if (ast1.counter() > ast2.counter()) {
-        r = SourceRange(ast2.normalizedSourceRange().getBegin(),
-                        ast1.normalizedSourceRange().getEnd());
-        endAst = ast1.counter();
-    }
-    else {
-        r = SourceRange(ast1.normalizedSourceRange().getBegin(),
-                        ast2.normalizedSourceRange().getEnd());
-        endAst = ast2.counter();
-    }
-    return new SetRangeOp(r, endAst, text);
+    return new SetRangeOp(SourceRange(ast1.normalizedSourceRange().getBegin(),
+                                      ast2.normalizedSourceRange().getEnd()),
+                          ast2.counter(),
+                          text);
 }
 
 RewritingOpPtr setRangeText (SourceRange r, const std::string & text)
