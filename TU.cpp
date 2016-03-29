@@ -43,13 +43,13 @@ class BuildTU
   public:
     BuildTU(CompilerInstance * _ci, bool _allowDeclAsts)
         : ci(_ci)
-        , allowDeclAsts(_allowDeclAsts)
         , sm(_ci->getSourceManager())
         , asts(TUs.back().astTable)
         , decl_scopes(TUs.back().scopes)
         , protos(TUs.back().aux["protos"])
         , decls(TUs.back().aux["decls"])
         , function_ranges(TUs.back().function_ranges)
+        , allowDeclAsts(_allowDeclAsts)
     {}
 
     ~BuildTU() {}
