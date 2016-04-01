@@ -76,6 +76,7 @@ OPTION( File2       , std::string , "file2"        , "file containing value2");
 OPTION( Fields      , std::string , "fields"       , "comma-delimited list of JSON fields to output");
 OPTION( Aux         , std::string , "aux"          , "comma-delimited list of auxiliary JSON entry kinds to output");
 OPTION( Silent      , bool        , "silent"       , "do not print prompts in interactive mode");
+OPTION( CtrlChar    , bool        , "ctrl"         , "print a control character after output in the interactive mode");
 OPTION( Binary      , std::string , "binary"       , "binary with DWARF information for line->address mapping");
 OPTION( DwarfFilepathMap, std::string, "dwarf-filepath-mapping", "mapping of filepaths used in compilation -> new filepath");
 OPTION( Decls       , bool        , "decls"        , "create ASTs for decls");
@@ -226,7 +227,7 @@ int main(int argc, const char **argv) {
     int result = Tool.run(newFAF<ActionFactory>(&Factory, &Factory).get());
 
     if (Interactive) {
-        clang_mutate::interactive_flags["ctrl"  ] = false;
+        clang_mutate::interactive_flags["ctrl"  ] = CtrlChar;
         clang_mutate::interactive_flags["prompt"] = !Silent;
         clang_mutate::runInteractiveSession(std::cin);
     }
