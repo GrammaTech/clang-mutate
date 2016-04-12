@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# Test that a block starts a new scope.
+#
+. $(dirname $0)/common
+
+contains $(run_scopes -json | json_filter counter 7 | jshon -e scopes -e 0 -e 0) \
+         "inner"

@@ -95,7 +95,10 @@ TESTS =	help-text-appears				\
 	aux-includes-expected-entries                   \
 	aux-excludes-expected-entries                   \
 	null-finds-stdlib                               \
-	null-has-no-macros
+	null-has-no-macros				\
+	scopes-block-starts-scope			\
+	scopes-function-args-are-local			\
+	scopes-function-body-starts-scope
 
 etc/hello: etc/hello.c
 	$(CC) -g -O0 $< -o $@

@@ -25,6 +25,8 @@ AUX=etc/aux.c
 
 NULLC=etc/null.c
 
+SCOPES=etc/scopes.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -39,6 +41,9 @@ run_aux(){
 
 run_null(){
     clang-mutate "$@" $NULLC --; }
+
+run_scopes(){
+    clang-mutate "$@" $SCOPES --; }
 
 json_filter(){
     cat -|jshon -a -j|grep "\"${1}\":${2}\(,\|}\)"; }

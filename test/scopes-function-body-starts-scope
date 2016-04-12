@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# Test that a function body has its own scope.
+#
+. $(dirname $0)/common
+
+contains $(run_scopes -json | json_filter counter 7 | jshon -e scopes -e 1 -e 0) \
+         "local"

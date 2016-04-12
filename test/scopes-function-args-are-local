@@ -1,0 +1,12 @@
+#!/bin/bash
+#
+# Test that function args are in a local scope.
+#
+. $(dirname $0)/common
+
+OUTPUT=$(run_scopes -json | json_filter counter 7)
+
+contains $(echo $OUTPUT | jshon -e scopes -e 2 -e 0) \
+         "funarg"
+contains $(echo $OUTPUT | jshon -C -e scopes -e 3 -e 0) \
+         "global"

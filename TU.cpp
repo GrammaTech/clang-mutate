@@ -267,9 +267,8 @@ class BuildTU
         if (Utils::ShouldVisitDecl(sm, ci->getLangOpts(),
                                    sm.getMainFileID(), d))
         {
-            PTNode pos;
             if (begins_pseudoscope(d)) {
-                pos = decl_scopes.current_scope_position();
+                decl_scopes.enter_scope(NoAst);
             }
             size_t original_spine_size = spine.size();
 
@@ -283,7 +282,7 @@ class BuildTU
                 spine.pop_back();
 
             if (begins_pseudoscope(d)) {
-                decl_scopes.restore_scope_position(pos);
+                decl_scopes.exit_scope();
             }
             return keep_going;
         }
