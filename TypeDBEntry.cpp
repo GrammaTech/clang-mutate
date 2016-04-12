@@ -218,8 +218,10 @@ static Hash define_type(
         return hash;
     }
     
-    else if (t->isStructureType()) {
-        const RecordType * rt = t->getAsStructureType();
+    else if (t->isStructureType() || t->isUnionType()) {
+        const RecordType * rt = t->isStructureType() ? 
+                                t->getAsStructureType() :
+                                t->getAsUnionType();
         RecordDecl * decl = rt->getDecl();
         RecordDecl * rd = decl->getDefinition();
 
@@ -234,7 +236,8 @@ static Hash define_type(
         
         if (rd->getNameAsString() != "") {
             TypeDBEntry fdecl = TypeDBEntry::mkFwdDecl(rd->getNameAsString(),
-                                                 "struct");
+                                                       (t->isStructureType() ?
+                                                        "struct" : "union"));
             // Temporarily make this Type* reference the hash of the
             // forward declaration.
             seen[t] = fdecl.hash();
