@@ -27,7 +27,7 @@ class Ast
 public:
     bool isDecl() const { return (m_decl != NULL); }
     clang::Decl * asDecl() const { return m_decl; }
-    
+
     bool isStmt() const { return (m_stmt != NULL); }
     clang::Stmt * asStmt() const { return m_stmt; }
 
@@ -44,6 +44,12 @@ public:
     std::string className() const
     { return m_class; }
 
+    std::string declares() const
+    { return m_declares; }
+
+    void setDeclares(const std::string & decl)
+    { m_declares = decl; }
+
     bool isGuard() const
     { return m_guard; }
 
@@ -58,7 +64,7 @@ public:
 
     void setMacros(const std::set<Macro> & macros)
     { m_macros = macros; }
-    
+
     std::set<std::string> includes() const
     { return m_includes; }
 
@@ -67,7 +73,7 @@ public:
 
     std::set<Macro> macros() const
     { return m_macros; }
-    
+
     PTNode scopePosition() const
     { return m_scope_pos; }
 
@@ -97,29 +103,29 @@ public:
 
     bool canHaveAssociatedBytes() const
     { return m_can_have_bytes; }
-    
-    std::string srcFilename(TU & tu) const;
+
+    std::string srcFilename() const;
 
     bool binaryAddressRange(
-        TU & tu, BinaryAddressMap::BeginEndAddressPair & addrRange) const;
+        BinaryAddressMap::BeginEndAddressPair & addrRange) const;
 
     bool isFullStmt() const
     { return m_full_stmt; }
 
     void setIsFullStmt(bool yn)
     { m_full_stmt = yn; }
-    
+
     void setFieldDeclProperties(clang::ASTContext * context);
 
     AstRef counter() const
     { return m_counter; }
-    
+
     AstRef parent() const
     { return m_parent; }
 
     std::vector<AstRef> children() const
     { return m_children; }
-    
+
     typedef std::vector<AstRef>::const_iterator child_iterator;
 
     child_iterator begin_children() const
@@ -128,9 +134,8 @@ public:
     child_iterator end_children() const
     { return m_children.end(); }
 
-    picojson::value toJSON(const std::set<std::string> & keys,
-                           TU & tu) const;
-                           
+    picojson::value toJSON(const std::set<std::string> & keys) const;
+
     Ast(clang::Stmt * _stmt,
         AstRef _counter,
         AstRef _parent,
@@ -146,11 +151,21 @@ public:
         clang::SourceRange nr,
         clang::PresumedLoc pBegin,
         clang::PresumedLoc pEnd);
-    
+
     void add_child(AstRef child)
     { m_children.push_back(child); }
-    
+
+    static AstRef create(clang::Stmt * stmt, Requirements & reqs)
+    { return impl_create(stmt, reqs); }
+
+    static AstRef create(clang::Decl * decl, Requirements & reqs)
+    { return impl_create(decl, reqs); }
+
 private:
+
+    template <typename T>
+        static AstRef impl_create(T * clang_obj, Requirements & reqs);
+
     clang::Stmt * m_stmt;
     clang::Decl * m_decl;
     AstRef m_counter;
@@ -170,11 +185,12 @@ private:
     // making it harder to notice bugs where we try to
     // access vanished data.
     //
-    std::string m_class;    
+    std::string m_class;
     clang::SourceRange m_range;
     clang::SourceRange m_normalized_range;
     clang::PresumedLoc m_begin_loc;
     clang::PresumedLoc m_end_loc;
+    std::string m_declares;
     bool m_guard;
     std::set<Hash> m_types;
     std::set<std::string> m_includes;
@@ -195,33 +211,6 @@ private:
     unsigned m_bit_field_width;
     unsigned long m_array_length;
 };
-
-class AstTable
-{
-public:
-    AstRef create(clang::Stmt * stmt, Requirements & reqs)
-    { return impl_create(stmt, reqs); }
-
-    AstRef create(clang::Decl * decl, Requirements & reqs)
-    { return impl_create(decl, reqs); }
-
-    Ast& ast(AstRef ref);
-    Ast& operator[](AstRef ref);
-
-    AstRef nextAstRef() const;
-    size_t count() const;
-
-    typedef std::vector<Ast>::iterator iterator;
-    iterator begin() { return asts.begin(); }
-    iterator end()   { return asts.end();   }
-
-private:
-    template <typename T>
-        AstRef impl_create(T * clang_obj, Requirements & reqs);
-
-    std::vector<Ast> asts;
-};
-
 
 } // namespace clang_mutate
 

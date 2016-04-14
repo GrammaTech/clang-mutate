@@ -1,6 +1,7 @@
 
 #include "Requirements.h"
 #include "TypeDBEntry.h"
+#include "TU.h"
 
 #include "clang/Lex/Lexer.h"
 #include "clang/Lex/Preprocessor.h"
@@ -9,10 +10,11 @@ using namespace clang_mutate;
 using namespace clang;
 
 Requirements::Requirements(
-    CompilerInstance * _ci,
+    TURef _tu,
     clang::ASTContext * astContext,
     const std::vector<std::vector<std::string> > & scopes)
-    : ci(_ci)
+    : m_tu(_tu)
+    , ci(TUs[_tu]->ci)
     , m_ast_context(astContext)
     , m_vars(), m_funs(), m_includes(), addl_types(), m_macros()
     , m_text(""), m_parent(NoAst), m_scope_pos(NoNode)
@@ -228,3 +230,6 @@ clang::PresumedLoc Requirements::endLoc() const
 
 Replacements Requirements::replacements() const
 { return m_replacements; }
+
+TURef Requirements::tu() const
+{ return m_tu; }

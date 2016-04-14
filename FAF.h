@@ -32,7 +32,8 @@ bool FAF::runInvocation(clang::CompilerInvocation * Invocation,
                         clang::DiagnosticConsumer * DiagConsumer)
 {
     clang::CompilerInstance * Compiler = new clang::CompilerInstance;
-    clang_mutate::TUs.push_back(clang_mutate::TU(Compiler));
+    clang_mutate::TURef tuid = clang_mutate::TUs.size();
+    clang_mutate::TUs.push_back(new clang_mutate::TU(Compiler, tuid));
         
     Compiler->setInvocation(Invocation);
     Compiler->setFileManager(Files);

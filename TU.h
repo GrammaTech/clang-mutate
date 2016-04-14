@@ -16,18 +16,26 @@ namespace clang_mutate {
     
 struct TU
 {
-    TU(clang::CompilerInstance * _ci)
-        : ci(_ci), astTable(), addrMap() {}
+    TU(clang::CompilerInstance * _ci, TURef _tuid)
+      : ci(_ci)
+      , tuid(_tuid)
+      , asts()
+      , addrMap()
+    {}
+    ~TU();
     clang::CompilerInstance * ci;
+    TURef tuid;
     bool allowDeclAsts;
-    AstTable astTable;
+    std::vector<Ast*> asts;
     BinaryAddressMap addrMap;
     Scope scopes;
     std::map<std::string, std::vector<picojson::value> > aux;
     std::map<AstRef, clang::SourceRange> function_ranges;
+
+    AstRef nextAstRef() const;
 };
 
-extern std::vector<TU> TUs;
+extern std::vector<TU*> TUs;
 
 std::unique_ptr<clang::ASTConsumer>
 CreateTU(clang::CompilerInstance * CI, bool AllowDeclAsts);

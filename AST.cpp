@@ -7,75 +7,77 @@
 using namespace clang_mutate;
 using namespace clang;
 
-AstRef AstTable::nextAstRef() const
-{ return asts.size() + 1; }
+const AstRef clang_mutate::NoAst;
+
+TU & AstRef::tu() const
+{ return *TUs[m_tu]; }
+
+Ast * AstRef::operator->() const
+{ return TUs[m_tu]->asts[m_index - 1]; }
+
+Ast & AstRef::operator*() const
+{ return *TUs[m_tu]->asts[m_index - 1]; }
+
+std::string AstRef::to_string() const
+{
+    std::ostringstream oss;
+    oss << m_tu << "." << m_index;
+    return oss.str();
+}
 
 template <typename T>
-AstRef AstTable::impl_create(T * clang_obj, Requirements & required)
+AstRef Ast::impl_create(T * clang_obj, Requirements & required)
 {
-    AstRef ref = nextAstRef();
+    TU & tu = *TUs[required.tu()];
+    AstRef ref = tu.nextAstRef();
     AstRef parent = required.parent();
-    asts.push_back(Ast(clang_obj,
-                       ref,
-                       required.parent(),
-                       required.sourceRange(),
-                       required.normalizedSourceRange(),
-                       required.beginLoc(),
-                       required.endLoc()));
+    tu.asts.push_back(new Ast(clang_obj,
+                              ref,
+                              required.parent(),
+                              required.sourceRange(),
+                              required.normalizedSourceRange(),
+                              required.beginLoc(),
+                              required.endLoc()));
     if (parent != NoAst)
-        ast(parent).add_child(ref);
+        parent->add_child(ref);
 
-    Ast & newAst = ast(ref);
-    newAst.setIncludes(required.includes());
-    newAst.setMacros(required.macros());
-    newAst.setTypes(required.types());
-    newAst.setScopePosition(required.scopePos());
-    newAst.setFreeVariables(required.variables());
-    newAst.setFreeFunctions(required.functions());
-    newAst.setReplacements(required.replacements());
+    ref->setIncludes(required.includes());
+    ref->setMacros(required.macros());
+    ref->setTypes(required.types());
+    ref->setScopePosition(required.scopePos());
+    ref->setFreeVariables(required.variables());
+    ref->setFreeFunctions(required.functions());
+    ref->setReplacements(required.replacements());
 
     bool is_full_stmt =
-        (parent == NoAst && newAst.isStmt()) ||
-        (parent != NoAst && (ast(parent).isDecl() ||
-                             ast(parent).className() == "CompoundStmt"));
-    newAst.setIsFullStmt(is_full_stmt);
-    
+        (parent == NoAst && ref->isStmt()) ||
+        (parent != NoAst && (parent->isDecl() ||
+                             parent->className() == "CompoundStmt"));
+    ref->setIsFullStmt(is_full_stmt);
+
     Stmt * parentStmt = parent == NoAst
        ? NULL
-        : ast(parent).asStmt();
-    
-    if (newAst.isStmt()) {
+        : parent->asStmt();
+
+    if (ref->isStmt()) {
         bool has_bytes = Utils::ShouldAssociateBytesWithStmt(
-            newAst.asStmt(),
+            ref->asStmt(),
             parentStmt);
-        newAst.setCanHaveAssociatedBytes(has_bytes);
+        ref->setCanHaveAssociatedBytes(has_bytes);
     }
     else {
-        newAst.setCanHaveAssociatedBytes(false);
+        ref->setCanHaveAssociatedBytes(false);
     }
-    
-    if (newAst.isDecl() && isa<FieldDecl>(newAst.asDecl())) {
-        newAst.setFieldDeclProperties(required.astContext());
+
+    if (ref->isDecl() && isa<FieldDecl>(ref->asDecl())) {
+        ref->setFieldDeclProperties(required.astContext());
     }
 
     return ref;
 }
 
-template AstRef AstTable::impl_create<Stmt>(Stmt * stmt, Requirements & reqs);
-template AstRef AstTable::impl_create<Decl>(Decl * stmt, Requirements & reqs);
-
-Ast& AstTable::ast(AstRef ref)
-{
-    assert (ref != 0 && ref <= count());
-    return asts[ref - 1];
-}
-
-Ast& AstTable::operator[](AstRef ref)
-{ return ast(ref); }
-
-size_t AstTable::count() const
-{ return asts.size(); }
-
+template AstRef Ast::impl_create<Stmt>(Stmt * stmt, Requirements & reqs);
+template AstRef Ast::impl_create<Decl>(Decl * stmt, Requirements & reqs);
 
 #define SET_JSON(k, v)                                    \
     do {                                                  \
@@ -84,25 +86,26 @@ size_t AstTable::count() const
       } \
     } while(false)
 
-std::string Ast::srcFilename(TU & tu) const
+std::string Ast::srcFilename() const
 {
+    TU & tu = m_counter.tu();
     SourceManager & sm = tu.ci->getSourceManager();
     return Utils::safe_realpath(
         sm.getFileEntryForID(sm.getMainFileID())->getName());
 }
 
 bool Ast::binaryAddressRange(
-    TU & tu,
     BinaryAddressMap::BeginEndAddressPair & addrRange) const
 {
+    TU & tu = m_counter.tu();
     if (tu.addrMap.isEmpty())
         return false;
-    
+
     unsigned int beginSrcLine = m_begin_loc.getLine();
     unsigned int   endSrcLine = m_end_loc.getLine();
-    
+
     return tu.addrMap.lineRangeToAddressRange(
-        srcFilename(tu),
+        srcFilename(),
         std::make_pair(beginSrcLine, endSrcLine),
         addrRange);
 }
@@ -132,22 +135,26 @@ void Ast::setFieldDeclProperties(ASTContext * context)
 }
 
 picojson::value Ast::toJSON(
-    const std::set<std::string> & keys,
-    TU & tu) const
+    const std::set<std::string> & keys) const
 {
+    TU & tu = m_counter.tu();
     std::map<std::string, picojson::value> ans;
-    
+
     SET_JSON("counter", counter());
     SET_JSON("parent_counter", parent());
     SET_JSON("ast_class", className());
-    
-    SET_JSON("src_file_name", srcFilename(tu));
+
+    SET_JSON("src_file_name", srcFilename());
 
     SET_JSON("is_decl", isDecl());
+
+    if (declares() != "")
+        SET_JSON("declares", declares());
+
     SET_JSON("guard_stmt", isGuard());
 
     SET_JSON("full_stmt", isFullStmt());
-    
+
     if (className() == "CompoundStmt")
         SET_JSON("stmt_list", children());
 
@@ -170,31 +177,21 @@ picojson::value Ast::toJSON(
 
     // Get the original, normalized source text.
     {
-        std::ostringstream oss;
-        std::string err;
-        ChainedOp op = {
-            getTextAs (counter(), "$result", true),
-            echoTo    (oss, "$result")
-        };
-        op.run(tu, err);
-        SET_JSON("orig_text", oss.str());
+        RewriterState state;
+        getTextAs(counter(), "$result", true)->run(state);
+        SET_JSON("orig_text", state.vars["$result"]);
     }
 
     // Get the un-normalized source text, with free
     // variables and functions renamed via x -> (|x|)
     {
-        std::ostringstream oss;
-        std::string err;
-        ChainedOp op = {
-            getTextAs (counter(), "$result"),
-            echoTo    (oss, "$result")
-        };
-        op.run(tu, err);
-        SET_JSON("src_text", m_replacements.apply_to(oss.str()));
+        RewriterState state;
+        getTextAs(counter(), "$result")->run(state);
+        SET_JSON("src_text", m_replacements.apply_to(state.vars["$result"]));
     }
-    
+
     BinaryAddressMap::BeginEndAddressPair addrRange;
-    if (canHaveAssociatedBytes() && binaryAddressRange(tu, addrRange)) {
+    if (canHaveAssociatedBytes() && binaryAddressRange(addrRange)) {
         SET_JSON("binary_file_path", tu.addrMap.getBinaryPath());
         SET_JSON("begin_addr", addrRange.first);
         SET_JSON("end_addr", addrRange.second);
@@ -203,7 +200,7 @@ picojson::value Ast::toJSON(
                      addrRange.first,
                      addrRange.second));
     }
-    
+
     if (m_field_decl) {
         SET_JSON("field_name", m_field_name);
         SET_JSON("base_type", m_base_type);
@@ -233,6 +230,7 @@ Ast::Ast(Stmt * _stmt,
     , m_normalized_range(nr)
     , m_begin_loc(pBegin)
     , m_end_loc(pEnd)
+    , m_declares("")
     , m_guard(false)
     , m_scope_pos(NoNode)
     , m_macros()
@@ -272,6 +270,7 @@ Ast::Ast(Decl * _decl,
     , m_normalized_range(nr)
     , m_begin_loc(pBegin)
     , m_end_loc(pEnd)
+    , m_declares("")
     , m_guard(false)
     , m_scope_pos(NoNode)
     , m_macros()

@@ -1,3 +1,4 @@
+#include "AST.h"
 #include "Rewrite.h"
 #include "Utils.h"
 
@@ -6,46 +7,24 @@
 namespace clang_mutate {
 using namespace clang;
 
-// TODO
-std::string quote_string(const std::string & s)
-{ return s; }
-std::string unquote_string(const std::string & s)
-{ return s; }
-
-bool valid_ast(RewriterState & state, AstRef ast, const std::string & op)
-{
-    if (state.failed)
-        return false;
-    if (ast == NoAst || ast > state.asts.count()) {
-        std::ostringstream oss;
-        oss << "In '" << op << "' operation, AST " << ast
-            << " is outside the valid range of 1 -- "
-            << state.asts.count() << ".";
-        state.fail(oss.str());
-        return false;
-    }
-    return true;
-}
-
 std::string getAstText(
-    CompilerInstance * ci,
-    AstTable & asts,
     AstRef ast,
     bool normalized)
 {
-    SourceManager & sm = ci->getSourceManager();
+    TU & tu = ast.tu();
+    SourceManager & sm = tu.ci->getSourceManager();
     SourceRange r = normalized
-        ? asts[ast].normalizedSourceRange()
-        : asts[ast].sourceRange();
+        ? ast->normalizedSourceRange()
+        : ast->sourceRange();
     SourceLocation begin = r.getBegin();
     SourceLocation end = Lexer::getLocForEndOfToken(r.getEnd(),
                                                     0,
                                                     sm,
-                                                    ci->getLangOpts());
+                                                    tu.ci->getLangOpts());
     return Lexer::getSourceText(
         CharSourceRange::getCharRange(begin, end),
         sm,
-        ci->getLangOpts());
+        tu.ci->getLangOpts());
 }
 
 void RewriterState::fail(const std::string & msg)
@@ -65,48 +44,85 @@ RewritingOpPtr getTextAs(AstRef ast,
 RewritingOpPtr setText(AstRef ast, const std::string & text)
 { return new SetOp(ast, text); }
 
-RewritingOpPtr setRangeText (Ast & ast1, Ast & ast2, const std::string & text)
+RewritingOpPtr setRangeText (AstRef ast1, AstRef ast2, const std::string & text)
 {
-    return new SetRangeOp(SourceRange(ast1.normalizedSourceRange().getBegin(),
-                                      ast2.normalizedSourceRange().getEnd()),
-                          ast2.counter(),
+    return new SetRangeOp(ast2.tuid(),
+                          SourceRange(ast1->normalizedSourceRange().getBegin(),
+                                      ast2->normalizedSourceRange().getEnd()),
+                          ast2->counter(),
                           text);
 }
 
-RewritingOpPtr setRangeText (SourceRange r, const std::string & text)
-{ return new SetRangeOp(r, NoAst, text); }
+RewritingOpPtr setRangeText (TURef tu, SourceRange r, const std::string & text)
+{ return new SetRangeOp(tu, r, NoAst, text); }
 
 RewritingOpPtr insertBefore(AstRef ast, const std::string & text)
 { return new InsertOp(ast, text); }
 
-RewritingOpPtr echoTo(std::ostream & os, const std::string & text)
-{ return new EchoOp(text, os); }
+RewritingOpPtr echo(const std::string & text)
+{ return new EchoOp(text); }
 
-RewritingOpPtr printOriginalTo(std::ostream & os)
-{ return new PrintOriginalOp(os); }
+RewritingOpPtr echoTo(const std::string & text, const std::string & var)
+{ return new EchoOp(text, var); }
 
-RewritingOpPtr printModifiedTo(std::ostream & os)
-{ return new PrintModifiedOp(os); }
+RewritingOpPtr printOriginal(TURef tu)
+{ return new PrintOriginalOp(tu); }
 
-RewritingOpPtr annotateWith(Annotator * annotator)
-{ return new AnnotateOp(annotator); }
+RewritingOpPtr printModified(TURef tu)
+{ return new PrintModifiedOp(tu); }
+
+RewritingOpPtr annotateWith(TURef tu, Annotator * annotator)
+{ return new AnnotateOp(tu, annotator); }
 
 RewritingOpPtr chain(const std::vector<RewritingOpPtr> & ops)
 { return new ChainedOp(ops); }
 
-bool RewritingOp::run(TU & tu, std::string & error_message) const
+RewritingOpPtr note(const std::string & text)
+{ return echoTo(text, "$$"); }
+
+RewritingOpPtr reset_buffer(TURef tu)
 {
-    NamedText vars;
-    Rewriter rewriter;
-    SourceManager & sm = tu.ci->getSourceManager();
-    rewriter.setSourceMgr(sm, tu.ci->getLangOpts());
-    RewriterState state(rewriter, vars, tu.ci, tu.astTable);
-    execute(state);
-    if (state.failed) {
-        error_message = state.message;
-        return false;
+    std::vector<TURef> tus;
+    tus.push_back(tu);
+    return new StateManipOp(tus);
+}
+
+RewritingOpPtr reset_buffers()
+{
+    std::vector<TURef> tus;
+    return new StateManipOp(tus);
+}
+
+RewritingOpPtr clear_var(const std::string & var)
+{
+    std::vector<std::string> vars;
+    vars.push_back(var);
+    return new StateManipOp(vars);
+}
+
+RewritingOpPtr clear_vars()
+{
+    std::vector<std::string> vars;
+    return new StateManipOp(vars);
+}
+
+Rewriter & RewriterState::rewriter(TURef tuid)
+{
+    auto search = rewriters.find(tuid);
+    if (search == rewriters.end()) {
+        TU * tu = TUs[tuid];
+        SourceManager & sm = tu->ci->getSourceManager();
+        rewriters[tuid].setSourceMgr(sm, tu->ci->getLangOpts());
+        return rewriters[tuid];
     }
-    return true;
+    return search->second;
+}
+
+bool RewritingOp::run(RewriterState & state) const
+{
+    if (state.failed) return false;
+    execute(state);
+    return !state.failed;
 }
 
 std::string RewritingOp::string_value(
@@ -116,7 +132,7 @@ std::string RewritingOp::string_value(
 {
     return string_value(text,
                         state,
-                        (tgt == NoAst || state.asts[tgt].isFullStmt()));
+                        (tgt == NoAst || tgt->isFullStmt()));
 }
 
 std::string RewritingOp::string_value(
@@ -153,7 +169,7 @@ void ChainedOp::merge(RewritingOpPtr op)
         for (auto p : ch->m_ops) {
             if (first && m_ops.back().second.empty()) {
                 for (auto kvs : p.first) {
-                    for (auto v : kvs.second) { 
+                    for (auto v : kvs.second) {
                         m_ops.back().first[kvs.first].push_back(v);
                     }
                 }
@@ -178,7 +194,7 @@ void ChainedOp::merge(RewritingOpPtr op)
     } break;
     }
 }
-    
+
 void ChainedOp::print(std::ostream & o) const
 {
     o << "{ ";
@@ -198,6 +214,22 @@ void ChainedOp::print(std::ostream & o) const
         }
     }
     o << " }";
+}
+
+bool ChainedOp::edits_tu(TURef & tu) const
+{
+    if (m_ops.empty())
+        return false;
+    const std::pair<Mutations, IO> & last_ops = m_ops.back();
+    const std::vector<RewritingOpPtr> & last_muts
+        = last_ops.first.begin()->second;
+
+    // If this chain ends with an I/O action or contains no mutations, then
+    // this chain does not end with an edit.
+    if (!last_ops.second.empty() || last_muts.empty())
+        return false;
+
+    return last_muts.back()->edits_tu(tu);
 }
 
 void ChainedOp::execute(RewriterState & state) const
@@ -220,46 +252,65 @@ void ChainedOp::execute(RewriterState & state) const
 }
 
 void InsertOp::print(std::ostream & o) const
-{ o << "insert " << quote_string(m_text) << " before " << m_tgt; }
+{ o << "insert " << Utils::escape(m_text) << " before " << m_tgt; }
+
+bool InsertOp::edits_tu(TURef & tu) const
+{ tu = m_tgt.tuid(); return true; }
 
 void InsertOp::execute(RewriterState & state) const
 {
-    if (!valid_ast(state, m_tgt, "insert")) return;
-    SourceRange r = state.asts[m_tgt].normalizedSourceRange();
-    state.rewriter.InsertTextBefore(
+    std::cerr << "[" << m_text << "]" << std::endl;
+    SourceRange r = m_tgt->normalizedSourceRange();
+    state.rewriter(m_tgt.tuid()).InsertTextBefore(
         r.getBegin(),
         StringRef(string_value(m_text, m_tgt, state)));
 }
 
 void SetOp::print(std::ostream & o) const
-{ o << "set " << m_tgt << " to " << quote_string(m_text); }
+{ o << "set " << m_tgt << " to " << Utils::escape(m_text); }
+
+bool SetOp::edits_tu(TURef & tu) const
+{ tu = m_tgt.tuid(); return true; }
 
 void SetOp::execute(RewriterState & state) const
 {
-    if (!valid_ast(state, m_tgt, "set")) return;
-    SourceRange r = state.asts[m_tgt].normalizedSourceRange();
-    state.rewriter.ReplaceText(r,
-                               StringRef(string_value(m_text, m_tgt, state)));
+    SourceRange r = m_tgt->normalizedSourceRange();
+    state.rewriter(m_tgt.tuid())
+      .ReplaceText(r, StringRef(string_value(m_text, m_tgt, state)));
 }
 
 void SetRangeOp::print(std::ostream & o) const
 {
-    o << "setrange {??} " << " to " << quote_string(m_text);
+    o << "setrange {??} " << " to " << Utils::escape(m_text);
 }
+
+bool SetRangeOp::edits_tu(TURef & tu) const
+{ tu = m_tu; return true; }
 
 void SetRangeOp::execute(RewriterState & state) const
 {
-    state.rewriter.ReplaceText(
-        m_range, StringRef(string_value(m_text, m_endAst, state)));
+    state.rewriter(m_tu)
+      .ReplaceText(m_range, StringRef(string_value(m_text, m_endAst, state)));
 }
 
 void EchoOp::print(std::ostream & o) const
-{ o << "echo " << quote_string(m_text); }
+{
+    o << "echo " << Utils::escape(m_text);
+    if (m_var != "")
+        o << " to " << m_var;
+}
 
 void EchoOp::execute(RewriterState & state) const
 {
-    if (state.failed) return;
-    m_os << string_value(m_text, state);
+    if (m_var == "") {
+        std::cout << string_value(m_text, state);
+    }
+    else {
+        std::ostringstream oss;
+        oss << string_value(m_text, state);
+        state.vars[m_var] = oss.str();
+    }
+    state.vars["$$"] = "";
 }
 
 void PrintOriginalOp::print(std::ostream & o) const
@@ -267,9 +318,8 @@ void PrintOriginalOp::print(std::ostream & o) const
 
 void PrintOriginalOp::execute(RewriterState & state) const
 {
-    if (state.failed) return;
-    SourceManager & sm = state.ci->getSourceManager();
-    m_os << sm.getBufferData(sm.getMainFileID()).str();
+    SourceManager & sm = TUs[m_tu]->ci->getSourceManager();
+    state.vars["$$"] = sm.getBufferData(sm.getMainFileID()).str();
 }
 
 void PrintModifiedOp::print(std::ostream & o) const
@@ -277,44 +327,74 @@ void PrintModifiedOp::print(std::ostream & o) const
 
 void PrintModifiedOp::execute(RewriterState & state) const
 {
-    if (state.failed) return;
-    SourceManager & sm = state.ci->getSourceManager();
+    SourceManager & sm = TUs[m_tu]->ci->getSourceManager();
     FileID file = sm.getMainFileID();
-    const RewriteBuffer * buf = state.rewriter.getRewriteBufferFor(file);
-    m_os << std::string(buf->begin(), buf->end());
+    const RewriteBuffer * buf = state.rewriter(m_tu).getRewriteBufferFor(file);
+    state.vars["$$"] = std::string(buf->begin(), buf->end());
 }
 
 void AnnotateOp::print(std::ostream & o) const
 { o << "annotate(" << m_annotate->describe() << ")"; }
 
+bool AnnotateOp::edits_tu(TURef & tu) const
+{ tu = m_tu; return true; }
+
 void AnnotateOp::execute(RewriterState & state) const
 {
-    if (state.failed) return;
-    SourceManager & sm = state.ci->getSourceManager();
-    LangOptions & langOpts = state.ci->getLangOpts();
-    
-    for (auto & ast : state.asts) {
-        SourceRange r = ast.normalizedSourceRange();
+    TU * tu = TUs[m_tu];
+    SourceManager & sm = tu->ci->getSourceManager();
+    LangOptions & langOpts = tu->ci->getLangOpts();
+    Rewriter & rewriter = state.rewriter(m_tu);
+
+    for (auto & ast : tu->asts) {
+        SourceRange r = ast->normalizedSourceRange();
         SourceLocation end = r.getEnd();
 
-        state.rewriter.InsertText(r.getBegin(),
-                                  m_annotate->before(ast),
-                                  false);
-        
+        rewriter.InsertText(r.getBegin(),
+                            m_annotate->before(ast),
+                            false);
+
         unsigned offset = Lexer::MeasureTokenLength(end, sm, langOpts);
-        state.rewriter.InsertText(end.getLocWithOffset(offset),
-                                  m_annotate->after(ast),
-                                  false);
-    }        
+        rewriter.InsertText(end.getLocWithOffset(offset),
+                            m_annotate->after(ast),
+                            false);
+    }
 }
-                       
+
 void GetOp::print(std::ostream & o) const
 { o << (m_normalized ? "get' " : "get ") << m_tgt << " as " << m_var; }
 
 void GetOp::execute(RewriterState & state) const
 {
-    if (!valid_ast(state, m_tgt, "get")) return;
-    state.vars[m_var] = getAstText(state.ci, state.asts, m_tgt, m_normalized);
+    state.vars[m_var] = getAstText(m_tgt, m_normalized);
+    state.vars["$$"] = state.vars[m_var];
+}
+
+void StateManipOp::print(std::ostream & o) const
+{ o << "state-manip"; }
+
+void StateManipOp::execute(RewriterState & state) const
+{
+    if (m_clear_vars) {
+        if (m_vars.empty()) {
+            state.vars.clear();
+        }
+        else {
+            for (auto & v : m_vars) {
+                state.vars.erase(v);
+            }
+        }
+    }
+    if (m_reset_rewrite) {
+        if (m_tus.empty()) {
+            state.rewriters.clear();
+        }
+        else {
+            for (auto & tu : m_tus) {
+                state.rewriters.erase(tu);
+            }
+        }
+    }
 }
 
 } // end namespace clang_mutate

@@ -20,7 +20,16 @@
 namespace clang_mutate {
 using namespace clang;
 
-std::vector<TU> TUs;
+std::vector<TU*> TUs;
+
+TU::~TU()
+{
+    for (auto & ast : asts)
+        delete ast;
+}
+
+AstRef TU::nextAstRef() const
+{ return AstRef(tuid, asts.size() + 1); }
 
 template <class T>
 bool is_stmt(T *clang_obj) {
@@ -44,11 +53,10 @@ class BuildTU
     BuildTU(CompilerInstance * _ci, bool _allowDeclAsts)
         : ci(_ci)
         , sm(_ci->getSourceManager())
-        , asts(TUs.back().astTable)
-        , decl_scopes(TUs.back().scopes)
-        , protos(TUs.back().aux["protos"])
-        , decls(TUs.back().aux["decls"])
-        , function_ranges(TUs.back().function_ranges)
+        , decl_scopes(TUs.back()->scopes)
+        , protos(TUs.back()->aux["protos"])
+        , decls(TUs.back()->aux["decls"])
+        , function_ranges(TUs.back()->function_ranges)
         , allowDeclAsts(_allowDeclAsts)
     {}
 
@@ -141,8 +149,8 @@ class BuildTU
         SourceRange sr = clang_obj->getSourceRange();
         bool is_full_stmt =
             (parent == NoAst && is_stmt(clang_obj)) ||
-            (parent != NoAst && (asts[parent].isDecl() ||
-                                 asts[parent].className() == "CompoundStmt"));
+            (parent != NoAst && (parent->isDecl() ||
+                                 parent->className() == "CompoundStmt"));
         SourceRange nsr = Utils::normalizeSourceRange(sr,
                                                       is_full_stmt,
                                                       sm,
@@ -152,7 +160,7 @@ class BuildTU
                                 sr,
                                 nsr);
         
-        AstRef ast = asts.create(clang_obj, required);
+        AstRef ast = Ast::create(clang_obj, required);
         spine.push_back(ast);
         return ast;
     }
@@ -162,18 +170,20 @@ class BuildTU
         if (Utils::ShouldVisitStmt(sm, ci->getLangOpts(),
                                    sm.getMainFileID(), s))
         {
-            Requirements reqs(ci, Context, decl_scopes.get_names_in_scope());
+            Requirements reqs(TUs.back()->tuid,
+                              Context,
+                              decl_scopes.get_names_in_scope());
             reqs.TraverseStmt(s);
             
             AstRef ast = makeAst(s, reqs);
-            AstRef parent = asts[ast].parent();
+            AstRef parent = ast->parent();
             if (parent != NoAst) {
-                if (asts[parent].isStmt()) {
-                    asts[ast].setIsGuard(
-                        Utils::IsGuardStmt(s, asts[parent].asStmt()));
+                if (parent->isStmt()) {
+                    ast->setIsGuard(
+                        Utils::IsGuardStmt(s, parent->asStmt()));
                 }
-                if (asts[parent].className() == "Function") {
-                    functions.push_back(std::make_pair(asts[parent].asDecl(),
+                if (parent->className() == "Function") {
+                    functions.push_back(std::make_pair(parent->asDecl(),
                                                        ast));
                 }
             }
@@ -224,13 +234,23 @@ class BuildTU
         if (Utils::ShouldVisitDecl(sm, ci->getLangOpts(),
                                    sm.getMainFileID(), d))
         {
-            if (isa<VarDecl>(d))
+            if (isa<VarDecl>(d)) {
                 decl_scopes.declare(static_cast<VarDecl*>(d)->getIdentifier());
-            Requirements reqs(ci, Context, decl_scopes.get_names_in_scope());
+            }
+            if (isa<NamedDecl>(d)) {
+                std::string name = static_cast<NamedDecl*>(d)->getNameAsString();
+                AstRef parent = spine.back();
+                if (parent != NoAst) {
+                    parent->setDeclares(name);
+                }
+            }
+            Requirements reqs(TUs.back()->tuid,
+                              Context,
+                              decl_scopes.get_names_in_scope());
             reqs.TraverseDecl(d);
             if (allowDeclAsts)
-            makeAst(d, reqs);
-            processFunctionDecl(d, asts.nextAstRef());
+                makeAst(d, reqs);
+            processFunctionDecl(d, TUs.back()->nextAstRef());
         }
         return true;
     }
@@ -295,7 +315,6 @@ class BuildTU
     ASTContext * Context;
     CompilerInstance * ci;
     SourceManager & sm;
-    AstTable & asts;
 
     std::vector<AstRef> spine;
 

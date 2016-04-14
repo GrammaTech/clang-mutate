@@ -25,42 +25,43 @@ class RewritingOp;
 typedef ref_ptr<RewritingOp> RewritingOpPtr;
 class Annotator;
 RewritingOpPtr setText      (AstRef ast, const std::string & text);
-RewritingOpPtr setRangeText (Ast & ast1, Ast & ast2, const std::string & text);
-RewritingOpPtr setRangeText (clang::SourceRange r, const std::string & text);
+RewritingOpPtr setRangeText (AstRef ast1, AstRef ast2, const std::string & text);
+RewritingOpPtr setRangeText (TURef tu, clang::SourceRange r, const std::string & text);
 RewritingOpPtr insertBefore (AstRef ast, const std::string & text);
 RewritingOpPtr getTextAs    (AstRef ast,
                              const std::string & var,
                              bool normalized = false);
-RewritingOpPtr echoTo          (std::ostream & os, const std::string & text);
-RewritingOpPtr printModifiedTo (std::ostream & os);
-RewritingOpPtr printOriginalTo (std::ostream & os);
-RewritingOpPtr annotateWith (Annotator * ann);
+RewritingOpPtr echo          (const std::string & text);
+RewritingOpPtr echoTo        (const std::string & text, const std::string & var);
+RewritingOpPtr printModified (TURef tu);
+RewritingOpPtr printOriginal (TURef tu);
+RewritingOpPtr annotateWith  (TURef tu, Annotator * ann);
 RewritingOpPtr chain (const std::vector<RewritingOpPtr> & ops);
+RewritingOpPtr note  (const std::string & text);
+
+RewritingOpPtr reset_buffer(TURef tu);
+RewritingOpPtr reset_buffers();
+RewritingOpPtr clear_var(const std::string & var);
+RewritingOpPtr clear_vars();
 
 typedef std::map<std::string, std::string> NamedText;
 
 struct RewriterState
 {
-    RewriterState(clang::Rewriter & _rewriter,
-                  NamedText & _vars,
-                  clang::CompilerInstance * _ci,
-                  AstTable & _asts)
-        : rewriter(_rewriter)
-        , vars(_vars)
-        , asts(_asts)
+    RewriterState()
+        : vars()
         , failed(false)
         , message("")
-        , ci(_ci)
-    {}
+    { vars["$$"] = ""; }
 
     void fail(const std::string & msg);
 
-    clang::Rewriter &  rewriter;
-    NamedText & vars;
-    AstTable &  asts;
+    clang::Rewriter & rewriter(TURef tu);
+
+    std::map<TURef, clang::Rewriter> rewriters;
+    NamedText   vars;
     bool        failed;
     std::string message;
-    clang::CompilerInstance* ci;
 };
 
 class RewritingOp
@@ -75,19 +76,21 @@ public:
                 , Op_PrintOriginal
                 , Op_SetRange
                 , Op_Annotate
+                , Op_StateManip
     };
 
     RewritingOp() : count(0) {}
-    
+
     virtual OpKind kind() const = 0;
     virtual AstRef target() const = 0;
     virtual void print(std::ostream & o) const = 0;
     virtual void execute(RewriterState & state) const = 0;
+    virtual bool edits_tu(TURef & tu) const { return false; }
     virtual ~RewritingOp() {}
-    
+
     RewritingOpPtr then(RewritingOpPtr that);
 
-    bool run(TU & tu, std::string & error_message) const;
+    bool run(RewriterState & state) const;
 
     std::string string_value(const std::string & text,
                              AstRef tgt,
@@ -105,64 +108,76 @@ typedef std::vector<RewritingOpPtr> RewritingOps;
 class EchoOp : public RewritingOp
 {
 public:
-    EchoOp(const std::string & text,
-           std::ostream & os)
+    EchoOp(const std::string & text)
         : RewritingOp()
         , m_text(text)
-        , m_os(os)
+        , m_var("")
     {}
-    
+
+    EchoOp(const std::string & text, const std::string & var)
+        : RewritingOp()
+        , m_text(text)
+        , m_var(var)
+    {}
+
     OpKind kind() const { return Op_Echo; }
     AstRef target() const { return NoAst; }
     void print(std::ostream & o) const;
     void execute(RewriterState & state) const;
 private:
     std::string m_text;
-    std::ostream & m_os;
+    std::string m_var;
 };
 
 class PrintOriginalOp : public RewritingOp
 {
 public:
-    PrintOriginalOp(std::ostream & os) : RewritingOp(), m_os(os) {}
+    PrintOriginalOp(TURef tu) : RewritingOp(), m_tu(tu) {}
     OpKind kind() const { return Op_PrintOriginal; }
     AstRef target() const { return NoAst; }
     void print(std::ostream & o) const;
     void execute(RewriterState & state) const;
 private:
-    std::ostream & m_os;
+    TURef m_tu;
 };
 
 class PrintModifiedOp : public RewritingOp
 {
 public:
-    PrintModifiedOp(std::ostream & os) : RewritingOp(), m_os(os) {}
+    PrintModifiedOp(TURef tu) : RewritingOp(), m_tu(tu) {}
     OpKind kind() const { return Op_PrintModified; }
     AstRef target() const { return NoAst; }
     void print(std::ostream & o) const;
     void execute(RewriterState & state) const;
 private:
-    std::ostream & m_os;
+    TURef m_tu;
 };
 
 class Annotator {
 public:
     virtual ~Annotator() {}
 
-    virtual std::string before(const Ast & ast);
-    virtual std::string after (const Ast & ast);
+    virtual std::string before(const Ast * ast);
+    virtual std::string after (const Ast * ast);
     virtual std::string describe();
 };
 
 class AnnotateOp : public RewritingOp
 {
 public:
-    AnnotateOp(Annotator * annotate) : RewritingOp(), m_annotate(annotate) {}
+    AnnotateOp(TURef tu,
+               Annotator * annotate)
+        : RewritingOp()
+        , m_tu(tu)
+        , m_annotate(annotate)
+    {}
     OpKind kind() const { return Op_Annotate; }
     AstRef target() const { return NoAst; }
     void print(std::ostream & o) const;
     void execute(RewriterState & state) const;
+    bool edits_tu(TURef & tu) const;
 private:
+    TURef m_tu;
     Annotator * m_annotate;
 };
 
@@ -170,7 +185,7 @@ private:
 class ChainedOp : public RewritingOp
 {
     void merge(RewritingOpPtr op);
-    
+
 public:
     ChainedOp(const RewritingOps & ops)
         : RewritingOp()
@@ -186,6 +201,7 @@ public:
     AstRef target() const { return NoAst; }
     void print(std::ostream & o) const;
     void execute(RewriterState & state) const;
+    bool edits_tu(TURef & tu) const;
 
 private:
 
@@ -206,11 +222,12 @@ public:
         , m_tgt(ast)
         , m_text(text)
     {}
-    
+
     OpKind kind() const { return Op_Insert; }
     AstRef target() const { return m_tgt; }
     void print(std::ostream & o) const;
     void execute(RewriterState & state) const;
+    bool edits_tu(TURef & tu) const;
 
 private:
     AstRef m_tgt;
@@ -229,6 +246,7 @@ public:
     AstRef target() const { return m_tgt; }
     void print(std::ostream & o) const;
     void execute(RewriterState & state) const;
+    bool edits_tu(TURef & tu) const;
 
 private:
     AstRef m_tgt;
@@ -238,21 +256,25 @@ private:
 class SetRangeOp : public RewritingOp
 {
 public:
-    SetRangeOp(clang::SourceRange r,
+    SetRangeOp(TURef tu,
+               clang::SourceRange r,
                AstRef endAst,
                const std::string & text)
         : RewritingOp()
+        , m_tu(tu)
         , m_range(r)
         , m_endAst(endAst)
         , m_text(text)
     {}
-    
+
     OpKind kind() const { return Op_SetRange; }
     AstRef target() const { return m_endAst; }
     void print(std::ostream & o) const;
     void execute(RewriterState & state) const;
+    bool edits_tu(TURef & tu) const;
 
 private:
+    TURef m_tu;
     clang::SourceRange m_range;
     AstRef m_endAst;
     std::string m_text;
@@ -260,14 +282,14 @@ private:
 
 class GetOp : public RewritingOp
 {
-public:  
-GetOp(AstRef ast, const std::string & var, bool normalized)
+public:
+    GetOp(AstRef ast, const std::string & var, bool normalized)
         : RewritingOp()
         , m_tgt(ast)
         , m_var(var)
         , m_normalized(normalized)
     {}
-    OpKind kind() const { return Op_Get; }    
+    OpKind kind() const { return Op_Get; }
     AstRef target() const { return m_tgt; }
     void print(std::ostream & o) const;
     void execute(RewriterState & state) const;
@@ -278,11 +300,36 @@ private:
     bool m_normalized;
 };
 
+class StateManipOp : public RewritingOp
+{
+public:
+    StateManipOp(const std::vector<std::string> & vars)
+        : m_clear_vars(true)
+        , m_vars(vars)
+        , m_reset_rewrite(false)
+        , m_tus()
+    {}
 
-std::string getAstText(
-    clang::CompilerInstance * ci,
-    AstTable & asts,
-    AstRef ast);
+    StateManipOp(const std::vector<TURef> & tus)
+        : m_clear_vars(false)
+        , m_vars()
+        , m_reset_rewrite(true)
+        , m_tus(tus)
+    {}
+
+    OpKind kind() const { return Op_StateManip; }
+    AstRef target() const { return NoAst; }
+    void print(std::ostream & o) const;
+    void execute(RewriterState & state) const;
+
+private:
+    bool m_clear_vars;
+    std::vector<std::string> m_vars;
+    bool m_reset_rewrite;
+    std::vector<TURef> m_tus;
+};
+
+std::string getAstText(AstRef ast, bool normalized);
 
 } // end namespace clang_mutate
 

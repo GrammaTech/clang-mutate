@@ -17,7 +17,7 @@ PICOJSON_INCS := -I third-party/picojson-1.3.0
 PICOJSON_DEFINES := -D PICOJSON_USE_INT64
 LLVM_CONFIG := $(LLVM_HOME)llvm-config$(LLVM_POSTFIX)
 LLVM_DWARFDUMP := $(LLVM_HOME)llvm-dwarfdump$(LLVM_POSTFIX)
-CXXFLAGS := $(shell $(LLVM_CONFIG) --cxxflags) $(RTTIFLAG) $(PICOJSON_INCS) $(PICOJSON_DEFINES) -DLLVM_DWARFDUMP='"$(LLVM_DWARFDUMP)"'
+CXXFLAGS := $(shell $(LLVM_CONFIG) --cxxflags) -I. $(RTTIFLAG) $(PICOJSON_INCS) $(PICOJSON_DEFINES) -DLLVM_DWARFDUMP='"$(LLVM_DWARFDUMP)"'
 LLVMLDFLAGS := $(shell $(LLVM_CONFIG) --ldflags --libs) -ldl
 
 SOURCES = Rewrite.cpp Interactive.cpp Function.cpp Variable.cpp AST.cpp TU.cpp Requirements.cpp Bindings.cpp Renaming.cpp Scopes.cpp Macros.cpp TypeDBEntry.cpp AuxDB.cpp BinaryAddressMap.cpp Json.cpp Utils.cpp clang-mutate.cpp

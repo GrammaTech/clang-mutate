@@ -23,6 +23,8 @@
 
 namespace clang_mutate {
 
+struct TU;
+
 // A traversal to run on each statement in order to gather
 // information about the context required by the statement;
 // for example, what variables appear free, what macros
@@ -36,7 +38,7 @@ public:
     typedef RecursiveASTVisitor<Requirements> base;
 
     Requirements(
-        clang::CompilerInstance * _ci,
+        TURef _tu,
         clang::ASTContext * astContext,
         const std::vector<std::vector<std::string> > & scopes);
     
@@ -53,7 +55,8 @@ public:
     clang::PresumedLoc     beginLoc()    const;
     clang::PresumedLoc     endLoc()      const;
     Replacements           replacements() const;
-    
+    TURef                  tu()          const;
+
     bool VisitStmt(clang::Stmt * expr);
 
     bool VisitExplicitCastExpr(clang::ExplicitCastExpr * expr);
@@ -96,6 +99,7 @@ private:
     void gatherMacro(clang::Stmt * stmt);
     void addAddlType(const clang::QualType & qt);
 
+    TURef m_tu;
     clang::CompilerInstance * ci;
     clang::ASTContext * m_ast_context;
     std::set<BindingCtx::Binding> m_vars;

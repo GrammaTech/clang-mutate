@@ -129,20 +129,25 @@ public:
         if (Json) {
             if (Stmt1) {
                 MutateCmd << "echo [" << std::endl;
-                MutateCmd << "ast 0 " << Stmt1;
+                MutateCmd << "ast 0." << Stmt1;
             }
             else {
                 MutateCmd << "json 0";
             }
             if (!Aux.empty()) {
+                std::string sep = "";
+                MutateCmd << " aux=";
                 for (auto & aux : Utils::split(Aux, ',')) {
-                    MutateCmd << " " << aux;
+                    MutateCmd << sep << aux;
+                    sep = ",";
                 }
             }
             if (!Fields.empty()) {
-                MutateCmd << " keys:";
+                std::string sep = "";
+                MutateCmd << " fields=";
                 for (auto & key : Utils::split(Fields, ',')) {
-                    MutateCmd << " " << key;
+                    MutateCmd << sep << key;
+                    sep = ",";
                 }
             }
             MutateCmd << std::endl;
@@ -152,45 +157,55 @@ public:
             return clang_mutate::CreateTU(CI, Decls);
         }
         if (Cut) {
-            MutateCmd << "cut 0 " << Stmt1 << std::endl;
+            MutateCmd << "cut 0." << Stmt1 << std::endl
+                      << "preview 0" << std::endl;
             return clang_mutate::CreateTU(CI, Decls);
         }
         if (SetRange) {
-            MutateCmd << "setrange 0 "
-                      << Stmt1 << " "
-                      << Stmt2 << " "
-                      << Utils::escape(Value1) << std::endl;
+            MutateCmd << "set-range "
+                      << "0." << Stmt1 << " "
+                      << "0." << Stmt2 << " "
+                      << Utils::escape(Value1) << std::endl
+                      << "preview 0" << std::endl;
             return clang_mutate::CreateTU(CI, Decls);
         }
         if (SetFunc) {
-            MutateCmd << "setfunc 0 "
-                      << Stmt1 << " "
-                      << Utils::escape(Value1) << std::endl;
+            MutateCmd << "setfunc "
+                      << "0." << Stmt1 << " "
+                      << Utils::escape(Value1) << std::endl
+                      << "preview 0" << std::endl;
             return clang_mutate::CreateTU(CI, Decls);
         }
         if (Insert) {
-            MutateCmd << "get    0 " << Stmt1 << " as $stmt" << std::endl
-                      << "insert 0 " << Stmt2 << " $stmt" << std::endl;
+            MutateCmd << "get    0." << Stmt1 << " as $stmt" << std::endl
+                      << "insert 0." << Stmt2 << " $stmt" << std::endl
+                      << "preview 0" << std::endl;
             return clang_mutate::CreateTU(CI, Decls);
         }
         if (Swap) {
-            MutateCmd << "swap 0 " << Stmt1 << " " << Stmt2 << std::endl;
+            MutateCmd << "swap 0." << Stmt1
+                      << " 0." << Stmt2 << std::endl
+                      << "preview 0" << std::endl;
             return clang_mutate::CreateTU(CI, Decls);
         }
         if (Set) {
-            MutateCmd << "set 0 " << Stmt1 << " "
-                      << Utils::escape(Value1) << std::endl;
+            MutateCmd << "set 0." << Stmt1 << " "
+                      << Utils::escape(Value1) << std::endl
+                      << "preview 0" << std::endl;
             return clang_mutate::CreateTU(CI, Decls);
         }
         if (Set2) {
-            MutateCmd << "set 0 "
-                      << Stmt1 << " " << Utils::escape(Value1) << " "
-                      << Stmt2 << " " << Utils::escape(Value2) << std::endl;
+            MutateCmd << "set "
+                      << "0." << Stmt1 << " " << Utils::escape(Value1) << " "
+                      << "0." << Stmt2 << " " << Utils::escape(Value2)
+                      << std::endl
+                      << "preview 0" << std::endl;
             return clang_mutate::CreateTU(CI, Decls);
         }
         if (InsertV) {
-            MutateCmd << "insert 0 " << Stmt1 << " "
-                      << Utils::escape(Value1) << std::endl;
+            MutateCmd << "insert 0." << Stmt1 << " "
+                      << Utils::escape(Value1) << std::endl
+                      << "preview 0" << std::endl;
             return clang_mutate::CreateTU(CI, Decls);
         }
         if (Interactive) {
