@@ -170,7 +170,7 @@ public:
             return clang_mutate::CreateTU(CI, Decls);
         }
         if (SetFunc) {
-            MutateCmd << "setfunc "
+            MutateCmd << "set-func "
                       << "0." << Stmt1 << " "
                       << Utils::escape(Value1) << std::endl
                       << "preview 0" << std::endl;
