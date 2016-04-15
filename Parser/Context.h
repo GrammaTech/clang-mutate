@@ -21,10 +21,9 @@ template <typename P, typename Ctx>
 parsed<typename P::type> parse(Ctx & ctx)
 {
     parsed<typename P::type> ans;
-    if (!ctx.ok()) {
-        ans.ok = false;
+    ans.ok = false;
+    if (!ctx.ok())
         return ans;
-    }
     ans = P::run(ctx);
     if (!ans.ok && ctx.ok())
         ctx.fail(P::describe());
