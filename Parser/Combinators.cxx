@@ -257,9 +257,9 @@ struct whitespace
     template <typename Ctx> static parsed<type> run(Ctx & ctx)
     {
         parsed<type> ans;
-        if (!ctx.get(ans.result))
-            ans.ok = false;
-        ans.ok = isspace(ans.result);
+        ans.ok = ctx.get(ans.result)
+            ? isspace(ans.result)
+            : false;
         return ans;
     }
     static std::string describe() { return " "; }
