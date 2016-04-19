@@ -116,27 +116,30 @@ bool RenameFreeVar::VisitStmt(Stmt * stmt)
           Utils::getImmediateMacroArgCallerRange(
               sm,
               stmt->getSourceRange());
+      if (sm.isInMainFile(sr.getBegin()) &&
+          !sm.isMacroBodyExpansion(sr.getBegin()))
+      {
+        // Not very efficient, but I didn't see a better way to
+        // get the size in characters of a CharSourceRange.
+        CharSourceRange srcRange =
+            CharSourceRange::getCharRange(begin, sr.getBegin());
+        size_t offset = Lexer::getSourceText(
+            srcRange,
+            sm,
+            langOpts,
+            NULL).size();
+        std::string old_str;
+        llvm::raw_string_ostream ss(old_str);
+        stmt->printPretty(ss, 0, PrintingPolicy(langOpts));
+        old_str = ss.str();
+        std::string new_str = name;
 
-      // Not very efficient, but I didn't see a better way to
-      // get the size in characters of a CharSourceRange.
-      CharSourceRange srcRange = CharSourceRange::getCharRange(begin,
-                                                               sr.getBegin());
-      size_t offset = Lexer::getSourceText(
-          srcRange,
-          sm,
-          langOpts,
-          NULL).size();
-      std::string old_str;
-      llvm::raw_string_ostream ss(old_str);
-      stmt->printPretty(ss, 0, PrintingPolicy(langOpts));
-      old_str = ss.str();
-      std::string new_str = name;
-
-      int _;
-      // If the statement is part of a macro expansion, getRangeSize will
-      // return false; we want to skip the rewriting in this case.
-      if (getRangeSize(srcRange, sm, langOpts, _)) {
-          replacements.add(offset, old_str.size(), new_str);
+        int _;
+        // If the statement is part of a macro expansion, getRangeSize will
+        // return false; we want to skip the rewriting in this case.
+        if (getRangeSize(srcRange, sm, langOpts, _)) {
+            replacements.add(offset, old_str.size(), new_str);
+        }
       }
     }
   }
