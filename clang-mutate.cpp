@@ -109,7 +109,8 @@ public:
         }
 
         if (Number) {
-            MutateCmd << "number 0" << std::endl;
+            MutateCmd << "number 0" << std::endl
+                      << "preview 0" << std::endl;
             return clang_mutate::CreateTU(CI, Decls);
         }
         if (Ids) {
@@ -117,7 +118,8 @@ public:
             return clang_mutate::CreateTU(CI, Decls);
         }
         if (Annotate) {
-            MutateCmd << "annotate 0" << std::endl;
+            MutateCmd << "annotate 0" << std::endl
+                      << "preview 0" << std::endl;
             return clang_mutate::CreateTU(CI, Decls);
         }
 
