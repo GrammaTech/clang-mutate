@@ -54,6 +54,7 @@ static cl::extrahelp MoreHelp(
     static cl::opt<type> variable (option, cl::desc(description), cl::cat(ToolCategory))
 
 OPTION( Number      , bool        , "number"       , "number all statements");
+OPTION( NumberF     , bool        , "number-full"  , "number all full statements");
 OPTION( Ids         , bool        , "ids"          , "print count of statement ids");
 OPTION( Annotate    , bool        , "annotate"     , "annotate each statement with its class");
 OPTION( List        , bool        , "list"         , "list every statement's id, class, and range");
@@ -110,6 +111,11 @@ public:
 
         if (Number) {
             MutateCmd << "number 0" << std::endl
+                      << "preview 0" << std::endl;
+            return clang_mutate::CreateTU(CI, Decls);
+        }
+        if (NumberF) {
+            MutateCmd << "number-full 0" << std::endl
                       << "preview 0" << std::endl;
             return clang_mutate::CreateTU(CI, Decls);
         }

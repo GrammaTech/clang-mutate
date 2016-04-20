@@ -364,6 +364,39 @@ struct number_op
     { return { "Annotate each AST with its counter." }; }
 };
 
+class FullCounterAnnotator : public Annotator
+{
+public:
+    virtual ~FullCounterAnnotator() {}
+
+    std::string before(const Ast * ast)
+    {
+        std::ostringstream oss;
+        if (ast->isFullStmt())
+            oss << "/*[" << ast->counter() << ":]*/ ";
+        return oss.str();
+    }
+
+    std::string after(const Ast*) { return ""; }
+
+    std::string describe() { return "full-counter"; }
+};
+
+FullCounterAnnotator fullCounterAnnotator;
+
+extern const char number_full_[] = "number-full";
+struct number_full_op
+{
+    typedef str_<number_full_> command;
+    typedef tokens< command, p_tu > parser;
+
+    static RewritingOpPtr make(TURef const& tuid)
+    { return annotateWith(tuid, &fullCounterAnnotator); }
+
+    static std::vector<std::string> purpose()
+    { return { "Annotate each full AST with its counter." }; }
+};
+
 extern const char list_[] = "list";
 struct list_op
 {

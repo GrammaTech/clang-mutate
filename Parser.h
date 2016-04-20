@@ -112,6 +112,7 @@ struct interactive_op
         , ids_op
         , annotate_op
         , number_op
+        , number_full_op
         , list_op
         , cut_op
         , setrange_op
