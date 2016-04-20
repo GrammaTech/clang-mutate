@@ -148,7 +148,7 @@ picojson::value Ast::toJSON(
 
     SET_JSON("is_decl", isDecl());
 
-    if (declares() != "")
+    if (!declares().empty())
         SET_JSON("declares", declares());
 
     SET_JSON("guard_stmt", isGuard());
@@ -230,7 +230,7 @@ Ast::Ast(Stmt * _stmt,
     , m_normalized_range(nr)
     , m_begin_loc(pBegin)
     , m_end_loc(pEnd)
-    , m_declares("")
+    , m_declares()
     , m_guard(false)
     , m_scope_pos(NoNode)
     , m_macros()
@@ -270,7 +270,7 @@ Ast::Ast(Decl * _decl,
     , m_normalized_range(nr)
     , m_begin_loc(pBegin)
     , m_end_loc(pEnd)
-    , m_declares("")
+    , m_declares()
     , m_guard(false)
     , m_scope_pos(NoNode)
     , m_macros()

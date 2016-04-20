@@ -241,7 +241,7 @@ class BuildTU
                 std::string name = static_cast<NamedDecl*>(d)->getNameAsString();
                 AstRef parent = spine.back();
                 if (parent != NoAst) {
-                    parent->setDeclares(name);
+                    parent->addDeclares(name);
                 }
             }
             Requirements reqs(TUs.back()->tuid,

@@ -44,11 +44,11 @@ public:
     std::string className() const
     { return m_class; }
 
-    std::string declares() const
+    std::vector<std::string> declares() const
     { return m_declares; }
 
-    void setDeclares(const std::string & decl)
-    { m_declares = decl; }
+    void addDeclares(const std::string & decl)
+    { m_declares.push_back(decl); }
 
     bool isGuard() const
     { return m_guard; }
@@ -190,7 +190,7 @@ private:
     clang::SourceRange m_normalized_range;
     clang::PresumedLoc m_begin_loc;
     clang::PresumedLoc m_end_loc;
-    std::string m_declares;
+    std::vector<std::string> m_declares;
     bool m_guard;
     std::set<Hash> m_types;
     std::set<std::string> m_includes;
