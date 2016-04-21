@@ -116,7 +116,7 @@ class BuildTU
         size_t endpos = decl_text.find_last_not_of(" \t\n\r");
         if (endpos != std::string::npos)
             decl_text = decl_text.substr(0, endpos + 1);
-        
+
         // Build a function prototype, which will be added to the
         // global database. We don't actually need the value here.
         AuxDBEntry proto;
@@ -124,6 +124,7 @@ class BuildTU
                          .set("name", F->getNameAsString())
                          .set("text", decl_text)
                          .set("body", body_ast)
+                         .set("stmt_range", body_ast->stmt_range())
                          .set("ret", hash_type(ret.getTypePtr(), ci))
                          .set("void_ret", ret.getTypePtr()->isVoidType())
                          .set("args", args)
@@ -250,7 +251,6 @@ class BuildTU
             reqs.TraverseDecl(d);
             if (allowDeclAsts)
                 makeAst(d, reqs);
-            processFunctionDecl(d, TUs.back()->nextAstRef());
         }
         return true;
     }
@@ -287,6 +287,8 @@ class BuildTU
         if (Utils::ShouldVisitDecl(sm, ci->getLangOpts(),
                                    sm.getMainFileID(), d))
         {
+            AstRef nextAstRef = TUs.back()->nextAstRef();
+            
             if (begins_pseudoscope(d)) {
                 decl_scopes.enter_scope(NoAst);
             }
@@ -296,6 +298,10 @@ class BuildTU
             bool keep_going = base::TraverseDecl(d);
             --decl_depth;
 
+            if (isa<FunctionDecl>(d)) {
+                processFunctionDecl(d, nextAstRef);
+            }
+            
             // If we created a new node, remove it from the spine
             // now that the traversal of this Decl is complete.
             while (spine.size() > original_spine_size)

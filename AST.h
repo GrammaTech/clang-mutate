@@ -123,6 +123,8 @@ public:
     AstRef parent() const
     { return m_parent; }
 
+    std::pair<AstRef, AstRef> stmt_range() const;
+    
     std::vector<AstRef> children() const
     { return m_children; }
 

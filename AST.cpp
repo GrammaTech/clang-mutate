@@ -134,6 +134,15 @@ void Ast::setFieldDeclProperties(ASTContext * context)
     }
 }
 
+std::pair<AstRef, AstRef> Ast::stmt_range() const
+{
+    return std::make_pair(
+        counter(),
+        m_children.empty()
+        ? counter()
+        : m_children.back()->stmt_range().second);
+}
+
 picojson::value Ast::toJSON(
     const std::set<std::string> & keys) const
 {
