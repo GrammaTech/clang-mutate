@@ -1,2 +1,5 @@
 *.tmp
 *.gz
+
+clang-mutate.md
+fields.md
