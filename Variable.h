@@ -39,4 +39,11 @@ template <> inline
 picojson::value to_json(const VariableInfo & v)
 { return v.toJSON(); }
 
+template <>
+struct describe_json<VariableInfo>
+{
+    static std::string str()
+    { return "[\"replacement_name\", num_scopes_to_decl]"; }
+};
+
 #endif

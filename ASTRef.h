@@ -83,4 +83,8 @@ template <> inline
 picojson::value to_json(const clang_mutate::AstRef & ref)
 { return to_json(ref.counter()); }
 
+template <>
+struct describe_json<clang_mutate::AstRef>
+{ static std::string str() { return "ast_counter"; } };
+
 #endif

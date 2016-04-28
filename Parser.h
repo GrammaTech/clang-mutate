@@ -122,6 +122,7 @@ struct interactive_op
         , aux_op
         , ast_op
         , json_op
+        , help_fields_op
         > registered_ops;
 
     typedef RewritingOpPtr type;

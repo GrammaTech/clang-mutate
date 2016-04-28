@@ -9,6 +9,8 @@ using namespace clang;
 
 const AstRef clang_mutate::NoAst;
 
+std::map<std::string, Ast::Field*> Ast::s_ast_fields;
+
 TU & AstRef::tu() const
 { return *TUs[m_tu]; }
 
@@ -79,13 +81,6 @@ AstRef Ast::impl_create(T * clang_obj, Requirements & required)
 template AstRef Ast::impl_create<Stmt>(Stmt * stmt, Requirements & reqs);
 template AstRef Ast::impl_create<Decl>(Decl * stmt, Requirements & reqs);
 
-#define SET_JSON(k, v)                                    \
-    do {                                                  \
-      if (keys.empty() || keys.find(k) != keys.end()) {   \
-          ans[k] = to_json(v);                            \
-      } \
-    } while(false)
-
 std::string Ast::srcFilename() const
 {
     TU & tu = m_counter.tu();
@@ -143,83 +138,54 @@ std::pair<AstRef, AstRef> Ast::stmt_range() const
         : m_children.back()->stmt_range().second);
 }
 
+// Register structs representing all of the AST fields.
+//
+#define FIELD_DEF(Name, T, Descr, Predicate, Body)           \
+    struct Name##_field : public Ast::Field                  \
+    {                                                        \
+        static std::string name() { return #Name; }          \
+        virtual bool has_field(TU & tu, Ast & ast)           \
+        { return Predicate; }                                \
+        static T get(TU & tu, Ast & ast) Body                \
+        virtual picojson::value to_json(TU & tu, Ast & ast)  \
+        { return ::to_json(get(tu, ast)); }                  \
+        virtual std::vector<std::string> purpose()           \
+        { return Utils::split(Descr, '\n'); }                \
+    };
+#include "FieldDefs.cxx"
+
+std::map<std::string, Ast::Field*> & Ast::ast_fields()
+{
+    if (s_ast_fields.empty()) {
+        #define FIELD_DEF(Name, T, Descr, Predicate, Body) \
+            s_ast_fields[Name##_field::name()] = new Name##_field();
+        #include "FieldDefs.cxx"
+    }
+    return s_ast_fields;
+}
+
 picojson::value Ast::toJSON(
     const std::set<std::string> & keys) const
 {
     TU & tu = m_counter.tu();
+    Ast & ast = *m_counter;
     std::map<std::string, picojson::value> ans;
 
-    SET_JSON("counter", counter());
-    SET_JSON("parent_counter", parent());
-    SET_JSON("ast_class", className());
-
-    SET_JSON("src_file_name", srcFilename());
-
-    SET_JSON("is_decl", isDecl());
-
-    if (!declares().empty())
-        SET_JSON("declares", declares());
-
-    SET_JSON("guard_stmt", isGuard());
-
-    SET_JSON("full_stmt", isFullStmt());
-
-    if (className() == "CompoundStmt")
-        SET_JSON("stmt_list", children());
-
-    if (opcode() != "")
-        SET_JSON("opcode", opcode());
-
-    SET_JSON("macros", macros());
-    SET_JSON("includes", includes());
-    SET_JSON("types", types());
-    SET_JSON("unbound_vals", freeVariables());
-    SET_JSON("unbound_funs", freeFunctions());
-
-    SET_JSON("scopes", tu.scopes.get_names_in_scope_from(scopePosition(),
-                                                         1000));
-
-    SET_JSON("begin_src_line", m_begin_loc.getLine());
-    SET_JSON("begin_src_col" , m_begin_loc.getColumn());
-    SET_JSON("end_src_line"  , m_end_loc.getLine());
-    SET_JSON("end_src_col"   , m_end_loc.getColumn());
-
-    // Get the original, normalized source text.
-    {
-        RewriterState state;
-        getTextAs(counter(), "$result", true)->run(state);
-        SET_JSON("orig_text", state.vars["$result"]);
+    for (auto & field : ast_fields()) {
+        if (!keys.empty() && keys.find(field.first) == keys.end())
+            continue;
+        if (field.second->has_field(tu, ast)) {
+            ans[field.first] = field.second->to_json(tu, ast);
+        }
     }
-
-    // Get the un-normalized source text, with free
-    // variables and functions renamed via x -> (|x|)
-    {
-        RewriterState state;
-        getTextAs(counter(), "$result")->run(state);
-        SET_JSON("src_text", m_replacements.apply_to(state.vars["$result"]));
-    }
-
-    BinaryAddressMap::BeginEndAddressPair addrRange;
-    if (canHaveAssociatedBytes() && binaryAddressRange(addrRange)) {
-        SET_JSON("binary_file_path", tu.addrMap.getBinaryPath());
-        SET_JSON("begin_addr", addrRange.first);
-        SET_JSON("end_addr", addrRange.second);
-        SET_JSON("binary_contents",
-                 tu.addrMap.getBinaryContentsAsStr(
-                     addrRange.first,
-                     addrRange.second));
-    }
-
-    if (m_field_decl) {
-        SET_JSON("field_name", m_field_name);
-        SET_JSON("base_type", m_base_type);
-        if (m_bit_field)
-            SET_JSON("bit_field_width", m_bit_field_width);
-        if (m_array_length > 1)
-            SET_JSON("array_length", m_array_length);
-    }
-
     return to_json(ans);
+}
+
+bool Ast::has_bytes() const
+{
+    BinaryAddressMap::BeginEndAddressPair _;
+    return canHaveAssociatedBytes()
+        && binaryAddressRange(_);
 }
 
 Ast::Ast(Stmt * _stmt,

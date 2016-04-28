@@ -52,4 +52,7 @@ std::vector<V> map_values(const std::map<K,V> & m)
     return ans;
 }
 
+template <> struct describe_json<Hash>
+{ static std::string str() { return "hash"; } };
+
 #endif

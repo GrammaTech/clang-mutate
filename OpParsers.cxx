@@ -148,6 +148,34 @@ struct info_op
     { return { "Print information about the loaded translation units." }; }
 };
 
+extern const char help_fields_[] = "?fields";
+struct help_fields_op
+{
+    typedef str_<help_fields_> command;
+    typedef tokens< command > parser;
+
+    static RewritingOpPtr make()
+    {
+        std::ostringstream oss;
+        oss << "JSON representation of ASTs" << std::endl
+            << "---------------------------" << std::endl;
+        oss << "Each AST node is represented by a single JSON object, "
+            << "with the following fields:" << std::endl << std::endl;
+        #define FIELD_DEF(Name, T, Descr, Predicate, Body)           \
+        oss << "  key   = \"" #Name "\"" << std::endl                \
+            << "  value = " << describe_json<T>::str() << std::endl; \
+        for (auto & line : Utils::split(Descr, '\n'))                \
+            oss << "    " << line << std::endl;                      \
+        oss << std::endl;
+        #include "FieldDefs.cxx"
+        return echo(oss.str());
+    }
+
+    static std::vector<std::string> purpose()
+    { return { "Print usage information and definitions"
+               " for AST JSON representation." }; }
+};
+
 extern const char types_[] = "types";
 struct types_op
 {
@@ -564,7 +592,8 @@ struct ast_op
     }
 
     static std::vector<std::string> purpose()
-    { return { "Dump the representation of an AST as JSON." }; }
+    { return { "Dump the representation of an AST as JSON."
+             , "Use '?fields' to get a description of each JSON field." }; }
 };
 
 extern const char json_[] = "json";
@@ -617,7 +646,8 @@ struct json_op
     }
 
     static std::vector<std::string> purpose()
-    { return { "Dump the representation of a translation unit as JSON." }; }
+    { return { "Dump the representation of a translation unit as JSON."
+             , "Use '?fields' to get a description of each JSON field." }; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////

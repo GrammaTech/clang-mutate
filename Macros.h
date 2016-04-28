@@ -96,5 +96,7 @@ template <> inline
 picojson::value to_json(const clang_mutate::Macro & m)
 { return to_json(std::make_pair(m.name(), m.body())); }
 
+template <> struct describe_json<clang_mutate::Macro>
+{ static std::string str() {  return "[name, definition]"; } };
 
 #endif

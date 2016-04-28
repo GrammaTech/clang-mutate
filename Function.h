@@ -40,4 +40,13 @@ template <> inline
 picojson::value to_json(const FunctionInfo & f)
 { return f.toJSON(); }
 
+template <>
+struct describe_json<FunctionInfo>
+{
+    static std::string str()
+    { return "[\"replacement_name\", returns_void?"
+             ", is_variadic?, num_params]";
+    }
+};
+
 #endif

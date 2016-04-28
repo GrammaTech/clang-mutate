@@ -83,6 +83,9 @@ public:
     void setReplacements(const Replacements & r)
     { m_replacements = r; }
 
+    const Replacements & replacements() const
+    { return m_replacements; }
+
     std::string opcode() const
     { return m_opcode; }
 
@@ -106,6 +109,8 @@ public:
 
     std::string srcFilename() const;
 
+    bool has_bytes() const;
+
     bool binaryAddressRange(
         BinaryAddressMap::BeginEndAddressPair & addrRange) const;
 
@@ -116,6 +121,30 @@ public:
     { m_full_stmt = yn; }
 
     void setFieldDeclProperties(clang::ASTContext * context);
+
+    bool is_field_decl() const
+    { return m_field_decl; }
+
+    std::string field_name() const
+    { return m_field_name; }
+
+    std::string base_type() const
+    { return m_base_type; }
+
+    bool is_bit_field() const
+    { return m_bit_field; }
+
+    unsigned bit_field_width() const
+    { return m_bit_field_width; }
+
+    unsigned long array_length() const
+    { return m_array_length; }
+
+    clang::PresumedLoc begin_src_pos() const
+    { return m_begin_loc; }
+
+    clang::PresumedLoc end_src_pos() const
+    { return m_end_loc; }
 
     AstRef counter() const
     { return m_counter; }
@@ -163,7 +192,18 @@ public:
     static AstRef create(clang::Decl * decl, Requirements & reqs)
     { return impl_create(decl, reqs); }
 
+    struct Field
+    {
+        virtual bool has_field(TU & tu, Ast & ast) = 0;
+        virtual picojson::value to_json(TU & tu, Ast & ast) = 0;
+        virtual std::vector<std::string> purpose() = 0;
+    };
+
+    static std::map<std::string, Ast::Field*> & ast_fields();
+
 private:
+
+    static std::map<std::string, Ast::Field*> s_ast_fields;
 
     template <typename T>
         static AstRef impl_create(T * clang_obj, Requirements & reqs);
