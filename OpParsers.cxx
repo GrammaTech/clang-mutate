@@ -149,26 +149,51 @@ struct info_op
 };
 
 extern const char help_fields_[] = "?fields";
+extern const char help_fields_md_[] = "md";
 struct help_fields_op
 {
     typedef str_<help_fields_> command;
-    typedef tokens< command > parser;
+    typedef tokens< command, optional<str<help_fields_md_>>> parser;
 
-    static RewritingOpPtr make()
+    static RewritingOpPtr make(Optional<std::string> const& format)
     {
+        std::string how;
         std::ostringstream oss;
-        oss << "JSON representation of ASTs" << std::endl
-            << "---------------------------" << std::endl;
-        oss << "Each AST node is represented by a single JSON object, "
-            << "with the following fields:" << std::endl << std::endl;
-        #define FIELD_DEF(Name, T, Descr, Predicate, Body)           \
-        oss << "  key   = \"" #Name "\"" << std::endl                \
-            << "  value = " << describe_json<T>::str() << std::endl; \
-        for (auto & line : Utils::split(Descr, '\n'))                \
-            oss << "    " << line << std::endl;                      \
-        oss << std::endl;
-        #include "FieldDefs.cxx"
-        return echo(oss.str());
+        if (!format.get(how)) {
+            oss << "JSON representation of ASTs" << std::endl
+                << "---------------------------" << std::endl;
+            oss << "Each AST node is represented by a single JSON object, "
+                << "with the following fields:" << std::endl << std::endl;
+            #define FIELD_DEF(Name, T, Descr, Predicate, Body)           \
+            oss << "  key   = \"" #Name "\"" << std::endl                \
+                << "  value = " << describe_json<T>::str() << std::endl; \
+            for (auto & line : Utils::split(Descr, '\n'))                \
+                oss << "    " << line << std::endl;                      \
+            oss << std::endl;
+            #include "FieldDefs.cxx"
+            return echo(oss.str());
+        }
+        else if (how == "md") {
+            // Format the field descriptions for inclusion in a markdown file.
+            #define FIELD_DEF(Name, T, Descr, Predicate, Body)                \
+            {                                                                 \
+                bool first_descr = true;                                      \
+                oss << #Name << ": " << describe_json<T>::str() << std::endl; \
+                for (auto & line : Utils::split(Descr, '\n')) {               \
+                    oss << (first_descr ? ":   " : "    ");                   \
+                    oss << line << std::endl;                                 \
+                    first_descr = false;                                      \
+                }                                                             \
+                oss << std::endl;                                             \
+            }
+            #include "FieldDefs.cxx"
+            std::string s = oss.str();
+            return echo(Utils::intercalate(Utils::split(s, '_'), "\\_"));
+        }
+        else {
+            oss << "unknown formatting option '" << how << "'" << std::endl;
+            return echo(oss.str());
+        }
     }
 
     static std::vector<std::string> purpose()

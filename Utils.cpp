@@ -313,6 +313,21 @@ std::vector<std::string> split(const std::string &input,
     return elems;
 }
 
+std::string intercalate(const std::vector<std::string> & input,
+                        const std::string & between)
+{
+    if (input.empty())
+        return "";
+
+    std::ostringstream oss;
+    bool first = true;
+    for (auto & text : input) {
+        oss << (first ? "" : between) << text;
+        first = false;
+    }
+    return oss.str();
+}
+
 bool in_system_header(
     SourceLocation loc,
     SourceManager & sm,
