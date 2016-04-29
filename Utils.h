@@ -9,6 +9,7 @@
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Lex/Lexer.h"
+#include "clang/Frontend/CompilerInstance.h"
 
 template <typename T>
 struct Reversed
@@ -91,9 +92,9 @@ std::vector<std::string> split(const std::string &input,
 std::string intercalate(const std::vector<std::string> & input,
                         const std::string & between);
 
-bool in_system_header(clang::SourceLocation loc,
-                      clang::SourceManager & sm,
-                      std::string & header);
+bool in_header(clang::SourceLocation loc,
+               clang::CompilerInstance * ci,
+               std::string & header);
 
 template <typename T>
 std::set<T> set_union(const std::set<T> & xs,

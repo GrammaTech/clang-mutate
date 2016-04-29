@@ -64,22 +64,17 @@ bool Requirements::VisitDeclRefExpr(DeclRefExpr * expr)
     std::string name      = vdecl->getQualifiedNameAsString();
     IdentifierInfo * id   = vdecl->getIdentifier();
     if (id != NULL && !ctx.is_bound(name)) {
-      if (isa<FunctionDecl>(vdecl)) {
         std::string header;
-        if (Utils::in_system_header(vdecl->getLocation(),
-                                    ci->getSourceManager(),
-                                    header))
-        {
-          m_includes.insert(header);
+        if (Utils::in_header(vdecl->getLocation(), ci, header)) {
+            m_includes.insert(header);
         }
-        else  {
+        else if (isa<FunctionDecl>(vdecl)) {
             m_funs.insert(
                 FunctionInfo(static_cast<FunctionDecl*>(vdecl)));
         }
-      }
-      else {
-	m_vars.insert(BindingCtx::Binding(name, id));
-      }
+        else {
+            m_vars.insert(BindingCtx::Binding(name, id));
+        }
     }
     return base::VisitDeclRefExpr(expr);
 }
@@ -150,7 +145,7 @@ void Requirements::gatherMacro(Stmt * stmt)
                 body.pop_back();
 
             std::string header;
-            if (Utils::in_system_header(mi->getDefinitionLoc(), sm, header)) {
+            if (Utils::in_header(mi->getDefinitionLoc(), ci, header)) {
                 m_includes.insert(header);
             }
             else {

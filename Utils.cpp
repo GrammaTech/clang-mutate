@@ -328,13 +328,20 @@ std::string intercalate(const std::vector<std::string> & input,
     return oss.str();
 }
 
-bool in_system_header(
+bool in_header(
     SourceLocation loc,
-    SourceManager & sm,
+    CompilerInstance * ci,
     std::string & header)
 {
-    SourceLocation last_hdr;
-    while (sm.isInSystemHeader(loc) || sm.isInExternCSystemHeader(loc)) {
+    SourceManager & sm = ci->getSourceManager();
+    if (sm.isWrittenInMainFile(loc))
+        return false;
+    // We should have already checked that loc does not belong
+    // to a system header at this point, and it wasn't spelled
+    // out in the main file; it must belong to some locally
+    // included header.
+    SourceLocation last_hdr = loc;
+    while (!sm.isWrittenInMainFile(loc)) {
         last_hdr = loc;
         loc = sm.getIncludeLoc(sm.getFileID(loc));
     }
@@ -343,21 +350,18 @@ bool in_system_header(
         return false;
     loc = last_hdr;
 
-    std::string include = sm.getFilename(loc).str();
+    SourceLocation spell =
+        sm.getSpellingLoc(sm.getIncludeLoc(sm.getFileID(loc)));
+    char target = sm.getCharacterData(spell)[0] == '<' ? '>' : '\"';
+    header.clear();
+    char c = sm.getCharacterData(spell)[0];
+    do {
+        header.push_back(c);
+        spell = spell.getLocWithOffset(1);
+        c = sm.getCharacterData(spell)[0];
+    } while (c != '\n' && c != target);
+    header.push_back(target);
 
-    // Take foo.h in "*/include/foo.h"..
-    std::string incldir = "/include/";
-    size_t idx = include.rfind(incldir);
-    if (idx != std::string::npos)
-        idx += incldir.size();
-    // ..or if that doesn't work, foo.h in "*/foo.h"..
-    if (idx == std::string::npos || idx >= include.size())
-        idx = include.rfind("/") + 1;
-    // ..or if that doesn't work, just take it all.
-    if (idx == std::string::npos || idx >= include.size())
-        idx = 0;
-
-    header = include.substr(idx);
     return true;
 }
 

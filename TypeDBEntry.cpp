@@ -125,7 +125,7 @@ static Hash define_type(
         std::string header;
         SourceManager & sm = ci->getSourceManager();
         SourceLocation loc = sm.getSpellingLoc(td->getSourceRange().getBegin());
-        if (Utils::in_system_header(loc, sm, header)) {
+        if (Utils::in_header(loc, ci, header)) {
             Hash hash = TypeDBEntry::mkInclude(td->getNameAsString(), header).hash();
             seen[t] = hash;
             return hash;

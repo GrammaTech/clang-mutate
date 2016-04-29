@@ -95,22 +95,17 @@ bool GetBindingCtx::VisitStmt(Stmt * expr)
     std::string name      = vdecl->getQualifiedNameAsString();
     IdentifierInfo * id   = vdecl->getIdentifier();
     if (id != NULL && !ctx.is_bound(name)) {
-      if (isa<FunctionDecl>(vdecl)) {
         std::string header;
-        if (Utils::in_system_header(vdecl->getLocation(),
-                                    ci->getSourceManager(),
-                                    header))
-        {
-          includes.insert(header);
+        if (Utils::in_header(vdecl->getLocation(), ci, header)) {
+            includes.insert(header);
         }
-        else  {
+        else if (isa<FunctionDecl>(vdecl)) {
             unbound_f.insert(
                 FunctionInfo(static_cast<FunctionDecl*>(vdecl)));
         }
-      }
-      else {
-	unbound_v.insert(BindingCtx::Binding(name, id));
-      }
+        else {
+            unbound_v.insert(BindingCtx::Binding(name, id));
+        }
     }
   }
   return true;

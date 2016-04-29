@@ -55,7 +55,7 @@ bool GetMacros::VisitStmt(clang::Stmt * stmt)
                 body.pop_back();
 
             std::string header;
-            if (Utils::in_system_header(mi->getDefinitionLoc(), sm, header)) {
+            if (Utils::in_header(mi->getDefinitionLoc(), CI, header)) {
                 includes.insert(header);
             }
             else {
