@@ -341,7 +341,7 @@ bool in_header(
     // out in the main file; it must belong to some locally
     // included header.
     SourceLocation last_hdr = loc;
-    while (!sm.isWrittenInMainFile(loc)) {
+    while (!sm.isWrittenInMainFile(loc) && last_hdr.isValid()) {
         last_hdr = loc;
         loc = sm.getIncludeLoc(sm.getFileID(loc));
     }
