@@ -100,6 +100,11 @@ template <> inline
 picojson::value to_json(const unsigned long & t)
 { return to_json(static_cast<int64_t>(t)); }
 
+// Serializing ints would be ambiguous without this specialization.
+template <> inline
+picojson::value to_json(const int & t)
+{ return to_json(static_cast<int64_t>(t)); }
+
 ///////////////////////////////////////////////////////////////
 
 // Generate a string describing the structure of to_json(T t)
