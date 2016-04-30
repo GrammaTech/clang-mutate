@@ -2,6 +2,7 @@
 #define CLANG_MUTATE_REWRITER_H
 
 #include "TU.h"
+#include "EditBuffer.h"
 
 #include "ref_ptr.hpp"
 
@@ -24,10 +25,18 @@ namespace clang_mutate
 class RewritingOp;
 typedef ref_ptr<RewritingOp> RewritingOpPtr;
 class Annotator;
-RewritingOpPtr setText      (AstRef ast, const std::string & text);
-RewritingOpPtr setRangeText (AstRef ast1, AstRef ast2, const std::string & text);
-RewritingOpPtr setRangeText (TURef tu, clang::SourceRange r, const std::string & text);
-RewritingOpPtr insertBefore (AstRef ast, const std::string & text);
+RewritingOpPtr setText      (AstRef ast,
+                             const std::string & text,
+                             bool allow_renormalization = true);
+RewritingOpPtr setRangeText (AstRef ast1, AstRef ast2,
+                             const std::string & text,
+                             int preAdjust = 0, int postAdjust = 0);
+RewritingOpPtr insertBefore (AstRef ast,
+                             const std::string & text,
+                             bool allow_renormalization = true);
+RewritingOpPtr insertAfter  (AstRef ast,
+                             const std::string & text,
+                             bool allow_renormalization = true);
 RewritingOpPtr getTextAs    (AstRef ast,
                              const std::string & var,
                              bool normalized = false);
@@ -56,9 +65,9 @@ struct RewriterState
 
     void fail(const std::string & msg);
 
-    clang::Rewriter & rewriter(TURef tu);
+    EditBuffer & rewriter(TURef tu);
 
-    std::map<TURef, clang::Rewriter> rewriters;
+    std::map<TURef, EditBuffer> rewriters;
     NamedText   vars;
     bool        failed;
     std::string message;
@@ -217,10 +226,11 @@ private:
 class InsertOp : public RewritingOp
 {
 public:
-    InsertOp(AstRef ast, const std::string & text)
+    InsertOp(AstRef ast, const std::string & text, bool after)
         : RewritingOp()
         , m_tgt(ast)
         , m_text(text)
+        , m_after(after)
     {}
 
     OpKind kind() const { return Op_Insert; }
@@ -232,15 +242,43 @@ public:
 private:
     AstRef m_tgt;
     std::string m_text;
+    bool m_after;
+};
+
+
+// Non-normalizing variant of InsertOp
+class LitInsertOp : public RewritingOp
+{
+public:
+    LitInsertOp(AstRef ast, const std::string & text, bool after)
+        : RewritingOp()
+        , m_tgt(ast)
+        , m_text(text)
+        , m_after(after)
+    {}
+
+    OpKind kind() const { return Op_Insert; }
+    AstRef target() const { return m_tgt; }
+    void print(std::ostream & o) const;
+    void execute(RewriterState & state) const;
+    bool edits_tu(TURef & tu) const;
+
+private:
+    AstRef m_tgt;
+    std::string m_text;
+    bool m_after;
 };
 
 class SetOp : public RewritingOp
 {
 public:
-    SetOp(AstRef ast, const std::string & text)
+    SetOp(AstRef ast,
+          const std::string & text,
+          bool normalizing = true)
         : RewritingOp()
         , m_tgt(ast)
         , m_text(text)
+        , m_normalizing(normalizing)
     {}
     OpKind kind() const { return Op_Set; }
     AstRef target() const { return m_tgt; }
@@ -251,24 +289,29 @@ public:
 private:
     AstRef m_tgt;
     std::string m_text;
+    bool m_normalizing;
 };
 
 class SetRangeOp : public RewritingOp
 {
 public:
     SetRangeOp(TURef tu,
-               clang::SourceRange r,
-               AstRef endAst,
-               const std::string & text)
+               AstRef stmt1,
+               AstRef stmt2,
+               const std::string & text,
+               int preAdjust,
+               int postAdjust)
         : RewritingOp()
         , m_tu(tu)
-        , m_range(r)
-        , m_endAst(endAst)
+        , m_stmt1(stmt1)
+        , m_stmt2(stmt2)
         , m_text(text)
+        , m_preAdjust(preAdjust)
+        , m_postAdjust(postAdjust)
     {}
 
     OpKind kind() const { return Op_SetRange; }
-    AstRef target() const { return m_endAst; }
+    AstRef target() const { return m_stmt2; }
     void print(std::ostream & o) const;
     void execute(RewriterState & state) const;
     bool edits_tu(TURef & tu) const;
@@ -276,8 +319,9 @@ public:
 private:
     TURef m_tu;
     clang::SourceRange m_range;
-    AstRef m_endAst;
+    AstRef m_stmt1, m_stmt2;
     std::string m_text;
+    int m_preAdjust, m_postAdjust;
 };
 
 class GetOp : public RewritingOp

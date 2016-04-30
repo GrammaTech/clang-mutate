@@ -10,23 +10,24 @@ using namespace parser_templates;
 template <typename T> using Optional = parser_templates::Optional<T>;
 
 extern const char get_[]  = "get";
-extern const char getp_[] = "get'";
 extern const char as_[] = "as";
 struct get_op
 {
-    typedef alt<str<get_>, str<getp_>> command;
+    typedef sequence_<str_<get_>, optional<chr<'\''>>> command;
 
     typedef tokens< command, p_ast,
                     optional< tokens<str_<as_>, variable > > > parser;
 
     static RewritingOpPtr make(
-        std::string const& cmd,
+        Optional<char> const& quote,
         AstRef const& ast,
         Optional<std::string> const& var)
     {
+        char _;
+        bool normalizing = quote.get(_);
         std::string v = "$$";
         (void) var.get(v);
-        return getTextAs(ast->counter(), v, cmd == "get'");
+        return getTextAs(ast->counter(), v, normalizing);
     }
 
     static std::vector<std::string> purpose()
@@ -41,25 +42,31 @@ struct get_op
 extern const char set_[] = "set";
 struct set_op
 {
-    typedef str_<set_> command;
+    typedef sequence_< str_<set_>, optional<chr<'\''>>> command;
 
     typedef tokens< command, many1<tokens<p_ast, p_text>> >
         parser;
 
     static RewritingOpPtr make(
+        Optional<char> const& quote,
         std::vector<std::pair<AstRef, std::string>> const& args)
     {
+        char _;
+        bool normalizing = !quote.get(_);
         RewritingOps ops;
         TURef tu;
         for (auto & p : args) {
-            ops.push_back(setText(p.first->counter(), p.second));
+            ops.push_back(setText(p.first->counter(),
+                                  p.second,
+                                  normalizing));
             tu = p.first.tuid();
         }
         return chain(ops);
     }
 
     static std::vector<std::string> purpose()
-    { return { "Set the text of an AST to the given value." }; }
+    { return { "Set the text of an AST to the given value."
+             , "Use set' to set the un-normalized text." }; }
 };
 
 extern const char print_[] = "print";
@@ -243,13 +250,14 @@ struct setfunc_op
         std::string const& text)
     {
         TU & tu = body.tu();
-        auto fsearch = tu.function_ranges.find(body);
-        if (fsearch == tu.function_ranges.end()) {
+        auto fsearch = tu.function_starts.find(body);
+        if (fsearch == tu.function_starts.end()) {
             std::ostringstream oss;
             oss << body << " is not the body AST of a function.";
             return note(oss.str());
         }
-        return setRangeText(body.tuid(), fsearch->second, text);
+        int adjust = fsearch->second - body->initial_offset();
+        return setRangeText(body, body, text, adjust, 0);
     }
 
     static std::vector<std::string> purpose()
@@ -534,23 +542,79 @@ struct setrange_op
 };
 
 extern const char insert_[] = "insert";
+extern const char before_[] = "before";
 struct insert_op
 {
-    typedef str_<insert_> command;
+    typedef sequence_ < alt< str_<insert_>, str_<before_> >
+                      , optional<chr<'\''>>
+                      > command;
     typedef tokens< command, many1<tokens<p_ast, p_text>> > parser;
 
     static RewritingOpPtr make(
+        Optional<char> const& quote,
         std::vector<std::pair<AstRef, std::string>> const& insertions)
     {
+        char _;
+        bool normalizing = !quote.get(_);
         RewritingOps ops;
         for (auto & insertion : insertions) {
-            ops.push_back(insertBefore(insertion.first, insertion.second));
+            ops.push_back(insertBefore(insertion.first,
+                                       insertion.second,
+                                       normalizing));
         }
         return chain(ops);
     }
 
     static std::vector<std::string> purpose()
-    { return { "Insert text before the given AST." }; }
+    { return { "Insert text before the given AST."
+             , "Use the ' variant to perform non-normalizing insertions." }; }
+};
+
+extern const char after_[] = "after";
+struct after_op
+{
+    typedef sequence_< str_<after_>, optional<chr<'\''>>> command;
+    typedef tokens< command, many1<tokens<p_ast, p_text>> > parser;
+
+    static RewritingOpPtr make(
+        Optional<char> const& quote,
+        std::vector<std::pair<AstRef, std::string>> const& insertions)
+    {
+        char _;
+        bool normalizing = !quote.get(_);
+        RewritingOps ops;
+        for (auto & insertion : insertions) {
+            ops.push_back(insertAfter(insertion.first,
+                                      insertion.second,
+                                      normalizing));
+        }
+        return chain(ops);
+    }
+
+    static std::vector<std::string> purpose()
+    { return { "Insert text after the given AST."
+             , "Use the ' variant to perform non-normalizing insertions." }; }
+};
+
+extern const char comment_[] = "comment";
+struct comment_op
+{
+    typedef str_<comment_> command;
+    typedef tokens< command, many1<tokens<p_ast>> > parser;
+
+    static RewritingOpPtr make(
+        std::vector<AstRef> const& stmts)
+    {
+        RewritingOps ops;
+        for (auto & stmt : stmts) {
+            ops.push_back(insertBefore(stmt, "/*", false));
+            ops.push_back(insertAfter (stmt, "*/", false));
+        }
+        return chain(ops);
+    }
+
+    static std::vector<std::string> purpose()
+    { return { "Comment out the given AST." }; }
 };
 
 extern const char swap_[] = "swap";

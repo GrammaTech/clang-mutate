@@ -11,20 +11,13 @@ std::string getAstText(
     AstRef ast,
     bool normalized)
 {
-    TU & tu = ast.tu();
-    SourceManager & sm = tu.ci->getSourceManager();
-    SourceRange r = normalized
-        ? ast->normalizedSourceRange()
-        : ast->sourceRange();
-    SourceLocation begin = r.getBegin();
-    SourceLocation end = Lexer::getLocForEndOfToken(r.getEnd(),
-                                                    0,
-                                                    sm,
-                                                    tu.ci->getLangOpts());
-    return Lexer::getSourceText(
-        CharSourceRange::getCharRange(begin, end),
-        sm,
-        tu.ci->getLangOpts());
+    SourceOffset first = normalized
+        ? ast->initial_normalized_offset()
+        : ast->initial_offset();
+    SourceOffset last = normalized
+        ? ast->final_normalized_offset()
+        : ast->final_offset();
+    return ast.tu().source.substr(first, 1 + last - first);
 }
 
 void RewriterState::fail(const std::string & msg)
@@ -41,23 +34,42 @@ RewritingOpPtr getTextAs(AstRef ast,
                          bool normalized)
 { return new GetOp(ast, var, normalized); }
 
-RewritingOpPtr setText(AstRef ast, const std::string & text)
-{ return new SetOp(ast, text); }
+RewritingOpPtr setText(AstRef ast,
+                       const std::string & text,
+                       bool allow_normalization)
+{ return new SetOp(ast, text, allow_normalization); }
 
-RewritingOpPtr setRangeText (AstRef ast1, AstRef ast2, const std::string & text)
+RewritingOpPtr setRangeText (AstRef ast1, AstRef ast2,
+                             const std::string & text,
+                             int preAdjust, int postAdjust)
 {
-    return new SetRangeOp(ast2.tuid(),
-                          SourceRange(ast1->normalizedSourceRange().getBegin(),
-                                      ast2->normalizedSourceRange().getEnd()),
+    return new SetRangeOp(ast1.tuid(),
+                          ast1->counter(),
                           ast2->counter(),
-                          text);
+                          text,
+                          preAdjust,
+                          postAdjust);
 }
 
-RewritingOpPtr setRangeText (TURef tu, SourceRange r, const std::string & text)
-{ return new SetRangeOp(tu, r, NoAst, text); }
+RewritingOpPtr insertBefore(AstRef ast,
+                            const std::string & text,
+                            bool allow_normalization)
+{
+    if (allow_normalization)
+        return new InsertOp(ast, text, false);
+    else
+        return new LitInsertOp(ast, text, false);
+}
 
-RewritingOpPtr insertBefore(AstRef ast, const std::string & text)
-{ return new InsertOp(ast, text); }
+RewritingOpPtr insertAfter(AstRef ast,
+                           const std::string & text,
+                           bool allow_normalization)
+{
+    if (allow_normalization)
+        return new InsertOp(ast, text, true);
+    else
+        return new LitInsertOp(ast, text, true);
+}
 
 RewritingOpPtr echo(const std::string & text)
 { return new EchoOp(text); }
@@ -106,13 +118,11 @@ RewritingOpPtr clear_vars()
     return new StateManipOp(vars);
 }
 
-Rewriter & RewriterState::rewriter(TURef tuid)
+EditBuffer & RewriterState::rewriter(TURef tuid)
 {
     auto search = rewriters.find(tuid);
     if (search == rewriters.end()) {
-        TU * tu = TUs[tuid];
-        SourceManager & sm = tu->ci->getSourceManager();
-        rewriters[tuid].setSourceMgr(sm, tu->ci->getLangOpts());
+        rewriters.insert(std::make_pair(tuid, EditBuffer()));
         return rewriters[tuid];
     }
     return search->second;
@@ -252,18 +262,49 @@ void ChainedOp::execute(RewriterState & state) const
 }
 
 void InsertOp::print(std::ostream & o) const
-{ o << "insert " << Utils::escape(m_text) << " before " << m_tgt; }
+{
+    o << "insert " << Utils::escape(m_text)
+      << (m_after ? " after " : " before ") << m_tgt;
+}
 
 bool InsertOp::edits_tu(TURef & tu) const
 { tu = m_tgt.tuid(); return true; }
 
 void InsertOp::execute(RewriterState & state) const
 {
-    std::cerr << "[" << m_text << "]" << std::endl;
-    SourceRange r = m_tgt->normalizedSourceRange();
-    state.rewriter(m_tgt.tuid()).InsertTextBefore(
-        r.getBegin(),
-        StringRef(string_value(m_text, m_tgt, state)));
+    std::cerr << "InsertOp at " << m_tgt << std::endl;
+    if (m_after) {
+        state.rewriter(m_tgt.tuid())
+            .insertAfter(m_tgt, string_value(m_text, m_tgt, state));
+    }
+    else {
+        state.rewriter(m_tgt.tuid())
+            .insertBefore(m_tgt, string_value(m_text, m_tgt, state));
+    }
+}
+
+
+void LitInsertOp::print(std::ostream & o) const
+{
+    o << "insert " << Utils::escape(m_text)
+      << (m_after ? " after " : " before ") << m_tgt
+      << " without normalization.";
+}
+
+bool LitInsertOp::edits_tu(TURef & tu) const
+{ tu = m_tgt.tuid(); return true; }
+
+void LitInsertOp::execute(RewriterState & state) const
+{
+    std::cerr << "LitInsertOp" << std::endl;
+    if (m_after) {
+        state.rewriter(m_tgt.tuid())
+            .insertAfter(m_tgt, string_value(m_text, state, false));
+    }
+    else {
+        state.rewriter(m_tgt.tuid())
+            .insertBefore(m_tgt, string_value(m_text, state, false));
+    }
 }
 
 void SetOp::print(std::ostream & o) const
@@ -274,14 +315,20 @@ bool SetOp::edits_tu(TURef & tu) const
 
 void SetOp::execute(RewriterState & state) const
 {
-    SourceRange r = m_tgt->normalizedSourceRange();
-    state.rewriter(m_tgt.tuid())
-      .ReplaceText(r, StringRef(string_value(m_text, m_tgt, state)));
+    if (m_normalizing) {
+        state.rewriter(m_tgt.tuid())
+            .replaceText(m_tgt, string_value(m_text, m_tgt, state));
+    }
+    else {
+        state.rewriter(m_tgt.tuid())
+            .replaceText(m_tgt, string_value(m_text, state, false));
+    }
 }
 
 void SetRangeOp::print(std::ostream & o) const
 {
-    o << "setrange {??} " << " to " << Utils::escape(m_text);
+    o << "setrange " << m_stmt1 << ".." << m_stmt2
+      << " to " << Utils::escape(m_text);
 }
 
 bool SetRangeOp::edits_tu(TURef & tu) const
@@ -290,7 +337,9 @@ bool SetRangeOp::edits_tu(TURef & tu) const
 void SetRangeOp::execute(RewriterState & state) const
 {
     state.rewriter(m_tu)
-      .ReplaceText(m_range, StringRef(string_value(m_text, m_endAst, state)));
+         .replaceTextRange(m_stmt1, m_stmt2,
+                           string_value(m_text, m_stmt2, state),
+                           m_preAdjust, m_postAdjust);
 }
 
 void EchoOp::print(std::ostream & o) const
@@ -318,20 +367,16 @@ void PrintOriginalOp::print(std::ostream & o) const
 
 void PrintOriginalOp::execute(RewriterState & state) const
 {
-    SourceManager & sm = TUs[m_tu]->ci->getSourceManager();
-    state.vars["$$"] = sm.getBufferData(sm.getMainFileID()).str();
+    //SourceManager & sm = TUs[m_tu]->ci->getSourceManager();
+    //state.vars["$$"] = sm.getBufferData(sm.getMainFileID()).str();
+    state.vars["$$"] = TUs[m_tu]->source;
 }
 
 void PrintModifiedOp::print(std::ostream & o) const
 { o << "print_modified"; }
 
 void PrintModifiedOp::execute(RewriterState & state) const
-{
-    SourceManager & sm = TUs[m_tu]->ci->getSourceManager();
-    FileID file = sm.getMainFileID();
-    const RewriteBuffer * buf = state.rewriter(m_tu).getRewriteBufferFor(file);
-    state.vars["$$"] = std::string(buf->begin(), buf->end());
-}
+{ state.vars["$$"] = state.rewriter(m_tu).preview(TUs[m_tu]->source); }
 
 void AnnotateOp::print(std::ostream & o) const
 { o << "annotate(" << m_annotate->describe() << ")"; }
@@ -342,27 +387,16 @@ bool AnnotateOp::edits_tu(TURef & tu) const
 void AnnotateOp::execute(RewriterState & state) const
 {
     TU * tu = TUs[m_tu];
-    SourceManager & sm = tu->ci->getSourceManager();
-    LangOptions & langOpts = tu->ci->getLangOpts();
-    Rewriter & rewriter = state.rewriter(m_tu);
+    EditBuffer & rewriter = state.rewriter(m_tu);
 
     for (auto & ast : tu->asts) {
-        SourceRange r = ast->normalizedSourceRange();
-        SourceLocation end = r.getEnd();
-
-        rewriter.InsertText(r.getBegin(),
-                            m_annotate->before(ast),
-                            false);
-
-        unsigned offset = Lexer::MeasureTokenLength(end, sm, langOpts);
-        rewriter.InsertText(end.getLocWithOffset(offset),
-                            m_annotate->after(ast),
-                            false);
+        rewriter.insertBefore(ast->counter(), m_annotate->before(ast));
+        rewriter.insertAfter (ast->counter(), m_annotate->after(ast));
     }
 }
 
 void GetOp::print(std::ostream & o) const
-{ o << (m_normalized ? "get' " : "get ") << m_tgt << " as " << m_var; }
+{ o << (m_normalized ? "get " : "get' ") << m_tgt << " as " << m_var; }
 
 void GetOp::execute(RewriterState & state) const
 {

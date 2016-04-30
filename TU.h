@@ -31,7 +31,7 @@ struct TU
     std::string source;
     Scope scopes;
     std::map<std::string, std::vector<picojson::value> > aux;
-    std::map<AstRef, clang::SourceRange> function_ranges;
+    std::map<AstRef, SourceOffset> function_starts;
 
     AstRef nextAstRef() const;
 };

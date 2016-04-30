@@ -113,11 +113,13 @@ struct interactive_op
         , annotate_op
         , number_op
         , number_full_op
+        , comment_op
         , list_op
         , cut_op
         , setrange_op
         , setfunc_op
         , insert_op
+        , after_op
         , swap_op
         , aux_op
         , ast_op
