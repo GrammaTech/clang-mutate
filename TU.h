@@ -28,6 +28,7 @@ struct TU
     bool allowDeclAsts;
     std::vector<Ast*> asts;
     BinaryAddressMap addrMap;
+    std::string source;
     Scope scopes;
     std::map<std::string, std::vector<picojson::value> > aux;
     std::map<AstRef, clang::SourceRange> function_ranges;

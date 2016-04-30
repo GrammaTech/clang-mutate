@@ -40,16 +40,16 @@ bool FAF::runInvocation(clang::CompilerInvocation * Invocation,
     Compiler->createDiagnostics(DiagConsumer, /*ShouldOwnClient=*/false);
     Compiler->createSourceManager(*Files);
 
-    clang::SourceManager & sm = Compiler->getSourceManager();
-    clang_mutate::TUs[tuid]->source
-        = sm.getBufferData(sm.getMainFileID()).str();
-
     std::unique_ptr<clang::FrontendAction> ScopedToolAction(create());
 
     if (!Compiler->hasDiagnostics())
         return false;
 
     const bool Success = Compiler->ExecuteAction(*ScopedToolAction);
+
+    clang::SourceManager & sm = Compiler->getSourceManager();
+    clang_mutate::TUs[tuid]->source
+        = sm.getBufferData(sm.getMainFileID()).str();
 
     Files->clearStatCaches();
     return Success;
