@@ -138,6 +138,16 @@ std::pair<AstRef, AstRef> Ast::stmt_range() const
         : m_children.back()->stmt_range().second);
 }
 
+bool Ast::is_ancestor_of(AstRef ast) const
+{
+    while (ast != NoAst) {
+        if (ast == counter())
+            return true;
+        ast = ast->parent();
+    }
+    return false;
+}
+
 // Register structs representing all of the AST fields.
 //
 #define FIELD_DEF(Name, T, Descr, Predicate, Body)           \
@@ -188,6 +198,37 @@ bool Ast::has_bytes() const
         && binaryAddressRange(_);
 }
 
+void Ast::update_range_offsets()
+{
+    CompilerInstance * ci = counter().tu().ci;
+    SourceManager & sm = ci->getSourceManager();
+    FileID mainFileID = sm.getMainFileID();
+
+    std::pair<FileID, unsigned> decomp;
+
+    decomp = sm.getDecomposedLoc(m_range.getBegin());
+    m_start_off = (decomp.first == mainFileID)
+        ? decomp.second
+        : parent()->initial_offset();
+    decomp = sm.getDecomposedLoc(
+        Lexer::getLocForEndOfToken(m_range.getEnd(),
+                                   0, sm, ci->getLangOpts()));
+    m_end_off = (decomp.first == mainFileID)
+        ? decomp.second - 1
+        : parent()->final_offset();
+
+    decomp = sm.getDecomposedLoc(m_normalized_range.getBegin());
+    m_norm_start_off = (decomp.first == mainFileID)
+        ? decomp.second
+        : parent()->initial_normalized_offset();
+    decomp = sm.getDecomposedLoc(
+        Lexer::getLocForEndOfToken(m_normalized_range.getEnd(),
+                                   0, sm, ci->getLangOpts()));
+    m_norm_end_off = (decomp.first == mainFileID)
+        ? decomp.second - 1
+        : parent()->final_normalized_offset();
+}
+
 Ast::Ast(Stmt * _stmt,
          AstRef _counter,
          AstRef _parent,
@@ -222,6 +263,7 @@ Ast::Ast(Stmt * _stmt,
     , m_bit_field_width(0)
     , m_array_length(0)
 {
+    update_range_offsets();
     if (isa<BinaryOperator>(m_stmt)) {
         m_opcode = static_cast<BinaryOperator*>(m_stmt)
             ->getOpcodeStr().str();
@@ -261,4 +303,6 @@ Ast::Ast(Decl * _decl,
     , m_bit_field(false)
     , m_bit_field_width(0)
     , m_array_length(0)
-{}
+{
+    update_range_offsets();
+}

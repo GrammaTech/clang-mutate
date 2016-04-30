@@ -22,6 +22,8 @@ namespace clang_mutate {
 
 struct TU;
 
+typedef int SourceOffset;
+
 class Ast
 {
 public:
@@ -40,6 +42,25 @@ public:
     // semicolon, if this is a full statement.
     clang::SourceRange normalizedSourceRange() const
     { return m_normalized_range; }
+
+    SourceOffset initial_normalized_offset() const
+    { return m_norm_start_off; }
+
+    SourceOffset final_normalized_offset() const
+    { return m_norm_end_off; }
+
+    SourceOffset initial_offset() const
+    { return m_start_off; }
+
+    SourceOffset final_offset() const
+    {
+        // Adjustment to compensate for the fact that clang's
+        // source ranges include trailing semicolons for DeclStmts,
+        // but (seemingly?) not for other statements?
+        if (m_declares.empty() || !isFullStmt())
+            return m_end_off;
+        return m_end_off - 1;
+    }
 
     std::string className() const
     { return m_class; }
@@ -146,6 +167,8 @@ public:
     clang::PresumedLoc end_src_pos() const
     { return m_end_loc; }
 
+    bool is_ancestor_of(AstRef ast) const;
+
     AstRef counter() const
     { return m_counter; }
 
@@ -202,6 +225,7 @@ public:
     static std::map<std::string, Ast::Field*> & ast_fields();
 
 private:
+    void update_range_offsets();
 
     static std::map<std::string, Ast::Field*> s_ast_fields;
 
@@ -252,6 +276,8 @@ private:
     bool m_bit_field;
     unsigned m_bit_field_width;
     unsigned long m_array_length;
+
+    SourceOffset m_norm_start_off, m_norm_end_off, m_start_off, m_end_off;
 };
 
 } // namespace clang_mutate

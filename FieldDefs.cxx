@@ -115,6 +115,26 @@ AST_FIELD( end_src_col, unsigned int,
   { return ast.end_src_pos().getColumn(); }
   )
 
+AST_FIELD( begin_off, unsigned int,
+  "Source offset of the start of this node's text.",
+  { return ast.initial_offset(); }
+  )
+
+AST_FIELD( end_off, unsigned int,
+  "Source offset of the end of this node's text.",
+  { return ast.final_offset(); }
+  )
+
+AST_FIELD( begin_norm_off, unsigned int,
+  "Source offset of the start of this node's normalized text.",
+  { return ast.initial_normalized_offset(); }
+  )
+
+AST_FIELD( end_norm_off, unsigned int,
+  "Source offset of the start of this node's normalized text.",
+  { return ast.final_normalized_offset(); }
+  )
+
 AST_FIELD( orig_text, std::string,
   "Original source code for this node.",
   {
