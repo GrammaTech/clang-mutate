@@ -20,7 +20,7 @@ LLVM_DWARFDUMP := $(LLVM_HOME)llvm-dwarfdump$(LLVM_POSTFIX)
 CXXFLAGS := $(shell $(LLVM_CONFIG) --cxxflags) -I. $(RTTIFLAG) $(PICOJSON_INCS) $(PICOJSON_DEFINES) -DLLVM_DWARFDUMP='"$(LLVM_DWARFDUMP)"'
 LLVMLDFLAGS := $(shell $(LLVM_CONFIG) --ldflags --libs) -ldl
 
-SOURCES = Rewrite.cpp Interactive.cpp Function.cpp Variable.cpp AST.cpp TU.cpp Requirements.cpp Bindings.cpp Renaming.cpp Scopes.cpp Macros.cpp TypeDBEntry.cpp AuxDB.cpp BinaryAddressMap.cpp Json.cpp Utils.cpp clang-mutate.cpp
+SOURCES = Rewrite.cpp EditBuffer.cpp Interactive.cpp Function.cpp Variable.cpp AST.cpp TU.cpp Requirements.cpp Bindings.cpp Renaming.cpp Scopes.cpp Macros.cpp TypeDBEntry.cpp AuxDB.cpp BinaryAddressMap.cpp Json.cpp Utils.cpp clang-mutate.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 EXES = clang-mutate
 SYSLIBS = \
