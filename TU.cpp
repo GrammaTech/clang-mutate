@@ -185,7 +185,9 @@ class BuildTU
                     ast->setIsGuard(
                         Utils::IsGuardStmt(s, parent->asStmt()));
                 }
-                if (parent->className() == "Function") {
+                if (ast->className() == "CompoundStmt" &&
+                    parent->className() == "Function")
+                {
                     functions.push_back(std::make_pair(parent->asDecl(),
                                                        ast));
                 }
@@ -295,14 +297,9 @@ class BuildTU
                 decl_scopes.enter_scope(NoAst);
             }
             size_t original_spine_size = spine.size();
-
             ++decl_depth;
             bool keep_going = base::TraverseDecl(d);
             --decl_depth;
-
-            if (isa<FunctionDecl>(d)) {
-                processFunctionDecl(d, nextAstRef);
-            }
             
             // If we created a new node, remove it from the spine
             // now that the traversal of this Decl is complete.
