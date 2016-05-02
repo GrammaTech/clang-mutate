@@ -36,9 +36,13 @@ struct p_ops<std::tuple<X, Ys...>>
     typedef RewritingOpPtr type;
     template <typename Ctx> static parsed<type> run(Ctx & ctx)
     {
+        // Parse any leading whitespace
+        (void) parse<try_<spaces>>(ctx);
+
+        // Now try to parse the first command.
         auto snapshot = ctx.save();
-        auto match = parse<
-            sequence<typename X::command, alt<spaces, eof>>>(ctx);
+        auto match
+            = parse<sequence<typename X::command, alt<spaces, eof>>>(ctx);
         ctx.restore(snapshot);
         if (!match.ok) {
             // Command did not match, try the next one.
@@ -130,13 +134,36 @@ struct interactive_op
     typedef RewritingOpPtr type;
     template <typename Ctx> static parsed<type> run(Ctx & ctx)
     {
-        auto ans = parse<p_ops<registered_ops>>(ctx);
-        if (ans.ok && !ans.result.is_valid()) {
+        parsed<type> ans;
+
+        typedef p_ops<registered_ops> op;
+        auto cmd = parse<
+            fmap< Cons<RewritingOpPtr>,
+                  sequence_< op
+                           , many<sequence_<chr_<';'>, op>>
+                           , eof
+            >>>(ctx);
+        bool all_valid = true;
+        for (auto & res : cmd.result) {
+            if (!res.is_valid()) {
+                all_valid = false;
+                break;
+            }
+        }
+        if (cmd.ok && !all_valid) {
             // No operations matched, print help.
             std::ostringstream oss;
             oss << "Unknown command. Possible commands are:" << std::endl
                 << p_ops<registered_ops>::describe();
             ctx.fail(oss.str());
+            ans.ok = false;
+        }
+        else if (cmd.ok) {
+            ans.result = new ChainedOp(cmd.result);
+            ans.ok = true;
+        }
+        else {
+            ctx.fail("Hmm..");
             ans.ok = false;
         }
         return ans;

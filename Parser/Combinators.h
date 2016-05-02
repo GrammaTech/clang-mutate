@@ -104,6 +104,10 @@ bool matches(Ctx & ctx)
 // Some additional derived combinators:
 //
 
+// chr_<c>: parse a character but ignore the result.
+template <char c> using
+    chr_ = ignored<chr<c>>;
+
 // str_: parse a string but ignore the result.
 template <char const * s> using
     str_ = ignored<str<s>>;
