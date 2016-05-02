@@ -80,7 +80,6 @@ OPTION( Silent      , bool        , "silent"       , "do not print prompts in in
 OPTION( CtrlChar    , bool        , "ctrl"         , "print a control character after output in the interactive mode");
 OPTION( Binary      , std::string , "binary"       , "binary with DWARF information for line->address mapping");
 OPTION( DwarfFilepathMap, std::string, "dwarf-filepath-mapping", "mapping of filepaths used in compilation -> new filepath");
-OPTION( Decls       , bool        , "decls"        , "create ASTs for decls");
 
 std::ostringstream MutateCmd;
 
@@ -112,26 +111,26 @@ public:
         if (Number) {
             MutateCmd << "number 0" << std::endl
                       << "preview 0" << std::endl;
-            return clang_mutate::CreateTU(CI, Decls);
+            return clang_mutate::CreateTU(CI);
         }
         if (NumberF) {
             MutateCmd << "number-full 0" << std::endl
                       << "preview 0" << std::endl;
-            return clang_mutate::CreateTU(CI, Decls);
+            return clang_mutate::CreateTU(CI);
         }
         if (Ids) {
             MutateCmd << "ids 0" << std::endl;
-            return clang_mutate::CreateTU(CI, Decls);
+            return clang_mutate::CreateTU(CI);
         }
         if (Annotate) {
             MutateCmd << "annotate 0" << std::endl
                       << "preview 0" << std::endl;
-            return clang_mutate::CreateTU(CI, Decls);
+            return clang_mutate::CreateTU(CI);
         }
 
         if (List) {
             MutateCmd << "list 0" << std::endl;
-            return clang_mutate::CreateTU(CI, Decls);
+            return clang_mutate::CreateTU(CI);
         }
 
         if (Json) {
@@ -162,12 +161,12 @@ public:
             if (Stmt1) {
                 MutateCmd << "echo ]" << std::endl;
             }
-            return clang_mutate::CreateTU(CI, Decls);
+            return clang_mutate::CreateTU(CI);
         }
         if (Cut) {
             MutateCmd << "cut 0." << Stmt1 << std::endl
                       << "preview 0" << std::endl;
-            return clang_mutate::CreateTU(CI, Decls);
+            return clang_mutate::CreateTU(CI);
         }
         if (SetRange) {
             MutateCmd << "set-range "
@@ -175,32 +174,32 @@ public:
                       << "0." << Stmt2 << " "
                       << Utils::escape(Value1) << std::endl
                       << "preview 0" << std::endl;
-            return clang_mutate::CreateTU(CI, Decls);
+            return clang_mutate::CreateTU(CI);
         }
         if (SetFunc) {
             MutateCmd << "set-func "
                       << "0." << Stmt1 << " "
                       << Utils::escape(Value1) << std::endl
                       << "preview 0" << std::endl;
-            return clang_mutate::CreateTU(CI, Decls);
+            return clang_mutate::CreateTU(CI);
         }
         if (Insert) {
             MutateCmd << "get    0." << Stmt1 << " as $stmt" << std::endl
                       << "insert 0." << Stmt2 << " $stmt" << std::endl
                       << "preview 0" << std::endl;
-            return clang_mutate::CreateTU(CI, Decls);
+            return clang_mutate::CreateTU(CI);
         }
         if (Swap) {
             MutateCmd << "swap 0." << Stmt1
                       << " 0." << Stmt2 << std::endl
                       << "preview 0" << std::endl;
-            return clang_mutate::CreateTU(CI, Decls);
+            return clang_mutate::CreateTU(CI);
         }
         if (Set) {
             MutateCmd << "set 0." << Stmt1 << " "
                       << Utils::escape(Value1) << std::endl
                       << "preview 0" << std::endl;
-            return clang_mutate::CreateTU(CI, Decls);
+            return clang_mutate::CreateTU(CI);
         }
         if (Set2) {
             MutateCmd << "set "
@@ -208,16 +207,16 @@ public:
                       << "0." << Stmt2 << " " << Utils::escape(Value2)
                       << std::endl
                       << "preview 0" << std::endl;
-            return clang_mutate::CreateTU(CI, Decls);
+            return clang_mutate::CreateTU(CI);
         }
         if (InsertV) {
             MutateCmd << "insert 0." << Stmt1 << " "
                       << Utils::escape(Value1) << std::endl
                       << "preview 0" << std::endl;
-            return clang_mutate::CreateTU(CI, Decls);
+            return clang_mutate::CreateTU(CI);
         }
         if (Interactive) {
-            return clang_mutate::CreateTU(CI, Decls);
+            return clang_mutate::CreateTU(CI);
         }
         
         errs() << "Must supply one of:\n";

@@ -39,7 +39,7 @@ struct TU
 extern std::vector<TU*> TUs;
 
 std::unique_ptr<clang::ASTConsumer>
-CreateTU(clang::CompilerInstance * CI, bool AllowDeclAsts);
+CreateTU(clang::CompilerInstance * CI);
 
 } // end namespace clang_mutate
 

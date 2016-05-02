@@ -50,14 +50,13 @@ class BuildTU
     typedef std::set<clang::IdentifierInfo*> VarScope;
     
   public:
-    BuildTU(CompilerInstance * _ci, bool _allowDeclAsts)
+    BuildTU(CompilerInstance * _ci)
         : ci(_ci)
         , sm(_ci->getSourceManager())
         , decl_scopes(TUs.back()->scopes)
         , protos(TUs.back()->aux["protos"])
         , decls(TUs.back()->aux["decls"])
         , function_starts(TUs.back()->function_starts)
-        , allowDeclAsts(_allowDeclAsts)
     {}
 
     ~BuildTU() {}
@@ -252,9 +251,9 @@ class BuildTU
             Requirements reqs(TUs.back()->tuid,
                               Context,
                               decl_scopes.get_names_in_scope());
+
             reqs.TraverseDecl(d);
-            if (allowDeclAsts)
-                makeAst(d, reqs);
+            makeAst(d, reqs);
         }
         return true;
     }
@@ -297,6 +296,7 @@ class BuildTU
                 decl_scopes.enter_scope(NoAst);
             }
             size_t original_spine_size = spine.size();
+
             ++decl_depth;
             bool keep_going = base::TraverseDecl(d);
             --decl_depth;
@@ -330,11 +330,10 @@ class BuildTU
     std::map<AstRef, SourceOffset> & function_starts;
     std::vector<std::pair<Decl*,AstRef> > functions;
     size_t decl_depth;
-    bool allowDeclAsts;
 };
 
 } // namespace clang_mutate
 
 std::unique_ptr<clang::ASTConsumer>
-clang_mutate::CreateTU(clang::CompilerInstance * CI, bool AllowDeclAsts)
-{ return std::unique_ptr<clang::ASTConsumer>(new BuildTU(CI, AllowDeclAsts)); }
+clang_mutate::CreateTU(clang::CompilerInstance * CI)
+{ return std::unique_ptr<clang::ASTConsumer>(new BuildTU(CI)); }
