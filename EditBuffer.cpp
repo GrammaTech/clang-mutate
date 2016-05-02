@@ -33,9 +33,12 @@ std::string EditBuffer::preview(const std::string & source) const
         skipTo = NoAst;
 
         AstRef endAst = (edit.skipTo == NoAst) ? ast : edit.skipTo;
-        SourceOffset start = ast->initial_normalized_offset() + edit.preAdjust;
-        SourceOffset end = 1 + edit.postAdjust
-            + endAst->final_normalized_offset();
+        SourceOffset start = ast->initial_normalized_offset();
+        SourceOffset end = endAst->final_normalized_offset();
+        if (start == BadOffset || end == BadOffset)
+            continue;
+        start += edit.preAdjust;
+        end += 1 + edit.postAdjust;
         LinearEdit & ledit = linear_edits[start];
         LinearEdit & redit = linear_edits[end];
         ledit.text = ledit.text + edit.prefix;

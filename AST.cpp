@@ -8,6 +8,7 @@ using namespace clang_mutate;
 using namespace clang;
 
 const AstRef clang_mutate::NoAst;
+const SourceOffset clang_mutate::BadOffset = 0xBAD0FF5E;
 
 std::map<std::string, Ast::Field*> Ast::s_ast_fields;
 
@@ -206,27 +207,31 @@ void Ast::update_range_offsets()
 
     std::pair<FileID, unsigned> decomp;
 
-    decomp = sm.getDecomposedLoc(m_range.getBegin());
-    m_start_off = (decomp.first == mainFileID)
-        ? decomp.second
-        : parent()->initial_offset();
-    decomp = sm.getDecomposedLoc(
+    decomp = sm.getDecomposedExpansionLoc(m_range.getBegin());
+    m_start_off
+        = decomp.first == mainFileID ? decomp.second
+        : parent() == NoAst          ? BadOffset
+                                     : parent()->initial_offset();
+    decomp = sm.getDecomposedExpansionLoc(
         Lexer::getLocForEndOfToken(m_range.getEnd(),
                                    0, sm, ci->getLangOpts()));
-    m_end_off = (decomp.first == mainFileID)
-        ? decomp.second - 1
-        : parent()->final_offset();
+    m_end_off
+        = decomp.first == mainFileID ? decomp.second - 1
+        : parent() == NoAst          ? BadOffset
+                                     : parent()->final_offset();
 
-    decomp = sm.getDecomposedLoc(m_normalized_range.getBegin());
-    m_norm_start_off = (decomp.first == mainFileID)
-        ? decomp.second
-        : parent()->initial_normalized_offset();
-    decomp = sm.getDecomposedLoc(
+    decomp = sm.getDecomposedExpansionLoc(m_normalized_range.getBegin());
+    m_norm_start_off
+        = decomp.first == mainFileID ? decomp.second
+        : parent() == NoAst          ? BadOffset
+                                     : parent()->initial_normalized_offset();
+    decomp = sm.getDecomposedExpansionLoc(
         Lexer::getLocForEndOfToken(m_normalized_range.getEnd(),
                                    0, sm, ci->getLangOpts()));
-    m_norm_end_off = (decomp.first == mainFileID)
-        ? decomp.second - 1
-        : parent()->final_normalized_offset();
+    m_norm_end_off
+        = decomp.first == mainFileID ? decomp.second - 1
+        : parent() == NoAst          ? BadOffset
+                                     : parent()->final_normalized_offset();
 }
 
 Ast::Ast(Stmt * _stmt,

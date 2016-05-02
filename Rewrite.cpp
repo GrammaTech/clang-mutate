@@ -17,6 +17,11 @@ std::string getAstText(
     SourceOffset last = normalized
         ? ast->final_normalized_offset()
         : ast->final_offset();
+    if (first == BadOffset || last == BadOffset) {
+        std::ostringstream oss;
+        oss << "/* bad offset for " << ast << " */";
+        return oss.str();
+    }
     return ast.tu().source.substr(first, 1 + last - first);
 }
 

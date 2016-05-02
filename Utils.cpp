@@ -105,8 +105,7 @@ bool SelectRange(SourceManager & SM,
                  SourceRange r)
 {
     FullSourceLoc loc = FullSourceLoc(r.getEnd(), SM);
-    return SM.isInMainFile(loc) && 
-           !SM.isMacroBodyExpansion(loc);
+    return SM.isInMainFile(loc);
 }
 
 SourceRange normalizeSourceRange(SourceRange r,
