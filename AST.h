@@ -23,6 +23,7 @@ namespace clang_mutate {
 struct TU;
 
 typedef int SourceOffset;
+extern const SourceOffset BadOffset;
 
 class Ast
 {
