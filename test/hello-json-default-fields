@@ -3,19 +3,19 @@
 # for -fields
 . $(dirname $0)/common
 
-contains "$(run_hello -json -stmt1=9 | jshon)" \
+contains "$(run_hello -json -stmt1=12 | jshon)" \
          '"src_file_name":.*,' \
          '"ast_class": "IntegerLiteral"' \
          '"unbound_vals": \[]' \
          '"begin_src_col": 10' \
          '"begin_src_line": 5' \
-         '"counter": 9' \
+         '"counter": 12' \
          '"end_src_col": 10' \
          '"full_stmt": false' \
          '"end_src_line": 5' \
          '"guard_stmt": false' \
          '"macros": \[]' \
-         '"parent_counter": 8' \
+         '"parent_counter": 11' \
          '"src_text": "0"' \
          '"types": \[]' \
          '"unbound_funs": \[]'

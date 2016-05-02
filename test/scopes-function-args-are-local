@@ -4,7 +4,7 @@
 #
 . $(dirname $0)/common
 
-OUTPUT=$(run_scopes -json | json_filter counter 7)
+OUTPUT=$(run_scopes -json | json_filter counter 9)
 
 contains $(echo $OUTPUT | jshon -e scopes -e 2 -e 0) \
          "funarg"

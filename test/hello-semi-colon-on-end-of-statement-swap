@@ -4,6 +4,6 @@
 #
 . $(dirname $0)/common
 
-contains "$(run_hello -swap -stmt1=2 -stmt2=8)" \
+contains "$(run_hello -swap -stmt1=5 -stmt2=11)" \
          "return 0;" \
          "puts(\"hello\");"
