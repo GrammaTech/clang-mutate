@@ -244,7 +244,7 @@ class BuildTU
             if (isa<NamedDecl>(d)) {
                 std::string name = static_cast<NamedDecl*>(d)->getNameAsString();
                 AstRef parent = spine.back();
-                if (parent != NoAst) {
+                if (parent != NoAst && parent->isStmt()) {
                     parent->addDeclares(name);
                 }
             }
@@ -253,7 +253,11 @@ class BuildTU
                               decl_scopes.get_names_in_scope());
 
             reqs.TraverseDecl(d);
-            makeAst(d, reqs);
+            AstRef ast = makeAst(d, reqs);
+            if (isa<NamedDecl>(d)) {
+                std::string name = static_cast<NamedDecl*>(d)->getNameAsString();
+                ast->addDeclares(name);
+            }
         }
         return true;
     }

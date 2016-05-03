@@ -20,7 +20,7 @@ svn revision 182049 (the latest as of this writing) of llvm/clang.
 | llvm/clang | svn revision 182049 |
 
 * Notes Issues and Tasks [4/9]
-** TODO set :DECLARES on "ParmVar" ASTs
+** DONE set :DECLARES on "ParmVar" ASTs
 This currently is not set.
 
 See file:test/parmvar-has-declares.
@@ -212,7 +212,7 @@ into a container and then removing all duplicates.
 - CXXCtorInitializer
 - Capture
 
-** TODO nesting of numbered statements
+** DONE nesting of numbered statements
 Ensure that the numbers are applied from the outside-in rather than
 the inside out, e.g., in the following =/* 1[ */= should be before
 both =/* 2[ */= and =/* 3[ */=.
