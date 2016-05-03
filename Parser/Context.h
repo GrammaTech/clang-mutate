@@ -16,6 +16,11 @@ template <>           struct parsed<void> { bool ok; };
 
 //
 //  parse<T,Ctx>: produce a parsed<T> from a context of type Ctx.
+//                The parser can either succeed, fail, or
+//                raise an error using Ctx::fail. A failed parse
+//                that does not explicitly raise an error with
+//                Ctx::fail will get an auto-generated error message
+//                built from its describe() method.
 //
 template <typename P, typename Ctx>
 parsed<typename P::type> parse(Ctx & ctx)
@@ -25,8 +30,11 @@ parsed<typename P::type> parse(Ctx & ctx)
     if (!ctx.ok())
         return ans;
     ans = P::run(ctx);
-    if (!ans.ok && ctx.ok())
-        ctx.fail(P::describe());
+    if (!ans.ok && ctx.ok()) {
+        std::ostringstream oss;
+        oss << "expected '" << P::describe() << "'";
+        ctx.fail(oss.str());
+    }
     return ans;
 }
 

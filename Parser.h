@@ -66,7 +66,7 @@ struct p_ops<std::tuple<X, Ys...>>
     {
         std::ostringstream oss;
         oss << std::endl
-            << "  " << X::parser::describe() << std::endl << std::endl;
+            << "  " << X::parser::describe() << std::endl;
         for (auto & line : X::purpose())
             oss << "    " << line << std::endl;
         oss << p_ops<std::tuple<Ys...>>::describe();
@@ -81,20 +81,22 @@ struct p_ops<std::tuple<>>
     template <typename Ctx> static parsed<type> run(Ctx & ctx)
     {
         parsed<type> ans;
-        ans.ok = true;
+        ans.ok = false;
         ans.result = NULL;
+        ctx.fail("Unknown command.\n"
+                 "Use '?' or 'help' for a list of commands,\n"
+                 "'q' or 'quit' to quit clang-mutate.");
         return ans;
     }
     static std::string describe()
     {
-        std::ostringstream oss;
-        oss << std::endl
-            << "  (quit|q)" << std::endl
-            << std::endl
-            << "    Quit clang-mutate." << std::endl;
-        return oss.str();
+        return "\n"
+               "  (q|quit)\n"
+               "    Quit clang-mutate.\n";
     }
 };
+
+struct help_op;
 
 //
 //  interactive_op implementation
@@ -129,6 +131,7 @@ struct interactive_op
         , ast_op
         , json_op
         , help_fields_op
+        , help_op
         > registered_ops;
 
     typedef RewritingOpPtr type;
@@ -143,34 +146,45 @@ struct interactive_op
                            , many<sequence_<chr_<';'>, op>>
                            , eof
             >>>(ctx);
-        bool all_valid = true;
-        for (auto & res : cmd.result) {
-            if (!res.is_valid()) {
-                all_valid = false;
-                break;
+        if (ctx.ok()) {
+            bool all_valid = true;
+            for (auto & res : cmd.result) {
+                if (!res.is_valid()) {
+                    all_valid = false;
+                    break;
+                }
             }
-        }
-        if (cmd.ok && !all_valid) {
-            // No operations matched, print help.
-            std::ostringstream oss;
-            oss << "Unknown command. Possible commands are:" << std::endl
-                << p_ops<registered_ops>::describe();
-            ctx.fail(oss.str());
-            ans.ok = false;
-        }
-        else if (cmd.ok) {
-            ans.result = new ChainedOp(cmd.result);
-            ans.ok = true;
-        }
-        else {
-            ctx.fail("Hmm..");
-            ans.ok = false;
+            if (all_valid) {
+                ans.result = new ChainedOp(cmd.result);
+                ans.ok = true;
+            }
+            else {
+                // No operations matched, print help.
+                std::ostringstream oss;
+                oss << "Unknown command. Possible commands are:" << std::endl
+                    << p_ops<registered_ops>::describe();
+                ctx.fail(oss.str());
+                ans.ok = false;
+            }
         }
         return ans;
     }
     static std::string describe() { return "<interactive-op>"; }
 };
 
+extern const char help_[] = "help";
+extern const char qmark_[] = "?";
+struct help_op
+{
+    typedef alt<str_<help_>, str_<qmark_>> command;
+    typedef tokens< command > parser;
+
+    static RewritingOpPtr make()
+    { return echo(p_ops<interactive_op::registered_ops>::describe()); }
+
+    static std::vector<std::string> purpose()
+    { return { "Explain clang-mutate's interactive commands." }; }
+};
 
 } // end namespace clang_mutate
 
