@@ -175,58 +175,14 @@ std::string RewritingOp::string_value(
         : search->second;
 }
 
-void ChainedOp::merge(RewritingOpPtr op)
-{
-    switch (op->kind()) {
-    case Op_Chain: {
-        ref_ptr<ChainedOp> ch = static_pointer_cast<ChainedOp>(op);
-        bool first = true;
-        for (auto p : ch->m_ops) {
-            if (first && m_ops.back().second.empty()) {
-                for (auto kvs : p.first) {
-                    for (auto v : kvs.second) {
-                        m_ops.back().first[kvs.first].push_back(v);
-                    }
-                }
-                m_ops.back().second = p.second;
-            }
-            else {
-                m_ops.push_back(p);
-            }
-            first = false;
-        }
-    } break;
-    case Op_Set:
-    case Op_Insert:
-    case Op_SetRange: {
-        if (!m_ops.back().second.empty()) {
-            m_ops.push_back(std::make_pair(Mutations(), IO()));
-        }
-        m_ops.back().first[op->target()].push_back(op);
-    } break;
-    default: {
-        m_ops.back().second.push_back(op);
-    } break;
-    }
-}
-
 void ChainedOp::print(std::ostream & o) const
 {
     o << "{ ";
     std::string sep = "";
     for (auto p : m_ops) {
-        for (auto kvs : p.first) {
-            for (auto op : kvs.second) {
-                o << sep;
-                op->print(o);
-                sep = "; ";
-            }
-        }
-        for (auto op : p.second) {
-            o << sep;
-            op->print(o);
-            sep = "; ";
-        }
+        o << sep;
+        p->print(o);
+        sep = ", ";
     }
     o << " }";
 }
@@ -235,34 +191,15 @@ bool ChainedOp::edits_tu(TURef & tu) const
 {
     if (m_ops.empty())
         return false;
-    const std::pair<Mutations, IO> & last_ops = m_ops.back();
-    const std::vector<RewritingOpPtr> & last_muts
-        = last_ops.first.begin()->second;
-
-    // If this chain ends with an I/O action or contains no mutations, then
-    // this chain does not end with an edit.
-    if (!last_ops.second.empty() || last_muts.empty())
-        return false;
-
-    return last_muts.back()->edits_tu(tu);
+    return m_ops.back()->edits_tu(tu);
 }
 
 void ChainedOp::execute(RewriterState & state) const
 {
     if (state.failed) return;
-    for (auto p : m_ops) {
-        // Execute some mutations in reverse-AstRef order
-        for (auto it = p.first.rbegin(); it != p.first.rend(); ++it) {
-            for (auto op : it->second) {
-                op->execute(state);
-                if (state.failed) return;
-            }
-        }
-        // Execution some IO
-        for (auto op : p.second) {
-            op->execute(state);
-            if (state.failed) return;
-        }
+    for (auto op : m_ops) {
+        op->execute(state);
+        if (state.failed) return;
     }
 }
 

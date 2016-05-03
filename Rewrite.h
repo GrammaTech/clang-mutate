@@ -190,21 +190,18 @@ private:
     Annotator * m_annotate;
 };
 
-// NOTE: ChainedOp takes ownership of it's member ops.
 class ChainedOp : public RewritingOp
 {
-    void merge(RewritingOpPtr op);
-
 public:
     ChainedOp(const RewritingOps & ops)
         : RewritingOp()
-        , m_ops(1)
-    { for (auto & op : ops) merge(op); }
+        , m_ops(ops)
+    {}
 
     ChainedOp(const std::initializer_list<RewritingOpPtr> & ops)
         : RewritingOp()
-        , m_ops(1)
-    { for (auto & op : ops) merge(op); }
+        , m_ops(ops)
+    {}
 
     OpKind kind() const { return Op_Chain; }
     AstRef target() const { return NoAst; }
@@ -213,14 +210,7 @@ public:
     bool edits_tu(TURef & tu) const;
 
 private:
-
-    // An operation chain consists of an interleaved list of operations
-    // of two types: mutations, which should be applied from largest AstRef
-    // to smallest, and IO-style actions like printing the resulting rewrite
-    // buffer or reading original source text.
-    typedef std::map<AstRef, std::vector<RewritingOpPtr> > Mutations;
-    typedef std::vector<RewritingOpPtr> IO;
-    std::vector<std::pair<Mutations, IO> > m_ops;
+    std::vector<RewritingOpPtr> m_ops;
 };
 
 class InsertOp : public RewritingOp
