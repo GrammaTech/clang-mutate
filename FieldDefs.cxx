@@ -50,6 +50,11 @@ AST_FIELD( full_stmt, bool,
   { return ast.isFullStmt(); }
   )
 
+AST_FIELD( children, std::vector<AstRef>,
+  "The ordered list of immediate children of this node.",
+  { return ast.children(); }
+  )
+
 AST_FIELD_P( stmt_list, std::vector<AstRef>,
   "For a CompoundStmt, the list of immediate children.",
   (ast.className() == "CompoundStmt"),
