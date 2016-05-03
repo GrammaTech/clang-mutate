@@ -214,7 +214,6 @@ bool InsertOp::edits_tu(TURef & tu) const
 
 void InsertOp::execute(RewriterState & state) const
 {
-    std::cerr << "InsertOp at " << m_tgt << std::endl;
     if (m_after) {
         state.rewriter(m_tgt.tuid())
             .insertAfter(m_tgt, string_value(m_text, m_tgt, state));
@@ -238,7 +237,6 @@ bool LitInsertOp::edits_tu(TURef & tu) const
 
 void LitInsertOp::execute(RewriterState & state) const
 {
-    std::cerr << "LitInsertOp" << std::endl;
     if (m_after) {
         state.rewriter(m_tgt.tuid())
             .insertAfter(m_tgt, string_value(m_text, state, false));
