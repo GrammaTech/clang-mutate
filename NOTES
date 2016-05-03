@@ -19,7 +19,12 @@ svn revision 182049 (the latest as of this writing) of llvm/clang.
 |------------+---------------------|
 | llvm/clang | svn revision 182049 |
 
-* Notes Issues and Tasks [3/5]
+* Notes Issues and Tasks [4/9]
+** TODO set :DECLARES on "ParmVar" ASTs
+This currently is not set.
+
+See file:test/parmvar-has-declares.
+
 ** TODO better selection of AST nodes to visit [1/3]
 - what can we visit http://clang.llvm.org/docs/RAVFrontendAction.html
 - lets not visit tiny statements
