@@ -10,8 +10,9 @@ ifneq ("$(LLVM_HOME)","$(dir $(LLVM_HOME))")
 endif
 endif
 
-LLVM_POSTFIX ?=
-CXX ?= $(LLVM_HOME)clang++$(LLVM_POSTFIX)
+ifeq "$(origin CXX)" "default"
+CXX = $(LLVM_HOME)clang++$(LLVM_POSTFIX)
+endif
 RTTIFLAG := -fno-rtti
 PICOJSON_INCS := -I third-party/picojson-1.3.0
 PICOJSON_DEFINES := -D PICOJSON_USE_INT64
