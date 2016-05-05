@@ -1,7 +1,7 @@
 #ifndef EDIT_BUFFER_H
 #define EDIT_BUFFER_H
 
-#include "ASTRef.h"
+#include "AstRef.h"
 
 #include <string>
 

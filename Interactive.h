@@ -1,7 +1,7 @@
 #ifndef INTERACTIVE_H
 #define INTERACTIVE_H
 
-#include "AST.h"
+#include "Ast.h"
 
 #include <iostream>
 

@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-#include "ASTRef.h"
+#include "AstRef.h"
 #include "Hash.h"
 #include "PointedTree.h"
 #include "BinaryAddressMap.h"

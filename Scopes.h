@@ -1,7 +1,7 @@
 #ifndef SCOPES_H
 #define SCOPES_H
 
-#include "ASTRef.h"
+#include "AstRef.h"
 #include "PointedTree.h"
 
 #include "clang/Basic/LLVM.h"

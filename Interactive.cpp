@@ -1,7 +1,7 @@
 #include "Interactive.h"
 
 #include "TU.h"
-#include "AST.h"
+#include "Ast.h"
 #include "BinaryAddressMap.h"
 #include "Rewrite.h"
 #include "TypeDBEntry.h"

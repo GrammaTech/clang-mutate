@@ -1,7 +1,7 @@
 #ifndef CLANG_MUTATE_TU_H
 #define CLANG_MUTATE_TU_H
 
-#include "AST.h"
+#include "Ast.h"
 #include "Scopes.h"
 #include "BinaryAddressMap.h"
 #include "Json.h"

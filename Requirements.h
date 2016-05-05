@@ -1,7 +1,7 @@
 #ifndef CLANG_MUTATE_REQUIREMENTS_H
 #define CLANG_MUTATE_REQUIREMENTS_H
 
-#include "ASTRef.h"
+#include "AstRef.h"
 #include "Macros.h"
 #include "Function.h"
 #include "Variable.h"
