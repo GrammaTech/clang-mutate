@@ -147,9 +147,6 @@ public:
     bool is_field_decl() const
     { return m_field_decl; }
 
-    std::string field_name() const
-    { return m_field_name; }
-
     std::string base_type() const
     { return m_base_type; }
 
@@ -272,7 +269,6 @@ private:
 
     // Properties for struct field decls
     bool m_field_decl;
-    std::string m_field_name;
     std::string m_base_type;
     bool m_bit_field;
     unsigned m_bit_field_width;

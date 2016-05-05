@@ -191,18 +191,6 @@ AST_FIELD_P( binary_contents, std::string,
           addrRange.second);
   } )
 
-AST_FIELD_P( field_name, std::string,
-  "For field declarations, the field name.",
-  ast.is_field_decl(),
-  { return ast.field_name(); }
-  )
-
-AST_FIELD_P( base_type, std::string,
-  { "For field declarations, the base type name." },
-  ast.is_field_decl(),
-  { return ast.base_type(); }
-  )
-
 AST_FIELD_P( bit_field_width, unsigned,
   "For bitfield declarations, the field width.",
   ast.is_field_decl() && ast.is_bit_field(),

@@ -111,7 +111,6 @@ void Ast::setFieldDeclProperties(ASTContext * context)
     FieldDecl *D = static_cast<FieldDecl *>(asDecl());
 
     m_field_decl = true;
-    m_field_name = D->getNameAsString();
 
     QualType Type = D->getType();
 
@@ -262,7 +261,6 @@ Ast::Ast(Stmt * _stmt,
     , m_can_have_bytes(false)
     , m_replacements()
     , m_field_decl(false)
-    , m_field_name()
     , m_base_type()
     , m_bit_field(false)
     , m_bit_field_width(0)
@@ -303,7 +301,6 @@ Ast::Ast(Decl * _decl,
     , m_can_have_bytes(false)
     , m_replacements()
     , m_field_decl(false)
-    , m_field_name()
     , m_base_type()
     , m_bit_field(false)
     , m_bit_field_width(0)
