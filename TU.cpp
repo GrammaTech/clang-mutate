@@ -63,6 +63,10 @@ class BuildTU
 
     virtual void HandleTranslationUnit(ASTContext &Context)
     {
+        SourceManager & sm = ci->getSourceManager();
+        TUs.back()->filename = Utils::safe_realpath(
+            sm.getFileEntryForID(sm.getMainFileID())->getName());
+
         this->Context = &Context;
         spine.clear();
         spine.push_back(NoAst);
@@ -174,6 +178,7 @@ class BuildTU
         {
             Requirements reqs(TUs.back()->tuid,
                               Context,
+                              ci,
                               decl_scopes.get_names_in_scope());
             reqs.TraverseStmt(s);
             
@@ -182,12 +187,12 @@ class BuildTU
             if (parent != NoAst) {
                 if (parent->isStmt()) {
                     ast->setIsGuard(
-                        Utils::IsGuardStmt(s, parent->asStmt()));
+                        Utils::IsGuardStmt(s, parent->asStmt(*ci)));
                 }
                 if (ast->className() == "CompoundStmt" &&
                     parent->className() == "Function")
                 {
-                    functions.push_back(std::make_pair(parent->asDecl(),
+                    functions.push_back(std::make_pair(parent->asDecl(*ci),
                                                        ast));
                 }
             }
@@ -250,6 +255,7 @@ class BuildTU
             }
             Requirements reqs(TUs.back()->tuid,
                               Context,
+                              ci,
                               decl_scopes.get_names_in_scope());
 
             reqs.TraverseDecl(d);
@@ -294,8 +300,6 @@ class BuildTU
         if (Utils::ShouldVisitDecl(sm, ci->getLangOpts(),
                                    sm.getMainFileID(), d))
         {
-            AstRef nextAstRef = TUs.back()->nextAstRef();
-            
             if (begins_pseudoscope(d)) {
                 decl_scopes.enter_scope(NoAst);
             }

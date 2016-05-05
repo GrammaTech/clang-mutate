@@ -116,9 +116,7 @@ struct info_op
         // working directory.
         std::vector<std::string> filenames;
         for (auto & tu : TUs) {
-            SourceManager & sm = tu->ci->getSourceManager();
-            std::string filename = sm.getFilename(
-                sm.getLocForStartOfFile(sm.getMainFileID())).str();
+            std::string filename = tu->filename;
             if (filename.find(prefix) == 0)
                 filename = filename.substr(prefix.size());
             if (filename.size() + 2 > maxFilenameLength)
@@ -468,19 +466,17 @@ struct list_op
     {
         std::ostringstream oss;
         TU * tu = TUs[tuid];
-        SourceManager & sm = tu->ci->getSourceManager();
 
         std::vector<picojson::value> ans;
         std::set<std::string> all_keys;
         for (auto & ast : tu->asts) {
             char msg[256];
-            SourceRange r = ast->sourceRange();
             sprintf(msg, "%8d %6d:%-3d %6d:%-3d %-25s",
                     (unsigned int) ast->counter().counter(),
-                    sm.getSpellingLineNumber   (r.getBegin()),
-                    sm.getSpellingColumnNumber (r.getBegin()),
-                    sm.getSpellingLineNumber   (r.getEnd()),
-                    sm.getSpellingColumnNumber (r.getEnd()),
+                    ast->begin_src_pos().getLine(),
+                    ast->begin_src_pos().getColumn(),
+                    ast->end_src_pos().getLine(),
+                    ast->end_src_pos().getColumn(),
                     ast->className().c_str());
             BinaryAddressMap::BeginEndAddressPair addrRange;
             if (ast->binaryAddressRange(addrRange)) {

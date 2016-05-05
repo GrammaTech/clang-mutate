@@ -12,9 +12,10 @@ using namespace clang;
 Requirements::Requirements(
     TURef _tu,
     clang::ASTContext * astContext,
+    clang::CompilerInstance * _ci,
     const std::vector<std::vector<std::string> > & scopes)
     : m_tu(_tu)
-    , ci(TUs[_tu]->ci)
+    , ci(_ci)
     , m_ast_context(astContext)
     , m_vars(), m_funs(), m_includes(), addl_types(), m_macros()
     , m_text(""), m_parent(NoAst), m_scope_pos(NoNode)

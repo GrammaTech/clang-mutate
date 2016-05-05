@@ -40,6 +40,7 @@ public:
     Requirements(
         TURef _tu,
         clang::ASTContext * astContext,
+        clang::CompilerInstance * _ci,
         const std::vector<std::vector<std::string> > & scopes);
     
     std::set<VariableInfo> variables()   const;
@@ -93,6 +94,9 @@ public:
     
     clang::ASTContext * astContext()
     { return m_ast_context; }
+
+    clang::CompilerInstance * CI()
+    { return ci; }
 
 private:
 

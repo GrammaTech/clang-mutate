@@ -28,11 +28,17 @@ extern const SourceOffset BadOffset;
 class Ast
 {
 public:
-    bool isDecl() const { return (m_decl != NULL); }
-    clang::Decl * asDecl() const { return m_decl; }
+    // NOTE: the CompilerInstance is not used here; it is just
+    //       a token used to assert "yes, the clang IR backing
+    //       this Ast is still in memory".  In effect, these
+    //       methods can only be used during TU construction.
+    clang::Decl * asDecl(clang::CompilerInstance const&) const
+    { return m_decl; }
+    clang::Stmt * asStmt(clang::CompilerInstance const&) const
+    { return m_stmt; }
 
+    bool isDecl() const { return (m_decl != NULL); }
     bool isStmt() const { return (m_stmt != NULL); }
-    clang::Stmt * asStmt() const { return m_stmt; }
 
     // The source range for the statement itself, not including
     // any trailing semicolon.
@@ -142,8 +148,6 @@ public:
     void setIsFullStmt(bool yn)
     { m_full_stmt = yn; }
 
-    void setFieldDeclProperties(clang::ASTContext * context);
-
     bool is_field_decl() const
     { return m_field_decl; }
 
@@ -223,7 +227,10 @@ public:
     static std::map<std::string, Ast::Field*> & ast_fields();
 
 private:
-    void update_range_offsets();
+    void update_range_offsets(clang::CompilerInstance * ci);
+
+    void setFieldDeclProperties(clang::ASTContext * context,
+                                clang::CompilerInstance * ci);
 
     static std::map<std::string, Ast::Field*> s_ast_fields;
 

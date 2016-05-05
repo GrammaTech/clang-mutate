@@ -41,6 +41,8 @@ AstRef Ast::impl_create(T * clang_obj, Requirements & required)
                               required.normalizedSourceRange(),
                               required.beginLoc(),
                               required.endLoc()));
+    ref->update_range_offsets(required.CI());
+
     if (parent != NoAst)
         parent->add_child(ref);
 
@@ -60,11 +62,11 @@ AstRef Ast::impl_create(T * clang_obj, Requirements & required)
 
     Stmt * parentStmt = parent == NoAst
        ? NULL
-        : parent->asStmt();
+        : parent->asStmt(*required.CI());
 
     if (ref->isStmt()) {
         bool has_bytes = Utils::ShouldAssociateBytesWithStmt(
-            ref->asStmt(),
+            ref->asStmt(*required.CI()),
             parentStmt);
         ref->setCanHaveAssociatedBytes(has_bytes);
     }
@@ -72,8 +74,9 @@ AstRef Ast::impl_create(T * clang_obj, Requirements & required)
         ref->setCanHaveAssociatedBytes(false);
     }
 
-    if (ref->isDecl() && isa<FieldDecl>(ref->asDecl())) {
-        ref->setFieldDeclProperties(required.astContext());
+    if (ref->isDecl() && isa<FieldDecl>(ref->asDecl(*required.CI()))) {
+        ref->setFieldDeclProperties(required.astContext(),
+                                    required.CI());
     }
 
     return ref;
@@ -83,12 +86,7 @@ template AstRef Ast::impl_create<Stmt>(Stmt * stmt, Requirements & reqs);
 template AstRef Ast::impl_create<Decl>(Decl * stmt, Requirements & reqs);
 
 std::string Ast::srcFilename() const
-{
-    TU & tu = m_counter.tu();
-    SourceManager & sm = tu.ci->getSourceManager();
-    return Utils::safe_realpath(
-        sm.getFileEntryForID(sm.getMainFileID())->getName());
-}
+{ return m_counter.tu().filename; }
 
 bool Ast::binaryAddressRange(
     BinaryAddressMap::BeginEndAddressPair & addrRange) const
@@ -106,9 +104,10 @@ bool Ast::binaryAddressRange(
         addrRange);
 }
 
-void Ast::setFieldDeclProperties(ASTContext * context)
+void Ast::setFieldDeclProperties(ASTContext * context,
+                                 CompilerInstance * ci)
 {
-    FieldDecl *D = static_cast<FieldDecl *>(asDecl());
+    FieldDecl *D = static_cast<FieldDecl *>(asDecl(*ci));
 
     m_field_decl = true;
 
@@ -198,9 +197,8 @@ bool Ast::has_bytes() const
         && binaryAddressRange(_);
 }
 
-void Ast::update_range_offsets()
+void Ast::update_range_offsets(CompilerInstance * ci)
 {
-    CompilerInstance * ci = counter().tu().ci;
     SourceManager & sm = ci->getSourceManager();
     FileID mainFileID = sm.getMainFileID();
 
@@ -266,7 +264,6 @@ Ast::Ast(Stmt * _stmt,
     , m_bit_field_width(0)
     , m_array_length(0)
 {
-    update_range_offsets();
     if (isa<BinaryOperator>(m_stmt)) {
         m_opcode = static_cast<BinaryOperator*>(m_stmt)
             ->getOpcodeStr().str();
@@ -311,6 +308,4 @@ Ast::Ast(Decl * _decl,
     // will grab everything up to (but not including) the semicolon.
     if (isa<FieldDecl>(_decl))
         m_range = m_normalized_range;
-
-    update_range_offsets();
 }

@@ -33,7 +33,7 @@ bool FAF::runInvocation(clang::CompilerInvocation * Invocation,
 {
     clang::CompilerInstance * Compiler = new clang::CompilerInstance;
     clang_mutate::TURef tuid = clang_mutate::TUs.size();
-    clang_mutate::TUs.push_back(new clang_mutate::TU(Compiler, tuid));
+    clang_mutate::TUs.push_back(new clang_mutate::TU(tuid));
         
     Compiler->setInvocation(Invocation);
     Compiler->setFileManager(Files);
@@ -52,6 +52,7 @@ bool FAF::runInvocation(clang::CompilerInvocation * Invocation,
         = sm.getBufferData(sm.getMainFileID()).str();
 
     Files->clearStatCaches();
+    delete Compiler;
     return Success;
 }
 

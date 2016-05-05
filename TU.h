@@ -16,14 +16,12 @@ namespace clang_mutate {
     
 struct TU
 {
-    TU(clang::CompilerInstance * _ci, TURef _tuid)
-      : ci(_ci)
-      , tuid(_tuid)
+    TU(TURef _tuid)
+      : tuid(_tuid)
       , asts()
       , addrMap()
     {}
     ~TU();
-    clang::CompilerInstance * ci;
     TURef tuid;
     bool allowDeclAsts;
     std::vector<Ast*> asts;
@@ -32,6 +30,7 @@ struct TU
     Scope scopes;
     std::map<std::string, std::vector<picojson::value> > aux;
     std::map<AstRef, SourceOffset> function_starts;
+    std::string filename;
 
     AstRef nextAstRef() const;
 };
