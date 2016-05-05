@@ -724,6 +724,7 @@ struct json_op
 
         std::set<std::string> ast_keys;
         std::vector<std::string> astf;
+        (void) ast_fields.get(astf);
         for (auto & a : astf)
             ast_keys.insert(a);
         for (auto & ast : tu.asts) {
