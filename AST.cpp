@@ -309,5 +309,11 @@ Ast::Ast(Decl * _decl,
     , m_bit_field_width(0)
     , m_array_length(0)
 {
+    // clang seems to give us the wrong source ranges for FieldDecls.
+    // Work around this by setting the range to the normalized range, which
+    // will grab everything up to (but not including) the semicolon.
+    if (isa<FieldDecl>(_decl))
+        m_range = m_normalized_range;
+
     update_range_offsets();
 }
