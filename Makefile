@@ -1,3 +1,4 @@
+
 # Set personal or machine-local flags in a file named local.mk
 ifneq ("$(wildcard local.mk)","")
 include local.mk
@@ -18,7 +19,10 @@ PICOJSON_INCS := -I third-party/picojson-1.3.0
 PICOJSON_DEFINES := -D PICOJSON_USE_INT64
 LLVM_CONFIG := $(LLVM_HOME)llvm-config$(LLVM_POSTFIX)
 LLVM_DWARFDUMP := $(LLVM_HOME)llvm-dwarfdump$(LLVM_POSTFIX)
-CXXFLAGS := $(shell $(LLVM_CONFIG) --cxxflags) -I. $(RTTIFLAG) $(PICOJSON_INCS) $(PICOJSON_DEFINES) -DLLVM_DWARFDUMP='"$(LLVM_DWARFDUMP)"'
+LLVM_CXXFLAGS := -I/home/mnoonan/bi/include  -fPIC -fvisibility-inlines-hidden -Wall -W -Wno-unused-parameter -Wwrite-strings -Wcast-qual -Wno-missing-field-initializers -pedantic -Wno-long-long -Wno-maybe-uninitialized -Wno-comment -std=c++11 -ffunction-sections -fdata-sections -O3 -fno-exceptions -fno-rtti  -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -DDEBUG -g
+CXXFLAGS := $(LLVM_CXXFLAGS) -I. $(RTTIFLAG) $(PICOJSON_INCS) $(PICOJSON_DEFINES) -DLLVM_DWARFDUMP='"$(LLVM_DWARFDUMP)"'
+
+CXXFLAGS_OLD := $(shell $(LLVM_CONFIG) --cxxflags) -I. $(RTTIFLAG) $(PICOJSON_INCS) $(PICOJSON_DEFINES) -DLLVM_DWARFDUMP='"$(LLVM_DWARFDUMP)"'
 LLVMLDFLAGS := $(shell $(LLVM_CONFIG) --ldflags --libs) -ldl
 
 SOURCES = Rewrite.cpp EditBuffer.cpp Interactive.cpp Function.cpp Variable.cpp AST.cpp TU.cpp Requirements.cpp Bindings.cpp Renaming.cpp Scopes.cpp Macros.cpp TypeDBEntry.cpp AuxDB.cpp BinaryAddressMap.cpp Json.cpp Utils.cpp clang-mutate.cpp
