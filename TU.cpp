@@ -20,7 +20,9 @@
 namespace clang_mutate {
 using namespace clang;
 
-std::vector<TU*> TUs;
+std::map<TURef, TU*> TUs;
+
+TU * tu_in_progress = NULL;
 
 TU::~TU()
 {
@@ -50,13 +52,14 @@ class BuildTU
     typedef std::set<clang::IdentifierInfo*> VarScope;
     
   public:
-    BuildTU(CompilerInstance * _ci)
+    BuildTU(TU & _tu, CompilerInstance * _ci)
         : ci(_ci)
+        , tu(_tu)
         , sm(_ci->getSourceManager())
-        , decl_scopes(TUs.back()->scopes)
-        , protos(TUs.back()->aux["protos"])
-        , decls(TUs.back()->aux["decls"])
-        , function_starts(TUs.back()->function_starts)
+        , decl_scopes(_tu.scopes)
+        , protos(_tu.aux["protos"])
+        , decls(_tu.aux["decls"])
+        , function_starts(_tu.function_starts)
     {}
 
     ~BuildTU() {}
@@ -64,7 +67,7 @@ class BuildTU
     virtual void HandleTranslationUnit(ASTContext &Context)
     {
         SourceManager & sm = ci->getSourceManager();
-        TUs.back()->filename = Utils::safe_realpath(
+        tu.filename = Utils::safe_realpath(
             sm.getFileEntryForID(sm.getMainFileID())->getName());
 
         this->Context = &Context;
@@ -176,7 +179,7 @@ class BuildTU
         if (Utils::ShouldVisitStmt(sm, ci->getLangOpts(),
                                    sm.getMainFileID(), s))
         {
-            Requirements reqs(TUs.back()->tuid,
+            Requirements reqs(tu.tuid,
                               Context,
                               ci,
                               decl_scopes.get_names_in_scope());
@@ -253,7 +256,7 @@ class BuildTU
                     parent->addDeclares(name);
                 }
             }
-            Requirements reqs(TUs.back()->tuid,
+            Requirements reqs(tu.tuid,
                               Context,
                               ci,
                               decl_scopes.get_names_in_scope());
@@ -327,6 +330,7 @@ class BuildTU
   private:
     ASTContext * Context;
     CompilerInstance * ci;
+    TU & tu;
     SourceManager & sm;
 
     std::vector<AstRef> spine;
@@ -344,4 +348,7 @@ class BuildTU
 
 std::unique_ptr<clang::ASTConsumer>
 clang_mutate::CreateTU(clang::CompilerInstance * CI)
-{ return std::unique_ptr<clang::ASTConsumer>(new BuildTU(CI)); }
+{
+    return std::unique_ptr<clang::ASTConsumer>
+        (new BuildTU(*tu_in_progress, CI));
+}

@@ -131,6 +131,7 @@ struct interactive_op
         , ast_op
         , json_op
         , load_op
+        , unload_op
         , help_fields_op
         , help_op
         > registered_ops;

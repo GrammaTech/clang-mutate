@@ -31,10 +31,12 @@ struct p_tu
             ans.ok = false;
             return ans;
         }
-        if (n.result >= TUs.size()) {
+        if (TUs.find(n.result) == TUs.end()) {
             std::ostringstream oss;
-            oss << "only " << TUs.size() << " translation units loaded, id "
-                << n.result << " is too large.";
+            oss << "No translation unit with id " << n.result
+                << " is loaded." << std::endl
+                << "Use 'info' to see a list of translation units."
+                << std::endl;
             ctx.restore(snapshot);
             ctx.fail(oss.str());
             ans.ok = false;

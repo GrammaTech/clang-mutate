@@ -31,10 +31,13 @@ bool FAF::runInvocation(clang::CompilerInvocation * Invocation,
                         std::shared_ptr<clang::PCHContainerOperations> PCHContainerOps,
                         clang::DiagnosticConsumer * DiagConsumer)
 {
+    static clang_mutate::TURef next_tuid = 0;
     clang::CompilerInstance * Compiler = new clang::CompilerInstance;
-    clang_mutate::TURef tuid = clang_mutate::TUs.size();
-    clang_mutate::TUs.push_back(new clang_mutate::TU(tuid));
-        
+    clang_mutate::TURef tuid = next_tuid++;
+    clang_mutate::TUs[tuid] = new clang_mutate::TU(tuid);
+
+    clang_mutate::tu_in_progress = clang_mutate::TUs[tuid];
+
     Compiler->setInvocation(Invocation);
     Compiler->setFileManager(Files);
     Compiler->createDiagnostics(DiagConsumer, /*ShouldOwnClient=*/false);
@@ -48,7 +51,7 @@ bool FAF::runInvocation(clang::CompilerInvocation * Invocation,
     const bool Success = Compiler->ExecuteAction(*ScopedToolAction);
 
     clang::SourceManager & sm = Compiler->getSourceManager();
-    clang_mutate::TUs[tuid]->source
+    clang_mutate::tu_in_progress->source
         = sm.getBufferData(sm.getMainFileID()).str();
 
     Files->clearStatCaches();

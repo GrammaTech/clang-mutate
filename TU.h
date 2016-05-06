@@ -35,8 +35,9 @@ struct TU
     AstRef nextAstRef() const;
 };
 
-extern std::vector<TU*> TUs;
+extern std::map<TURef, TU*> TUs;
 
+extern TU * tu_in_progress;
 std::unique_ptr<clang::ASTConsumer>
 CreateTU(clang::CompilerInstance * CI);
 

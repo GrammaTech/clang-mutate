@@ -117,7 +117,7 @@ struct info_op
         // working directory.
         std::vector<std::string> filenames;
         for (auto & tu : TUs) {
-            std::string filename = tu->filename;
+            std::string filename = tu.second->filename;
             if (filename.find(prefix) == 0)
                 filename = filename.substr(prefix.size());
             if (filename.size() + 2 > maxFilenameLength)
@@ -140,8 +140,8 @@ struct info_op
         size_t n = 0;
         for (auto & tu : TUs) {
             std::string name = filenames[n];
-            oss << "| " << std::setw(4) << n << " | "
-                << std::setw(6) << tu->asts.size() << " | "
+            oss << "| " << std::setw(4) << tu.first << " | "
+                << std::setw(6) << tu.second->asts.size() << " | "
                 << name;
             PAD(name.size() + 1);
             ++n;
@@ -762,7 +762,9 @@ struct load_op
 
         int result = process_command_line(argc, argv);
         std::ostringstream oss;
-        oss << "loaded " << path << " (result=" << result << ")";
+        oss << "loaded " << path
+            << ": tu = " << tu_in_progress->tuid
+            << ", result = " << result;
         delete [] argv;
         return echo(oss.str());
     }
@@ -770,6 +772,27 @@ struct load_op
     static std::vector<std::string> purpose()
     { return { "Load a file as a new translation unit. Optionally provide"
              , "compilation flags after the filename." }; }
+};
+
+extern const char unload_[] = "unload";
+struct unload_op
+{
+    typedef str_<unload_> command;
+    typedef tokens< command, p_tu > parser;
+
+    static RewritingOpPtr make(TURef const& tu)
+    {
+        auto it = TUs.find(tu);
+        std::ostringstream oss;
+        oss << "unloaded translation unit " << it->first;
+        auto op = reset_buffer(it->first);
+        delete it->second;
+        TUs.erase(it);
+        return op->then(echo(oss.str()));
+    }
+
+    static std::vector<std::string> purpose()
+    { return { "Unload a translation unit." }; }
 };
 
 ////////////////////////////////////////////////////////////////////////////////
