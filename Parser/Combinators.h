@@ -156,6 +156,29 @@ template <typename P>
 struct _tokens<optional<P>>
 { typedef sequence<optional<sequence_<spaces, P>>> parser; };
 
+template <typename F, typename P, typename ... Ps>
+struct _tokens<fmap<F, optional<P>>, Ps...>
+{
+    typedef sequence_
+        < fmap<F, optional<sequence_<spaces, P>>>
+        , typename _tokens<Ps...>::parser
+    > parser;
+};
+
+template <typename F, typename P>
+struct _tokens<fmap<F, optional<P>>>
+{ typedef sequence<fmap<F, optional<sequence_<spaces, P>>>> parser; };
+
+// When parsing many<P>, the trailing spaces should be optional.
+template <typename P, typename ...Ps>
+struct _tokens<many<P>, Ps...>
+{
+    typedef sequence_
+        < many<sequence_<spaces, P>>
+        , typename _tokens<Ps...>::parser
+    > parser;
+};
+
 template <typename P>
 struct _tokens<P>
 { typedef sequence<spaces, P> parser; };
@@ -189,7 +212,7 @@ template <typename ...Ps>
         , try_<spaces>
         > eval;
 };
-        
+
 // Nicer pretty-printing
 template <> std::string      try_<spaces>::describe() { return ""; }
 template <> std::string many1<whitespace>::describe() { return " "; }

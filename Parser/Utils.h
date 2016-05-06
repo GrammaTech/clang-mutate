@@ -245,6 +245,7 @@ struct fmap
 //
 //  Cons<T>: cons operation for a vector_of<T>
 //
+
 template <typename T>
 struct Cons
 {
@@ -319,6 +320,23 @@ public:
 private:
     bool has_value;
     T value;
+};
+
+//
+//  FromOptional<T>: Extract the value from an Optional<T> or
+//                   use the default constructor for T.
+//
+template <typename T>
+struct FromOptional
+{
+    typedef Optional<T> dom;
+    typedef T           cod;
+    static cod apply(dom x) {
+        cod ans;
+        if (x.get(ans))
+            return ans;
+        return cod();
+    }
 };
 
 } // end namespace parser_templates

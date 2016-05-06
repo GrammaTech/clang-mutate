@@ -1,4 +1,5 @@
 
+#include "clang-mutate.h"
 #include <unistd.h>
 #include <iomanip>
 #include <sstream>
@@ -736,6 +737,41 @@ struct json_op
              , "Use '?fields' to get a description of each JSON field." }; }
 };
 
+extern const char load_[] = "load";
+struct load_op
+{
+    typedef str_<load_> command;
+    typedef tokens< command
+                  , p_text
+                  , fmap<FromOptional<std::vector<std::string>>,
+                         optional<sepBy<p_text, spaces>>>
+                  > parser;
+
+    static RewritingOpPtr make(
+        std::string const& path,
+        std::vector<std::string> const& options)
+    {
+        int argc = 3 + options.size();
+        const char** argv = new const char*[argc + 1];
+        argv[0] = "clang-mutate";
+        argv[1] = path.c_str();
+        argv[2] = "--";
+        for (size_t i = 0; i < options.size(); ++i)
+            argv[3 + i] = options[i].c_str();
+        argv[argc] = NULL;
+
+        int result = process_command_line(argc, argv);
+        std::ostringstream oss;
+        oss << "loaded " << path << " (result=" << result << ")";
+        delete [] argv;
+        return echo(oss.str());
+    }
+
+    static std::vector<std::string> purpose()
+    { return { "Load a file as a new translation unit. Optionally provide"
+             , "compilation flags after the filename." }; }
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 //  Make, Make_impl: call X::make() with arguments unpacked from a tuple or a
@@ -785,6 +821,9 @@ struct Make
             X, dom, 0 == std::tuple_size<Tuple>::value,
             std::tuple_size<Tuple>::value>::go(std::forward<Tuple>(x));
     }
+
+    template <typename P> static std::string describe()
+    { return P::describe(); }
 };
 
 } // end namespace clang_mutate

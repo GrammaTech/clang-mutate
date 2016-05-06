@@ -12,6 +12,7 @@
 //  http://clang.llvm.org/docs/LibTooling.html for details.
 //
 //===----------------------------------------------------------------------===//
+#include "clang-mutate.h"
 #include "Interactive.h"
 #include "FAF.h"
 #include "Utils.h"
@@ -241,12 +242,25 @@ public:
 };
 }
 
-int main(int argc, const char **argv) {
+int process_command_line(int argc, const char **argv)
+{
+    static size_t processed = 0;
+
     CommonOptionsParser OptionsParser(argc, argv, ToolCategory);
-    ClangTool Tool(OptionsParser.getCompilations(),
-                   OptionsParser.getSourcePathList());
+
+    std::vector<std::string> newPaths;
+    auto srcPaths = OptionsParser.getSourcePathList();
+    while (processed < srcPaths.size())
+        newPaths.push_back(srcPaths[processed++]);
+
+    ClangTool Tool(OptionsParser.getCompilations(), newPaths);
     ActionFactory Factory;
-    int result = Tool.run(newFAF<ActionFactory>(&Factory, &Factory).get());
+    return Tool.run(newFAF<ActionFactory>(&Factory, &Factory).get());
+}
+
+int main(int argc, const char **argv)
+{
+    int result = process_command_line(argc, argv);
 
     if (Interactive) {
         clang_mutate::interactive_flags["ctrl"  ] = CtrlChar;
