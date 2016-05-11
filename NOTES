@@ -19,7 +19,28 @@ svn revision 182049 (the latest as of this writing) of llvm/clang.
 |------------+---------------------|
 | llvm/clang | svn revision 182049 |
 
-* Notes Issues and Tasks [4/9]
+* Notes Issues and Tasks [6/11]
+** TODO decl fix
+e.g. with a statement like the following
+: double a,b,c;
+
+we get these ASTs
+- =double a=
+- =double a,b=
+- =double a,b,c=
+
+** TODO better instrumentation
+1. [[file:Rewrite.cpp::std::string%20RewritingOp::string_value(][file:Rewrite.cpp::std::string RewritingOp::string_value(]]
+   - use isDelimited to catch ,-delimited as well as ;-delimited
+   - this should take the whole AST so it can check the parent
+2. =initial_normalized_offset= and friends, updated to handle
+   parameter values, and maybe decls after other fix.
+3. update =extendTextForFullStmt=, maybe =should_normalize= should
+   also hold something indicating the context or type of normalization
+
+Should handle struct-decl-delimiters as well?
+- Currently these are full statements so they're handled normally.
+
 ** DONE set :DECLARES on "ParmVar" ASTs
 This currently is not set.
 

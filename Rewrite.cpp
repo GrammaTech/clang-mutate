@@ -147,6 +147,7 @@ std::string RewritingOp::string_value(
 {
     return string_value(text,
                         state,
+                        // NOTE: isDelimited not just isFullStmt
                         (tgt == NoAst || tgt->isFullStmt()));
 }
 
