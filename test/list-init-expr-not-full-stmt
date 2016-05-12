@@ -1,0 +1,7 @@
+#!/bin/bash
+#
+# The AST with text "10" in list.c "int numbers[10];" should not be a full stmt.
+#
+. $(dirname $0)/common
+
+run_list -json -aux=decls|with_src_text 10|jshon -e full_stmt|grep -v true

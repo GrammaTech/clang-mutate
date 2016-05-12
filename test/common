@@ -23,6 +23,8 @@ MACROS=etc/macros.c
 
 AUX=etc/aux.c
 
+LIST=etc/list.c
+
 NULLC=etc/null.c
 
 SCOPES=etc/scopes.c
@@ -39,6 +41,9 @@ run_macros(){
 run_aux(){
     clang-mutate "$@" $AUX --; }
 
+run_list(){
+    clang-mutate "$@" $LIST --; }
+
 run_null(){
     clang-mutate "$@" $NULLC --; }
 
@@ -47,6 +52,9 @@ run_scopes(){
 
 json_filter(){
     cat -|jshon -a -j|grep "\"${1}\":${2}\(,\|}\)"; }
+
+with_src_text(){
+    cat -|jshon -a -j|grep "\"src_text\":\"${1}\"\(,\|}\)"; }
 
 json_key_filter(){
     cat -|jshon -a -j|grep "\"${1}\":"; }
