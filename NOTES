@@ -20,6 +20,29 @@ svn revision 182049 (the latest as of this writing) of llvm/clang.
 | llvm/clang | svn revision 182049 |
 
 * Notes Issues and Tasks [6/12]
+** TODO consider adjusting notion of what is a full statement
+: 14:18 < eschulte> mnoonan: this change is wreaking some havock with the SE instrumentation
+:                   tests, what's considered a full stmt has changed, i.e. whole-functions
+:                   are now "full" statements
+: 14:20 < mnoonan> well, what's considered a full statement *has* changed.. do we want to
+:                  exclude functions from the global decls that count as full statements?
+: 14:20 < mnoonan> or even exclude all decls, for that matter (including "int x = 1;" at
+:                  global scope, for example)?
+: 14:21 < eschulte> yeah, maybe havoc is a little strong... all I had to do so far was
+:                   exclude whole functions, and function bodies from consideration...
+: 14:22 < mnoonan> function bodies were included before
+: 14:22 < eschulte> yeah, I had considered that a bug
+: 14:22 < eschulte> but it could be subjective
+: 14:23 < mnoonan> well, they aren't any different from any other CompoundStmt, at least
+:                  when used for fodder. I guess you can't replace them with "x++;" though.
+: 14:23 < mnoonan> in any case, it should be easy to tweak the policy now; see the two defns
+:                  for is_full_stmt in Utils.cpp
+: 14:23 < eschulte> they can only be replaced with compound statements, and nothing can be
+:                   placed before then
+: 14:23 < eschulte> okay, will take a look, thanks
+: 14:26 < mnoonan> you might need Decl::getDeclKindName(), which is analogous to
+:                  Stmt::getStmtClassName
+
 ** TODO caching in clang
 From here [[http://clang.llvm.org/doxygen/group__CINDEX__TRANSLATION__UNIT.html#ga524e76bf2a809d037934d4be51ea448a][group__CINDEX__TRANSLATION__UNIT]] it looks like there are
 some reparsing options.
