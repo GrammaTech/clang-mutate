@@ -513,8 +513,9 @@ bool read_yesno(const std::string & s, bool & yesno)
 
 bool is_full_stmt(Stmt * stmt, AstRef parent)
 {
-    return parent->isDecl()
-        || parent->className() == "CompoundStmt";
+    return parent->className() == "CompoundStmt"
+        || (parent->className() == "Function" &&
+            std::string(stmt->getStmtClassName()) == "CompoundStmt");
 }
 
 bool is_full_stmt(Decl * decl, AstRef parent)
