@@ -19,7 +19,16 @@ svn revision 182049 (the latest as of this writing) of llvm/clang.
 |------------+---------------------|
 | llvm/clang | svn revision 182049 |
 
-* Notes Issues and Tasks [6/11]
+* Notes Issues and Tasks [6/12]
+** TODO caching in clang
+From here [[http://clang.llvm.org/doxygen/group__CINDEX__TRANSLATION__UNIT.html#ga524e76bf2a809d037934d4be51ea448a][group__CINDEX__TRANSLATION__UNIT]] it looks like there are
+some reparsing options.
+- see =unsaved_files=
+- =clang_reparseTranslationUnit=
+
+Tips to get the precompiled headers working (see the first response).
+http://clang-developers.42468.n3.nabble.com/Tips-for-optimising-libclang-td4031257.html
+
 ** TODO decl fix
 e.g. with a statement like the following
 : double a,b,c;
