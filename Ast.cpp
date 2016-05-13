@@ -200,6 +200,11 @@ void Ast::update_range_offsets(CompilerInstance * ci)
 
     std::pair<FileID, unsigned> decomp;
 
+    // Apparently clang reports different source ranges for global Var
+    // declarations when compared to local Var decls. This is supposed
+    // to correct for the difference.
+    int endShift = parent() == NoAst ? 0 : 1;
+
     decomp = sm.getDecomposedExpansionLoc(m_range.getBegin());
     m_start_off
         = decomp.first == mainFileID ? decomp.second
@@ -207,9 +212,11 @@ void Ast::update_range_offsets(CompilerInstance * ci)
                                      : parent()->initial_offset();
     decomp = sm.getDecomposedExpansionLoc(
         Lexer::getLocForEndOfToken(m_range.getEnd(),
-                                   0, sm, ci->getLangOpts()));
+                                   0,
+                                   sm,
+                                   ci->getLangOpts()));
     m_end_off
-        = decomp.first == mainFileID ? decomp.second - 1
+        = decomp.first == mainFileID ? decomp.second - endShift
         : parent() == NoAst          ? BadOffset
                                      : parent()->final_offset();
 
@@ -222,9 +229,52 @@ void Ast::update_range_offsets(CompilerInstance * ci)
         Lexer::getLocForEndOfToken(m_normalized_range.getEnd(),
                                    0, sm, ci->getLangOpts()));
     m_norm_end_off
-        = decomp.first == mainFileID ? decomp.second - 1
+        = decomp.first == mainFileID ? decomp.second - endShift
         : parent() == NoAst          ? BadOffset
                                      : parent()->final_normalized_offset();
+
+    // Make any required adjustments to the AST offsets.
+
+    // If this is a Var and our most recent sibling is too, make sure that
+    // our ranges don't overlap. If they do, cut this one short.
+    if (className() == "Var") {
+        TU & tu = counter().tu();
+        AstRef prev = NoAst;
+        if (parent() == NoAst && tu.asts.size() >= 2) {
+            prev = tu.asts[tu.asts.size() - 2]->counter();
+            while (prev->parent() != NoAst)
+                prev = prev->parent();
+            if (prev->className() != "Var")
+                prev = NoAst;
+        }
+        else if (parent() != NoAst &&
+                 parent()->className() == "DeclStmt" &&
+                 !parent()->children().empty())
+        {
+            prev = parent()->children().back();
+        }
+        if (prev != NoAst && initial_offset() <= prev->final_offset()) {
+            // Scan over whitespace, and optionally a comma and some more
+            // whitespace.
+            // TODO: handle comments etc. This should use clang's parsing,
+            //       but there will still be corner cases to handle
+            //       (e.g. the , comes from an expanded macro)
+            SourceOffset offset = prev->final_offset() + 1;
+            std::string buf = sm.getBufferData(sm.getMainFileID()).str();
+            while (isspace(buf[offset]) && offset < m_end_off) {
+                ++offset;
+            }
+            if (buf[offset] == ',') {
+                ++offset;
+                while (isspace(buf[offset]) && offset < m_end_off) {
+                    ++offset;
+                }
+            }
+            if (offset >= m_end_off)
+                offset = m_start_off;
+            m_start_off = m_norm_start_off = offset;
+        }
+    }
 }
 
 Ast::Ast(Stmt * _stmt,
