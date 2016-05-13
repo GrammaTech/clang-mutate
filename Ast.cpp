@@ -54,11 +54,7 @@ AstRef Ast::impl_create(T * clang_obj, Requirements & required)
     ref->setFreeFunctions(required.functions());
     ref->setReplacements(required.replacements());
 
-    bool is_full_stmt =
-        (parent == NoAst && ref->isStmt()) ||
-        (parent != NoAst && (parent->isDecl() ||
-                             parent->className() == "CompoundStmt"));
-    ref->setIsFullStmt(is_full_stmt);
+    ref->setIsFullStmt(Utils::is_full_stmt(clang_obj, parent));
 
     Stmt * parentStmt = parent == NoAst
        ? NULL

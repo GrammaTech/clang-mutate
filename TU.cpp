@@ -156,14 +156,11 @@ class BuildTU
         required.setReplacements(renamer.getReplacements());
 
         SourceRange sr = clang_obj->getSourceRange();
-        bool is_full_stmt =
-            (parent == NoAst && is_stmt(clang_obj)) ||
-            (parent != NoAst && (parent->isDecl() ||
-                                 parent->className() == "CompoundStmt"));
-        SourceRange nsr = Utils::normalizeSourceRange(sr,
-                                                      is_full_stmt,
-                                                      sm,
-                                                      ci->getLangOpts());
+        SourceRange nsr = Utils::normalizeSourceRange(
+            sr,
+            Utils::is_full_stmt(clang_obj, parent),
+            sm,
+            ci->getLangOpts());
         required.setSourceRange(sm.getPresumedLoc(sr.getBegin()),
                                 sm.getPresumedLoc(sr.getEnd()),
                                 sr,

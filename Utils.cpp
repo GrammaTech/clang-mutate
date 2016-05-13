@@ -1,9 +1,11 @@
 #include "Utils.h"
+#include "Ast.h"
 
 #include <algorithm>
 #include <fstream>
 #include <sstream>
 
+using namespace clang_mutate;
 using namespace clang;
 
 namespace Utils {
@@ -507,6 +509,17 @@ bool read_yesno(const std::string & s, bool & yesno)
         return true;
     }
     return false;
+}
+
+bool is_full_stmt(Stmt * stmt, AstRef parent)
+{
+    return parent->isDecl()
+        || parent->className() == "CompoundStmt";
+}
+
+bool is_full_stmt(Decl * decl, AstRef parent)
+{
+    return parent == NoAst;
 }
 
 } // end namespace Utils

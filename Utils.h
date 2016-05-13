@@ -2,6 +2,7 @@
 #ifndef CLANG_MUTATE_UTILS_H
 #define CLANG_MUTATE_UTILS_H
 
+#include "AstRef.h"
 #include "Json.h"
 #include "Hash.h"
 
@@ -115,6 +116,11 @@ std::vector<std::string> tokenize(const std::string & s);
 bool read_uint(const std::string & s, unsigned int & n);
 
 bool read_yesno(const std::string & s, bool & yesno);
+
+template <typename T>
+bool is_full_stmt(T * clang_obj, clang_mutate::AstRef parent);
+bool is_full_stmt(clang::Stmt * stmt, clang_mutate::AstRef parent);
+bool is_full_stmt(clang::Decl * decl, clang_mutate::AstRef parent);
 
 } // end namespace Utils
 
