@@ -19,7 +19,45 @@ svn revision 182049 (the latest as of this writing) of llvm/clang.
 |------------+---------------------|
 | llvm/clang | svn revision 182049 |
 
-* Notes Issues and Tasks [6/12]
+* Notes Issues and Tasks [6/14]
+** TODO report macros and types
+Currently top-level macros and types are not reported, even if they
+may be used by included files.
+
+** TODO clang-mutate multi-process library with daisy-chain
+The basic idea is to have a single process which could be loaded into
+lisp and accessed directly via the FFI.  This process will be a very
+thin wrapper around the current clang-mutate.  It will start up a new
+clang-mutate instance for every freshly loaded /new/ file.  For every
+/change/ to an existing file, instead of going through the big loop it
+will:
+1. Fork from the parent leaving the parent process unchanged,
+2. apply the change to the child process loading the updated source
+   with the =unsaved_files= option to =clang_reparseTranslationUnit=,
+   importantly this should be possible without any disk IO,
+3. return the modified source, and then suspend (this process may
+   later be picked up to retrieve the modified ASTs by =update-asts=).
+
+The result should be the following.
+1. A single clang-mutate.so loaded by lisp, no more system calls for
+   mutations.
+2. A run with only a single read from disk for the root of every
+   ancestor chain.
+3. Every individual on the lisp/SE side is paired with a suspended
+   process on the cpp/clang side.
+4. Maybe we could go even further, and do away with json serialization
+   entirely replacing this with direct queries to the CPP data
+   structures.
+
+*** caching in clang
+From here [[http://clang.llvm.org/doxygen/group__CINDEX__TRANSLATION__UNIT.html#ga524e76bf2a809d037934d4be51ea448a][group__CINDEX__TRANSLATION__UNIT]] it looks like there are
+some reparsing options.
+- see =unsaved_files=
+- =clang_reparseTranslationUnit=
+
+Tips to get the precompiled headers working (see the first response).
+http://clang-developers.42468.n3.nabble.com/Tips-for-optimising-libclang-td4031257.html
+
 ** TODO consider adjusting notion of what is a full statement
 : 14:18 < eschulte> mnoonan: this change is wreaking some havock with the SE instrumentation
 :                   tests, what's considered a full stmt has changed, i.e. whole-functions
@@ -42,15 +80,6 @@ svn revision 182049 (the latest as of this writing) of llvm/clang.
 : 14:23 < eschulte> okay, will take a look, thanks
 : 14:26 < mnoonan> you might need Decl::getDeclKindName(), which is analogous to
 :                  Stmt::getStmtClassName
-
-** TODO caching in clang
-From here [[http://clang.llvm.org/doxygen/group__CINDEX__TRANSLATION__UNIT.html#ga524e76bf2a809d037934d4be51ea448a][group__CINDEX__TRANSLATION__UNIT]] it looks like there are
-some reparsing options.
-- see =unsaved_files=
-- =clang_reparseTranslationUnit=
-
-Tips to get the precompiled headers working (see the first response).
-http://clang-developers.42468.n3.nabble.com/Tips-for-optimising-libclang-td4031257.html
 
 ** TODO decl fix
 e.g. with a statement like the following
