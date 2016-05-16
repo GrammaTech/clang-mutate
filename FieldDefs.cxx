@@ -50,6 +50,11 @@ AST_FIELD( full_stmt, bool,
   { return ast.isFullStmt(); }
   )
 
+AST_FIELD( syn_ctx, SyntacticContext,
+  "What is the surrounding syntactic context of this statement?",
+  { return ast.syntacticContext(); }
+  )
+
 AST_FIELD( children, std::vector<AstRef>,
   "The ordered list of immediate children of this node.",
   { return ast.children(); }

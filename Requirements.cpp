@@ -12,11 +12,13 @@ using namespace clang;
 Requirements::Requirements(
     TURef _tu,
     clang::ASTContext * astContext,
+    SyntacticContext _sctx,
     clang::CompilerInstance * _ci,
     const std::vector<std::vector<std::string> > & scopes)
     : m_tu(_tu)
     , ci(_ci)
     , m_ast_context(astContext)
+    , m_syn_ctx(_sctx)
     , m_vars(), m_funs(), m_includes(), addl_types(), m_macros()
     , m_text(""), m_parent(NoAst), m_scope_pos(NoNode)
     , toplev_is_macro(false)
@@ -229,3 +231,6 @@ Replacements Requirements::replacements() const
 
 TURef Requirements::tu() const
 { return m_tu; }
+
+SyntacticContext Requirements::syn_ctx() const
+{ return m_syn_ctx; }

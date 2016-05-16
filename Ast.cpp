@@ -37,6 +37,7 @@ AstRef Ast::impl_create(T * clang_obj, Requirements & required)
     tu.asts.push_back(new Ast(clang_obj,
                               ref,
                               required.parent(),
+                              required.syn_ctx(),
                               required.sourceRange(),
                               required.normalizedSourceRange(),
                               required.beginLoc(),
@@ -253,33 +254,61 @@ void Ast::update_range_offsets(CompilerInstance * ci)
         {
             prev = parent()->children().back();
         }
-        if (prev != NoAst && initial_offset() <= prev->final_offset()) {
+        if (prev != NoAst) {
+            prev->setSyntacticContext(SyntacticContext::ListElt());
+            setSyntacticContext(SyntacticContext::FinalListElt());
+        }
+        if (prev != NoAst &&
+            initial_offset() <= prev->final_normalized_offset())
+        {
             // Scan over whitespace, and optionally a comma and some more
             // whitespace.
             // TODO: handle comments etc. This should use clang's parsing,
             //       but there will still be corner cases to handle
             //       (e.g. the , comes from an expanded macro)
-            SourceOffset offset = prev->final_offset() + 1;
+            SourceOffset offset = prev->final_normalized_offset() + 1;
             std::string buf = sm.getBufferData(sm.getMainFileID()).str();
             while (isspace(buf[offset]) && offset < m_end_off) {
                 ++offset;
             }
             if (buf[offset] == ',') {
+                // If we do hit a comma, extend the previous Var's
+                // normalized range to include it.
+                prev->m_norm_end_off = offset;
                 ++offset;
-                while (isspace(buf[offset]) && offset < m_end_off) {
+                while (isspace(buf[offset]) &&
+                       offset < m_end_off &&
+                       offset < (SourceOffset) buf.size())
+                {
                     ++offset;
                 }
             }
             if (offset >= m_end_off)
-                offset = m_start_off;
+                offset = prev->final_normalized_offset() + 1;
             m_start_off = m_norm_start_off = offset;
         }
+    }
+    if (className() == "ParmVar" &&
+        !parent()->children().empty() &&
+        parent()->children().back()->className() == "ParmVar")
+    {
+        // We are a parameter, but not the first one. Extend our sibling's
+        // normalized range forward until it reaches a comma.
+        AstRef prev = parent()->children().back();
+        prev->setSyntacticContext(SyntacticContext::ListElt());
+        setSyntacticContext(SyntacticContext::FinalListElt());
+        SourceOffset offset = prev->final_normalized_offset();
+        std::string buf = sm.getBufferData(sm.getMainFileID()).str();
+        while (buf[offset] != ',' && offset < (SourceOffset) buf.size())
+            ++offset;
+        prev->m_norm_end_off = offset;
     }
 }
 
 Ast::Ast(Stmt * _stmt,
          AstRef _counter,
          AstRef _parent,
+         SyntacticContext syn_ctx,
          SourceRange r,
          SourceRange nr,
          PresumedLoc pBegin,
@@ -302,6 +331,7 @@ Ast::Ast(Stmt * _stmt,
     , m_free_funs()
     , m_opcode("")
     , m_full_stmt(false)
+    , m_syn_ctx(syn_ctx)
     , m_can_have_bytes(false)
     , m_replacements()
     , m_field_decl(false)
@@ -319,6 +349,7 @@ Ast::Ast(Stmt * _stmt,
 Ast::Ast(Decl * _decl,
          AstRef _counter,
          AstRef _parent,
+         SyntacticContext syn_ctx,
          SourceRange r,
          SourceRange nr,
          PresumedLoc pBegin,
@@ -341,6 +372,7 @@ Ast::Ast(Decl * _decl,
     , m_free_funs()
     , m_opcode("")
     , m_full_stmt(false)
+    , m_syn_ctx(syn_ctx)
     , m_can_have_bytes(false)
     , m_replacements()
     , m_field_decl(false)

@@ -176,14 +176,18 @@ class BuildTU
         if (Utils::ShouldVisitStmt(sm, ci->getLangOpts(),
                                    sm.getMainFileID(), s))
         {
+            AstRef parent = spine.back();
+            SyntacticContext syn_ctx = Utils::is_full_stmt(s, parent)
+                ? SyntacticContext::FullStmt()
+                : SyntacticContext::Generic();
             Requirements reqs(tu.tuid,
                               Context,
+                              syn_ctx,
                               ci,
                               decl_scopes.get_names_in_scope());
             reqs.TraverseStmt(s);
             
             AstRef ast = makeAst(s, reqs);
-            AstRef parent = ast->parent();
             if (parent != NoAst) {
                 if (parent->isStmt()) {
                     ast->setIsGuard(
@@ -243,18 +247,22 @@ class BuildTU
         if (Utils::ShouldVisitDecl(sm, ci->getLangOpts(),
                                    sm.getMainFileID(), d))
         {
+            AstRef parent = spine.back();
             if (isa<VarDecl>(d)) {
                 decl_scopes.declare(static_cast<VarDecl*>(d)->getIdentifier());
             }
             if (isa<NamedDecl>(d)) {
                 std::string name = static_cast<NamedDecl*>(d)->getNameAsString();
-                AstRef parent = spine.back();
                 if (parent != NoAst && parent->isStmt()) {
                     parent->addDeclares(name);
                 }
             }
+            SyntacticContext syn_ctx = parent == NoAst
+                ? SyntacticContext::TopLevel()
+                : SyntacticContext::Generic();
             Requirements reqs(tu.tuid,
                               Context,
+                              syn_ctx,
                               ci,
                               decl_scopes.get_names_in_scope());
 

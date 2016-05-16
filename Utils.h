@@ -85,8 +85,6 @@ bool IsGuardStmt(clang::Stmt *S, clang::Stmt *P);
 
 std::string filenameToContents(const std::string & str);
 
-std::string extendTextForFullStmt(const std::string & text);
-
 std::string trim(const std::string &input);
 std::vector<std::string> split(const std::string &input,
                                const char delim);

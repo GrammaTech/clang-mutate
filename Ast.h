@@ -12,6 +12,7 @@
 #include "Renaming.h"
 #include "Requirements.h"
 #include "Renaming.h"
+#include "SyntacticContext.h"
 
 #include "clang/AST/AST.h"
 #include "clang/Frontend/CompilerInstance.h"
@@ -117,6 +118,12 @@ public:
     std::string opcode() const
     { return m_opcode; }
 
+    SyntacticContext syntacticContext() const
+    { return m_syn_ctx; }
+
+    void setSyntacticContext(SyntacticContext syn_ctx)
+    { m_syn_ctx = syn_ctx; }
+
     void setFreeVariables(const std::set<VariableInfo> & vars)
     { m_free_vars = vars; }
 
@@ -195,6 +202,7 @@ public:
     Ast(clang::Stmt * _stmt,
         AstRef _counter,
         AstRef _parent,
+        SyntacticContext syn_ctx,
         clang::SourceRange r,
         clang::SourceRange nr,
         clang::PresumedLoc pBegin,
@@ -203,6 +211,7 @@ public:
     Ast(clang::Decl * _decl,
         AstRef _counter,
         AstRef _parent,
+        SyntacticContext syn_ctx,
         clang::SourceRange r,
         clang::SourceRange nr,
         clang::PresumedLoc pBegin,
@@ -271,6 +280,7 @@ private:
     std::set<FunctionInfo> m_free_funs;
     std::string m_opcode;
     bool m_full_stmt;
+    SyntacticContext m_syn_ctx;
     bool m_can_have_bytes;
     Replacements m_replacements;
 

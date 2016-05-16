@@ -265,22 +265,6 @@ bool IsGuardStmt(Stmt *S, Stmt *P)
     return false;
 }
 
-std::string extendTextForFullStmt(const std::string & _text)
-{
-    std::string text = _text;
-    size_t last = text.size();
-    while (last > 0 && isspace(text[last - 1]))
-        --last;
-    if (!text.empty() &&
-        last != 0 &&
-        text[last - 1] != '}' &&
-        text[last - 1] != ';')
-    {
-        text += ";";
-    }
-    return text;
-}
-
 std::string filenameToContents(const std::string & str)
 {
     std::stringstream buffer;

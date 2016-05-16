@@ -143,26 +143,21 @@ bool RewritingOp::run(RewriterState & state) const
 std::string RewritingOp::string_value(
     const std::string & text,
     AstRef tgt,
+    SyntacticContext::Where where,
     RewriterState & state) const
 {
-    return string_value(text,
-                        state,
-                        // NOTE: isDelimited not just isFullStmt
-                        (tgt == NoAst || tgt->isFullStmt()));
+    return SyntacticContext::adjust(
+        string_value(text, state),
+        tgt->syntacticContext(),
+        where);
 }
 
 std::string RewritingOp::string_value(
     const std::string & text,
-    RewriterState & state,
-    bool should_normalize) const
+    RewriterState & state) const
 {
-    if (state.failed || text.empty())
+    if (state.failed || text.empty() || text[0] != '$')
         return text;
-    if (text[0] != '$') {
-        return should_normalize
-            ? Utils::extendTextForFullStmt(text)
-            : text;
-    }
     // Look up variable binding or fail.
     auto search = state.vars.find(text);
     if (search == state.vars.end()) {
@@ -171,9 +166,7 @@ std::string RewritingOp::string_value(
         state.fail(oss.str());
         return text;
     }
-    return should_normalize
-        ? Utils::extendTextForFullStmt(search->second)
-        : search->second;
+    return search->second;
 }
 
 void ChainedOp::print(std::ostream & o) const
@@ -217,11 +210,19 @@ void InsertOp::execute(RewriterState & state) const
 {
     if (m_after) {
         state.rewriter(m_tgt.tuid())
-            .insertAfter(m_tgt, string_value(m_text, m_tgt, state));
+            .insertAfter(m_tgt,
+                         string_value(m_text,
+                                      m_tgt,
+                                      SyntacticContext::After,
+                                      state));
     }
     else {
         state.rewriter(m_tgt.tuid())
-            .insertBefore(m_tgt, string_value(m_text, m_tgt, state));
+            .insertBefore(m_tgt,
+                          string_value(m_text,
+                                       m_tgt,
+                                       SyntacticContext::Before,
+                                       state));
     }
 }
 
@@ -240,11 +241,12 @@ void LitInsertOp::execute(RewriterState & state) const
 {
     if (m_after) {
         state.rewriter(m_tgt.tuid())
-            .insertAfter(m_tgt, string_value(m_text, state, false));
+            .insertAfter(m_tgt,
+                         string_value(m_text, state));
     }
     else {
         state.rewriter(m_tgt.tuid())
-            .insertBefore(m_tgt, string_value(m_text, state, false));
+            .insertBefore(m_tgt, string_value(m_text, state));
     }
 }
 
@@ -258,11 +260,15 @@ void SetOp::execute(RewriterState & state) const
 {
     if (m_normalizing) {
         state.rewriter(m_tgt.tuid())
-            .replaceText(m_tgt, string_value(m_text, m_tgt, state));
+            .replaceText(m_tgt,
+                         string_value(m_text,
+                                      m_tgt,
+                                      SyntacticContext::Instead,
+                                      state));
     }
     else {
         state.rewriter(m_tgt.tuid())
-            .replaceText(m_tgt, string_value(m_text, state, false));
+            .replaceText(m_tgt, string_value(m_text, state));
     }
 }
 
@@ -279,7 +285,10 @@ void SetRangeOp::execute(RewriterState & state) const
 {
     state.rewriter(m_tu)
          .replaceTextRange(m_stmt1, m_stmt2,
-                           string_value(m_text, m_stmt2, state),
+                           string_value(m_text,
+                                        m_stmt2,
+                                        SyntacticContext::Instead,
+                                        state),
                            m_preAdjust, m_postAdjust);
 }
 

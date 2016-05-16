@@ -9,6 +9,7 @@
 #include "Utils.h"
 #include "Bindings.h"
 #include "Renaming.h"
+#include "SyntacticContext.h"
 
 #include "clang/Basic/LLVM.h"
 #include "clang/AST/ASTConsumer.h"
@@ -40,6 +41,7 @@ public:
     Requirements(
         TURef _tu,
         clang::ASTContext * astContext,
+        SyntacticContext _sctx,
         clang::CompilerInstance * _ci,
         const std::vector<std::vector<std::string> > & scopes);
     
@@ -57,6 +59,7 @@ public:
     clang::PresumedLoc     endLoc()      const;
     Replacements           replacements() const;
     TURef                  tu()          const;
+    SyntacticContext       syn_ctx()     const;
 
     bool VisitStmt(clang::Stmt * expr);
 
@@ -106,6 +109,7 @@ private:
     TURef m_tu;
     clang::CompilerInstance * ci;
     clang::ASTContext * m_ast_context;
+    SyntacticContext m_syn_ctx;
     std::set<BindingCtx::Binding> m_vars;
     std::set<FunctionInfo> m_funs;
     std::set<std::string> m_includes;

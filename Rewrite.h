@@ -3,6 +3,7 @@
 
 #include "TU.h"
 #include "EditBuffer.h"
+#include "SyntacticContext.h"
 
 #include "ref_ptr.hpp"
 
@@ -103,11 +104,11 @@ public:
 
     std::string string_value(const std::string & text,
                              AstRef tgt,
+                             SyntacticContext::Where where,
                              RewriterState & state) const;
 
     std::string string_value(const std::string & text,
-                             RewriterState & state,
-                             bool should_normalize = false) const;
+                             RewriterState & state) const;
 
     RefCounter count;
 };
