@@ -17,3 +17,7 @@ tests.html
 *~
 
 local.mk
+
+GPATH
+GRTAGS
+GTAGS
