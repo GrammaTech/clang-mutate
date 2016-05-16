@@ -268,6 +268,23 @@ static Hash define_type(
         }
     }
 
+    else if (t->getAs<BuiltinType>()) {
+        std::vector<std::string> ifiles;
+        std::vector<unsigned int> ilines;
+        std::vector<unsigned int> icols;
+        Hash hash = TypeDBEntry::mkInclude(
+            t->getAs<BuiltinType>()->getName(PrintingPolicy(ci->getLangOpts())),
+            "",
+            "",
+            0,
+            0,
+            ifiles,
+            ilines,
+            icols).hash();
+        seen[t] = hash;
+        return hash;
+    }
+
     else if (t->isPointerType()) {
         // Just ensure that the pointed-to type is defined
         Hash hash = define_type(t->getPointeeType().getTypePtr(), seen, ci);
