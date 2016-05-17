@@ -13,7 +13,9 @@ clang-mutate [*options*] <*source0*> [...<*sourceN*>]...
 # DESCRIPTION
 
 `clang-mutate` performs a number of local source-to-source
-transformations (or mutations) over C language source.
+transformations (or mutations) over C language source.  `clang-mutate`
+may also be used to print information of program source in JSON
+format.
 
 This tool uses the Clang Tooling infrastructure, see
 http://clang.llvm.org/docs/LibTooling.html for details.
@@ -23,23 +25,23 @@ http://clang.llvm.org/docs/LibTooling.html for details.
 -help
 :   Print usage information.
 
--stmt1
-:   Statement id for mutation operations.
+-stmt1 *ID*
+:   Statement *ID* for mutation operations.
 
--stmt2
-:   Second statement id for mutation operations.
+-stmt2 *ID*
+:   Second statement *ID* for mutation operations.
 
--value1
-:   String value for mutation operations.
+-value1 *VALUE*
+:   String *VALUE* for mutation operations.
 
--value2
-:   Second string value for mutation operations.
+-value2 *VALUE*
+:   Second string *VALUE* for mutation operations.
 
--file1
-:   File holding the value1 to use for mutation operations.
+-file1 *FILE*
+:   *FILE* holds the value1 to use for mutation operations.
 
--file2
-:   File holding the value2 to use for mutation operations.
+-file2 *FILE*
+:   *FILE* holds the value2 to use for mutation operations.
 
 -binary
 :   Binary with DWARF information for line-to-address mapping.
@@ -94,9 +96,89 @@ http://clang.llvm.org/docs/LibTooling.html for details.
 -json
 :   List JSON-encoded descriptions for every statement.
 
+-aux=[*FLAGS*]
+:   Include auxiliary information in json output according to
+    *FLAGS*.  *FLAGS* should be a comma delimited list of the
+    following keywords.
+
+    protos
+    :   Include prototype information in json output.
+
+    type
+    :   Output a type database as described in section _Type
+        Database_.
+
+    decls
+    :   Include declarations in json output.
+
+-fields=[*FIELDS*]
+:   The fields flag may be used to control the field names calculated
+    and returned by `clang-mutate`.  *FIELDS* should be a comma
+    delimited list of field names.  See the _JSON KEYS_ section for
+    names of the available fields and their contents.
+
 # JSON KEYS
 
 INCLUDE_FIELDS_MD
+
+# TYPE DATABASE
+
+When the `types` auxiliary flag is passed `clang-mutate` will print a
+JSON object for each type encountered in the program.  Each type
+object has the following keys which provide type information and which
+may be used to find the types referenced from the `type` JSON key for
+program elements.
+
+hash
+:   A hash field which corresponds to the `type` JSON key on program
+    element objects.  See _JSON KEYS_.
+
+type
+:   The name of the type.
+
+pointer
+:   A boolean indicating if the type is a pointer type or not.
+
+array: string
+:   A string representing the clang `ArraySizeModifier` associated
+    with the type.  This may hold one of the following values.
+
+    `[]`
+    :   Indicating a normal array, e.g., `X[4]`.
+
+    `[static]`
+    :   Indicating a static array, e.g., `X[static 4]`.
+
+    `[*]`
+    :   Indicating a star sized array, e.g., `X[*]`.
+
+decl
+:   A string holding the code used to declare the type.
+
+reqs
+:   A list of hash values for type upon which the type declaration
+    depends.
+
+file
+:   The file in which the type definition is located (if known).
+
+line
+:   The line in which the type definition is located (if known).
+
+col
+:   The column on which the type definition is located (if known).
+
+i_file
+:   A list of file names for `#include` directives leading to the
+    definition of the type (if known).
+
+i_line
+:   A list of lines for points of `#include` directives leading to
+    the definition of the type (if known).
+
+i_col
+:   A list of columns for points of `#include` directives leading to
+    the definition of the type (if known).
 
 # DISCUSSION
 
