@@ -155,10 +155,13 @@ class BuildTU
         required.setScopePos(decl_scopes.current_scope_position());
         required.setReplacements(renamer.getReplacements());
 
+        bool expand_range = (required.syn_ctx() == SyntacticContext::FullStmt() ||
+                             required.syn_ctx() == SyntacticContext::Field());
+
         SourceRange sr = clang_obj->getSourceRange();
         SourceRange nsr = Utils::normalizeSourceRange(
             sr,
-            Utils::is_full_stmt(clang_obj, parent),
+            expand_range,
             sm,
             ci->getLangOpts());
         required.setSourceRange(sm.getPresumedLoc(sr.getBegin()),

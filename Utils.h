@@ -61,7 +61,7 @@ getImmediateMacroArgCallerRange(clang::SourceManager & SM,
 
 clang::SourceRange
 normalizeSourceRange(clang::SourceRange r,
-                     bool is_full_stmt,
+                     bool expand_to_semicolon,
                      clang::SourceManager & sm,
                      const clang::LangOptions & langOpts);
 

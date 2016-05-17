@@ -111,13 +111,13 @@ bool SelectRange(SourceManager & SM,
 }
 
 SourceRange normalizeSourceRange(SourceRange r,
-                                 bool is_full_stmt,
+                                 bool expand_to_semicolon,
                                  SourceManager & sm,
                                  const LangOptions & langOpts)
 {
     return getImmediateMacroArgCallerRange(
         sm,
-        is_full_stmt ? expandRange(sm, langOpts, r) : r);
+        expand_to_semicolon ? expandRange(sm, langOpts, r) : r);
 }
 
 
@@ -513,4 +513,3 @@ picojson::value Hash::toJSON() const
 {
     return to_json(static_cast<int64_t>(m_hash));
 }
-
