@@ -257,9 +257,14 @@ class BuildTU
                     parent->addDeclares(name);
                 }
             }
-            SyntacticContext syn_ctx = parent == NoAst
-                ? SyntacticContext::TopLevel()
-                : SyntacticContext::Generic();
+            SyntacticContext syn_ctx = SyntacticContext::Generic();
+
+            if (isa<FieldDecl>(d)) {
+                syn_ctx = SyntacticContext::Field();
+            }
+            else if (parent == NoAst)
+                syn_ctx = SyntacticContext::TopLevel();
+
             Requirements reqs(tu.tuid,
                               Context,
                               syn_ctx,
