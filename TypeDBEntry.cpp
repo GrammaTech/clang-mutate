@@ -11,6 +11,8 @@ using namespace clang;
 std::map<Hash, TypeDBEntry> TypeDBEntry::type_db;
 
 TypeDBEntry TypeDBEntry::mkType(const std::string & _name,
+                                const bool & _pointer,
+                                const std::string & _array_size,
                                 const std::string & _text,
                                 const std::string & _file,
                                 const unsigned int & _line,
@@ -19,6 +21,8 @@ TypeDBEntry TypeDBEntry::mkType(const std::string & _name,
 {
     TypeDBEntry ti;
     ti.m_name = _name;
+    ti.m_pointer = _pointer;
+    ti.m_array_size = _array_size;
     ti.m_text = _text;
     ti.m_file = _file;
     ti.m_line = _line;
@@ -30,6 +34,8 @@ TypeDBEntry TypeDBEntry::mkType(const std::string & _name,
 }
 
 TypeDBEntry TypeDBEntry::mkFwdDecl(const std::string & _name,
+                                   const bool & _pointer,
+                                   const std::string & _array_size,
                                    const std::string & _kind,
                                    const std::string & _file,
                                    const unsigned int & _line,
@@ -37,6 +43,8 @@ TypeDBEntry TypeDBEntry::mkFwdDecl(const std::string & _name,
 {
     TypeDBEntry ti;
     ti.m_name = _name;
+    ti.m_pointer = _pointer;
+    ti.m_array_size = _array_size;
     ti.m_text = _kind;
     ti.m_text += " ";
     ti.m_text += _name;
@@ -50,6 +58,8 @@ TypeDBEntry TypeDBEntry::mkFwdDecl(const std::string & _name,
 }
 
 TypeDBEntry TypeDBEntry::mkInclude(const std::string & _name,
+                                   const bool & _pointer,
+                                   const std::string & _array_size,
                                    const std::string & _header,
                                    const std::string & _file,
                                    const unsigned int & _line,
@@ -62,6 +72,8 @@ TypeDBEntry TypeDBEntry::mkInclude(const std::string & _name,
     TypeDBEntry ti;
     ti.m_is_include = true;
     ti.m_name = _name;
+    ti.m_pointer = _pointer;
+    ti.m_array_size = _array_size;
     ti.m_text = _header;
     ti.m_file = _file;
     ti.m_line = _line;
@@ -76,7 +88,8 @@ TypeDBEntry TypeDBEntry::mkInclude(const std::string & _name,
 void TypeDBEntry::compute_hash()
 {
     std::hash<std::string> hasher;
-    size_t h = hasher(m_name + m_text);
+    size_t h = hasher(m_name + m_text + m_array_size);
+    if (m_pointer) h += 1;
     for (std::set<Hash>::iterator it = m_reqs.begin();
          it != m_reqs.end();
          ++it)
@@ -108,6 +121,8 @@ picojson::value TypeDBEntry::toJSON() const
     
     jsonObj["hash"] = to_json(m_hash);
     jsonObj["type"] = to_json(m_name);
+    jsonObj["pointer"] = to_json(m_pointer);
+    jsonObj["array"] = to_json(m_array_size);
     jsonObj["file"] = to_json(m_file);
     jsonObj["line"] = to_json(m_line);
     jsonObj["col"] = to_json(m_col);
@@ -150,17 +165,17 @@ static Hash define_type(
 
     // Check for pointer or array types, and if so we'll update the
     // name later.
-    std::string prefix;
-    std::string postfix;
+    bool pointer = false;
+    std::string size_mod = "";
     if (t->isPointerType()) {
-        prefix = "*";
+        pointer = true;
         t = t->getPointeeType().getTypePtr();
     }
     if (t->isArrayType()) {
         switch(t->getAsArrayTypeUnsafe()->getSizeModifier()){
-        case ArrayType::Normal : postfix = "[]";
-        case ArrayType::Static : postfix = "[static]";
-        case ArrayType::Star : postfix = "[*]";
+        case ArrayType::Normal : size_mod = "[]";
+        case ArrayType::Static : size_mod = "[static]";
+        case ArrayType::Star : size_mod = "[*]";
         }
         t = t->getAsArrayTypeUnsafe()->getElementType().getTypePtr();
     }
@@ -188,7 +203,9 @@ static Hash define_type(
                 incLoc = sm.getPresumedLoc(inc_loc);
             }
             Hash hash = TypeDBEntry::mkInclude(
-                (prefix + td->getNameAsString() + postfix),
+                td->getNameAsString(),
+                pointer,
+                size_mod,
                 header,
                 beginLoc.getFilename(),
                 beginLoc.getLine(),
@@ -250,7 +267,9 @@ static Hash define_type(
                 SourceLocation it = r.getBegin();
                 PresumedLoc beginLoc = sm.getPresumedLoc(sm.getSpellingLoc(it));
                 Hash hash = TypeDBEntry::mkType(
-                    (prefix + name + postfix),
+                    name,
+                    pointer,
+                    size_mod,
                     one_line_name,
                     beginLoc.getFilename(),
                     beginLoc.getLine(),
@@ -275,7 +294,9 @@ static Hash define_type(
                 text += ";";
         
                 TypeDBEntry ti = TypeDBEntry::mkType(td->getNameAsString(),
-                                                     (prefix + text + postfix),
+                                                     pointer,
+                                                     size_mod,
+                                                     text,
                                                      beginLoc.getFilename(),
                                                      beginLoc.getLine(),
                                                      beginLoc.getColumn(),
@@ -293,7 +314,9 @@ static Hash define_type(
         std::string name =
             t->getAs<BuiltinType>()->getName(PrintingPolicy(ci->getLangOpts()));
         Hash hash = TypeDBEntry::mkInclude(
-            (prefix + name + postfix),
+            name,
+            pointer,
+            size_mod,
             "",
             "",
             0,
@@ -328,6 +351,8 @@ static Hash define_type(
 
             TypeDBEntry fdecl = TypeDBEntry::mkFwdDecl(
                 rd->getNameAsString(),
+                pointer,
+                size_mod,
                 (t->isStructureType() ? "struct" : "union"),
                 beginLoc.getFilename(),
                 beginLoc.getLine(),
@@ -365,6 +390,8 @@ static Hash define_type(
         text += ";";
         
         TypeDBEntry ti = TypeDBEntry::mkType(rd->getNameAsString(),
+                                             pointer,
+                                             size_mod,
                                              text,
                                              beginLoc.getFilename(),
                                              beginLoc.getLine(),

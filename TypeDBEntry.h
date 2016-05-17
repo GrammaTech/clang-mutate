@@ -18,6 +18,8 @@ class TypeDBEntry
 {
 public:
     static TypeDBEntry mkType(const std::string & _name,
+                              const bool & _pointer,
+                              const std::string & _array_size,
                               const std::string & _text,
                               const std::string & _file,
                               const unsigned int & _line,
@@ -25,12 +27,16 @@ public:
                               const std::set<Hash> & _reqs);
 
     static TypeDBEntry mkFwdDecl(const std::string & _name,
+                                 const bool & _pointer,
+                                 const std::string & _array_size,
                                  const std::string & _kind,
                                  const std::string & _file,
                                  const unsigned int & _line,
                                  const unsigned int & _col);
 
     static TypeDBEntry mkInclude(const std::string & _name,
+                                 const bool & _pointer,
+                                 const std::string & _array_size,
                                  const std::string & _header,
                                  const std::string & _file,
                                  const unsigned int & _line,
@@ -58,6 +64,8 @@ private:
     static std::map<Hash, TypeDBEntry> type_db;
     
     std::string m_name;
+    bool m_pointer;
+    std::string m_array_size;
     std::string m_text;
     std::string m_file;
     unsigned int m_line;
