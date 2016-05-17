@@ -148,6 +148,24 @@ static Hash define_type(
     if (search != seen.end())
         return search->second;
 
+    // Check for pointer or array types, and if so we'll update the
+    // name later.
+    std::string prefix;
+    std::string postfix;
+    if (t->isPointerType()) {
+        prefix = "*";
+        t = t->getPointeeType().getTypePtr();
+    }
+    if (t->isArrayType()) {
+        switch(t->getAsArrayTypeUnsafe()->getSizeModifier()){
+        case ArrayType::Normal : postfix = "[]";
+        case ArrayType::Static : postfix = "[static]";
+        case ArrayType::Star : postfix = "[*]";
+        }
+        t = t->getAsArrayTypeUnsafe()->getElementType().getTypePtr();
+    }
+
+    // Now handle the normal type.
     if (t->getAs<TypedefType>()) {
         TypedefNameDecl * td = t->getAs<TypedefType>()->getDecl();
         
@@ -170,7 +188,7 @@ static Hash define_type(
                 incLoc = sm.getPresumedLoc(inc_loc);
             }
             Hash hash = TypeDBEntry::mkInclude(
-                td->getNameAsString(),
+                (prefix + td->getNameAsString() + postfix),
                 header,
                 beginLoc.getFilename(),
                 beginLoc.getLine(),
@@ -232,7 +250,7 @@ static Hash define_type(
                 SourceLocation it = r.getBegin();
                 PresumedLoc beginLoc = sm.getPresumedLoc(sm.getSpellingLoc(it));
                 Hash hash = TypeDBEntry::mkType(
-                    name,
+                    (prefix + name + postfix),
                     one_line_name,
                     beginLoc.getFilename(),
                     beginLoc.getLine(),
@@ -257,7 +275,7 @@ static Hash define_type(
                 text += ";";
         
                 TypeDBEntry ti = TypeDBEntry::mkType(td->getNameAsString(),
-                                                     text,
+                                                     (prefix + text + postfix),
                                                      beginLoc.getFilename(),
                                                      beginLoc.getLine(),
                                                      beginLoc.getColumn(),
@@ -272,8 +290,10 @@ static Hash define_type(
         std::vector<std::string> ifiles;
         std::vector<unsigned int> ilines;
         std::vector<unsigned int> icols;
+        std::string name =
+            t->getAs<BuiltinType>()->getName(PrintingPolicy(ci->getLangOpts()));
         Hash hash = TypeDBEntry::mkInclude(
-            t->getAs<BuiltinType>()->getName(PrintingPolicy(ci->getLangOpts())),
+            (prefix + name + postfix),
             "",
             "",
             0,
@@ -281,22 +301,6 @@ static Hash define_type(
             ifiles,
             ilines,
             icols).hash();
-        seen[t] = hash;
-        return hash;
-    }
-
-    else if (t->isPointerType()) {
-        // Just ensure that the pointed-to type is defined
-        Hash hash = define_type(t->getPointeeType().getTypePtr(), seen, ci);
-        seen[t] = hash;
-        return hash;
-    }
-
-    else if (t->isArrayType()) {
-        // Just ensure that the array's element type is defined.
-        Hash hash = define_type(t->getAsArrayTypeUnsafe()
-                                ->getElementType().getTypePtr(),
-                                seen, ci);
         seen[t] = hash;
         return hash;
     }
