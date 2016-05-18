@@ -41,7 +41,7 @@ Requirements::Requirements(
 //  Traversal
 //
 
-bool Requirements::TraverseVarDecl(VarDecl * decl)
+bool Requirements::VisitVarDecl(VarDecl * decl)
 {
   std::string name = decl->getQualifiedNameAsString();
   IdentifierInfo * ident = decl->getIdentifier();
@@ -51,7 +51,7 @@ bool Requirements::TraverseVarDecl(VarDecl * decl)
 
   ctx.push(name, ident, type_hash);
   
-  return base::TraverseVarDecl(decl);
+  return base::VisitVarDecl(decl);
 }
 
 bool Requirements::VisitStmt(Stmt * stmt)
