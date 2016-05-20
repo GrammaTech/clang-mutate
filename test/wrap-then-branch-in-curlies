@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# Wrapping the then branch in a compound statement should *not* place
+# a semicolon after the compound statement (it breaks the if).
+#
+. $(dirname $0)/common
+
+run_gcd -set -stmt1=62 -value1="{ a = a - b; }"|grep "};" && exit 1

@@ -101,7 +101,9 @@ TESTS =	help-text-appears				\
 	scopes-block-starts-scope			\
 	scopes-function-args-are-local			\
 	scopes-function-body-starts-scope               \
-	parmvar-has-declares
+	parmvar-has-declares				\
+	list-init-expr-not-full-stmt			\
+	wrap-then-branch-in-curlies
 
 etc/hello: etc/hello.c
 	$(CC) -g -O0 $< -o $@

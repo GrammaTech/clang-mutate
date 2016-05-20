@@ -29,6 +29,8 @@ NULLC=etc/null.c
 
 SCOPES=etc/scopes.c
 
+GCD=etc/gcd-wo-curlies.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -49,6 +51,9 @@ run_null(){
 
 run_scopes(){
     clang-mutate "$@" $SCOPES --; }
+
+run_gcd(){
+    clang-mutate "$@" $GCD --; }
 
 json_filter(){
     cat -|jshon -a -j|grep "\"${1}\":${2}\(,\|}\)"; }
