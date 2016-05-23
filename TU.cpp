@@ -340,6 +340,15 @@ class BuildTU
         }
     }
 
+    bool shouldUseDataRecursionFor(Stmt *S) const {
+        // For some nodes RecursiveASTVisitor will traverse with a queue
+        // rather than recursing, to avoid stack overflow with deeply-nested
+        // trees. Unfortunately, this mode doesn't call the normal Traverse*
+        // methods, which can screw up our parent counters. Disable this mode
+        // to avoid problems.
+        return false;
+    }
+
   private:
     ASTContext * Context;
     CompilerInstance * ci;
