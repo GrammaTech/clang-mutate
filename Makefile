@@ -103,7 +103,8 @@ TESTS =	help-text-appears				\
 	scopes-function-body-starts-scope               \
 	parmvar-has-declares				\
 	list-init-expr-not-full-stmt			\
-	wrap-then-branch-in-curlies
+	wrap-then-branch-in-curlies			\
+	replace-if-block-wi-single-stmt-adds-semicolon
 
 etc/hello: etc/hello.c
 	$(CC) -g -O0 $< -o $@

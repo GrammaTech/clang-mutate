@@ -183,13 +183,18 @@ class BuildTU
             SyntacticContext syn_ctx = Utils::is_full_stmt(s, parent)
                 ? SyntacticContext::FullStmt()
                 : SyntacticContext::Generic();
+
+            // Ensure that braces are kept when replacing a CompoundStmt.
+            if (isa<CompoundStmt>(s))
+                syn_ctx = SyntacticContext::Braced();
+
             Requirements reqs(tu.tuid,
                               Context,
                               syn_ctx,
                               ci,
                               decl_scopes.get_names_in_scope());
             reqs.TraverseStmt(s);
-            
+
             AstRef ast = makeAst(s, reqs);
             if (parent != NoAst) {
                 if (parent->isStmt()) {

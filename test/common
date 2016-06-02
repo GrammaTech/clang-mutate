@@ -31,6 +31,8 @@ SCOPES=etc/scopes.c
 
 GCD=etc/gcd-wo-curlies.c
 
+IF=etc/if.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -54,6 +56,9 @@ run_scopes(){
 
 run_gcd(){
     clang-mutate "$@" $GCD --; }
+
+run_if(){
+    clang-mutate "$@" $IF --; }
 
 json_filter(){
     cat -|jshon -a -j|grep "\"${1}\":${2}\(,\|}\)"; }
