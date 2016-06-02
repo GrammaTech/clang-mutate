@@ -737,6 +737,65 @@ struct json_op
              , "Use '?fields' to get a description of each JSON field." }; }
 };
 
+// Note: this is a copy of json_op with only minor changes to the
+// serialization code. Could probably be refactored.
+extern const char sexp_[] = "sexp";
+struct sexp_op
+{
+    typedef str_<sexp_> command;
+    typedef tokens< command, p_tu, kwarg<jaux_>, kwarg<jfields_> > parser;
+
+    static RewritingOpPtr make(
+        TURef const& tuid,
+        Optional<std::vector<std::string>> const& aux_fields,
+        Optional<std::vector<std::string>> const& ast_fields)
+    {
+        TU & tu = *TUs[tuid];
+        std::string sep = "";
+        std::ostringstream oss;
+        oss << "(";
+
+        std::set<std::string> aux_keys;
+        std::vector<std::string> auxf = { "types", "decls", "protos" };
+        (void) aux_fields.get(auxf);
+        for (auto & a : auxf)
+            aux_keys.insert(a);
+        for (auto & aux_key : aux_keys) {
+            if (aux_key == "types") {
+                for (auto & entry : TypeDBEntry::databaseToJSON()) {
+                    oss << sep;
+                    serialize_as_sexpr(entry, oss);
+                    sep = "\n";
+                }
+            }
+            else {
+                for (auto & entry : tu.aux[aux_key]) {
+                    oss << sep;
+                    serialize_as_sexpr(entry, oss);
+                    sep = "\n";
+                }
+            }
+        }
+
+        std::set<std::string> ast_keys;
+        std::vector<std::string> astf;
+        (void) ast_fields.get(astf);
+        for (auto & a : astf)
+            ast_keys.insert(a);
+        for (auto & ast : tu.asts) {
+            oss << sep;
+            serialize_as_sexpr(ast->toJSON(ast_keys), oss);
+            sep = "\n";
+        }
+        oss << ")";
+        return echo(oss.str());
+    }
+
+    static std::vector<std::string> purpose()
+    { return { "Dump the representation of a translation unit as JSON."
+             , "Use '?fields' to get a description of each JSON field." }; }
+};
+
 extern const char load_[] = "load";
 struct load_op
 {
