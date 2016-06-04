@@ -82,6 +82,7 @@ bool ShouldVisitDecl(clang::SourceManager & SM,
 bool ShouldAssociateBytesWithStmt(clang::Stmt *S, clang::Stmt *P);
 bool IsSingleLineStmt(clang::Stmt *S, clang::Stmt *P);
 bool IsGuardStmt(clang::Stmt *S, clang::Stmt *P);
+bool IsLoopOrIfBody(clang::Stmt *stmt, clang::Stmt *parent);
 
 std::string filenameToContents(const std::string & str);
 

@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# Replacing a single-statement "then" branch of an if with another
+# single statement should keep the semicolon.
+#
+. $(dirname $0)/common
+
+contains "$(run_if -set -stmt1=25 -value1="x = 1;")" "x = 1;"

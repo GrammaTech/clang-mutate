@@ -5,4 +5,4 @@
 #
 . $(dirname $0)/common
 
-run_gcd -set -stmt1=62 -value1="{ a = a - b; }"|grep "};" && exit 1
+! run_if -set -stmt1=25 -value1="{ x = 1; }" | grep "{ x = 1; };"

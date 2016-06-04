@@ -104,7 +104,9 @@ TESTS =	help-text-appears				\
 	parmvar-has-declares				\
 	list-init-expr-not-full-stmt			\
 	wrap-then-branch-in-curlies			\
-	replace-if-block-wi-single-stmt-adds-semicolon
+	wrap-do-body-in-curlies				\
+	replace-then-branch-keeps-curlies 		\
+	replace-then-branch-keeps-semicolon
 
 etc/hello: etc/hello.c
 	$(CC) -g -O0 $< -o $@

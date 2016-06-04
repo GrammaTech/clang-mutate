@@ -265,6 +265,17 @@ bool IsGuardStmt(Stmt *S, Stmt *P)
     return false;
 }
 
+// Return true if statement is the body of a loop or if/else statement.
+bool IsLoopOrIfBody(Stmt *S, Stmt *P)
+{
+    return (P != NULL && IsSingleLineStmt(S, P) &&
+            (P->getStmtClass() == Stmt::IfStmtClass ||
+             P->getStmtClass() == Stmt::WhileStmtClass ||
+             P->getStmtClass() == Stmt::DoStmtClass ||
+             P->getStmtClass() == Stmt::ForStmtClass));
+}
+
+
 std::string filenameToContents(const std::string & str)
 {
     std::stringstream buffer;

@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# Wrapping the body of a do loop in a compound statement should *not*
+# place a semicolon after the compound statement (it breaks the loop).
+#
+. $(dirname $0)/common
+
+! run_more_loops -set -stmt1=47 -value1="{ x = 1; }" | grep "{ x = 1; };"

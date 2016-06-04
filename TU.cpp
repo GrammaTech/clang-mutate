@@ -156,7 +156,8 @@ class BuildTU
         required.setReplacements(renamer.getReplacements());
 
         bool expand_range = (required.syn_ctx() == SyntacticContext::FullStmt() ||
-                             required.syn_ctx() == SyntacticContext::Field());
+                             required.syn_ctx() == SyntacticContext::Field() ||
+                             required.syn_ctx() == SyntacticContext::UnbracedBody());
 
         SourceRange sr = clang_obj->getSourceRange();
         SourceRange nsr = Utils::normalizeSourceRange(
@@ -183,10 +184,14 @@ class BuildTU
             SyntacticContext syn_ctx = Utils::is_full_stmt(s, parent)
                 ? SyntacticContext::FullStmt()
                 : SyntacticContext::Generic();
+            Stmt *parent_stmt = parent->isStmt() ? parent->asStmt(*ci) : NULL;
 
             // Ensure that braces are kept when replacing a CompoundStmt.
             if (isa<CompoundStmt>(s))
                 syn_ctx = SyntacticContext::Braced();
+            else if (Utils::IsLoopOrIfBody(s, parent_stmt)) {
+                syn_ctx = SyntacticContext::UnbracedBody();
+            }
 
             Requirements reqs(tu.tuid,
                               Context,
@@ -199,7 +204,7 @@ class BuildTU
             if (parent != NoAst) {
                 if (parent->isStmt()) {
                     ast->setIsGuard(
-                        Utils::IsGuardStmt(s, parent->asStmt(*ci)));
+                        Utils::IsGuardStmt(s, parent_stmt));
                 }
                 if (ast->className() == "CompoundStmt" &&
                     parent->className() == "Function")

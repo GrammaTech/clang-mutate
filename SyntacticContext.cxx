@@ -24,6 +24,12 @@ CONTEXT( Braced,
          add_braces,
          no_change )
 
+// Single-statement if/loop body without braces
+CONTEXT( UnbracedBody,
+         no_change,
+         add_semicolon_if_unbraced,
+         no_change )
+
 CONTEXT( Field,
          add_semicolon,
          add_semicolon,
