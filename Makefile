@@ -106,7 +106,9 @@ TESTS =	help-text-appears				\
 	wrap-then-branch-in-curlies			\
 	wrap-do-body-in-curlies				\
 	replace-then-branch-keeps-curlies 		\
-	replace-then-branch-keeps-semicolon
+	replace-then-branch-keeps-semicolon		\
+	macro-src-text-is-correct			\
+	replace-in-macro-expansion
 
 etc/hello: etc/hello.c
 	$(CC) -g -O0 $< -o $@
