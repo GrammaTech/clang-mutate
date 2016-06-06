@@ -214,4 +214,9 @@ AST_FIELD_P( array_length, unsigned long,
   { return ast.array_length(); }
   )
 
+AST_FIELD( in_macro_expansion, bool,
+  "Is this part of a macro expansion?",
+  { return ast.inMacroExpansion(); }
+  )
+
 #undef FIELD_DEF

@@ -155,6 +155,12 @@ public:
     void setIsFullStmt(bool yn)
     { m_full_stmt = yn; }
 
+    bool inMacroExpansion() const
+    { return m_in_macro_expansion; }
+
+    void setInMacroExpansion(bool yn)
+    { m_in_macro_expansion = yn; }
+
     bool is_field_decl() const
     { return m_field_decl; }
 
@@ -280,6 +286,7 @@ private:
     std::set<FunctionInfo> m_free_funs;
     std::string m_opcode;
     bool m_full_stmt;
+    bool m_in_macro_expansion;
     SyntacticContext m_syn_ctx;
     bool m_can_have_bytes;
     Replacements m_replacements;

@@ -194,6 +194,34 @@ bool Ast::has_bytes() const
         && binaryAddressRange(_);
 }
 
+SourceLocation findEndOfToken(CompilerInstance * ci, SourceLocation loc,
+                              AstRef parent)
+{
+    SourceManager & sm = ci->getSourceManager();
+
+    SourceLocation end_of_token =
+        Lexer::getLocForEndOfToken(loc, 0, sm, ci->getLangOpts());
+
+    // This is tricky, due to macros.
+
+    // If the AST is within a macro expansion, then the above call may return
+    // an invalid location. In that case, we can use try to use the range of
+    // the parent. Often the top-level AST in a macro expansion will end at a
+    // location outside the macro (e.g. if there's a semicolon afteward), in
+    // which case all is well.
+
+    // But when that's not the case, we eventually reach a parent that isn't
+    // part of the macro expansion. Its range may extend too far, so we don't
+    // want to use that. Instead, call getFileLoc() to translate our macro
+    // location to a file location, and then get the end of the token. This
+    // should always give us a valid location.
+    if (end_of_token.isInvalid() && !parent->inMacroExpansion())
+        return Lexer::getLocForEndOfToken(sm.getFileLoc(loc),
+                                          0, sm, ci->getLangOpts());
+    else
+        return end_of_token;
+}
+
 void Ast::update_range_offsets(CompilerInstance * ci)
 {
     SourceManager & sm = ci->getSourceManager();
@@ -212,10 +240,7 @@ void Ast::update_range_offsets(CompilerInstance * ci)
         : parent() == NoAst          ? BadOffset
                                      : parent()->initial_offset();
     decomp = sm.getDecomposedExpansionLoc(
-        Lexer::getLocForEndOfToken(m_range.getEnd(),
-                                   0,
-                                   sm,
-                                   ci->getLangOpts()));
+            findEndOfToken(ci, m_range.getEnd(), parent()));
     m_end_off
         = decomp.first == mainFileID ? decomp.second - endShift
         : parent() == NoAst          ? BadOffset
@@ -227,8 +252,7 @@ void Ast::update_range_offsets(CompilerInstance * ci)
         : parent() == NoAst          ? BadOffset
                                      : parent()->initial_normalized_offset();
     decomp = sm.getDecomposedExpansionLoc(
-        Lexer::getLocForEndOfToken(m_normalized_range.getEnd(),
-                                   0, sm, ci->getLangOpts()));
+            findEndOfToken(ci, m_normalized_range.getEnd(), parent()));
     m_norm_end_off
         = decomp.first == mainFileID ? decomp.second - endShift
         : parent() == NoAst          ? BadOffset
@@ -331,6 +355,7 @@ Ast::Ast(Stmt * _stmt,
     , m_free_funs()
     , m_opcode("")
     , m_full_stmt(false)
+    , m_in_macro_expansion(false)
     , m_syn_ctx(syn_ctx)
     , m_can_have_bytes(false)
     , m_replacements()
@@ -372,6 +397,7 @@ Ast::Ast(Decl * _decl,
     , m_free_funs()
     , m_opcode("")
     , m_full_stmt(false)
+    , m_in_macro_expansion(false)
     , m_syn_ctx(syn_ctx)
     , m_can_have_bytes(false)
     , m_replacements()

@@ -159,10 +159,7 @@ class BuildTU
                              required.syn_ctx() == SyntacticContext::Field() ||
                              required.syn_ctx() == SyntacticContext::UnbracedBody());
 
-        // If the AST is part of a macro expansion, getFileLoc translates
-        // back to the location in the file where the macro was expanded.
-        SourceRange sr = SourceRange(sm.getFileLoc(clang_obj->getLocStart()),
-                                     sm.getFileLoc(clang_obj->getLocEnd()));
+        SourceRange sr = clang_obj->getSourceRange();
         SourceRange nsr = Utils::normalizeSourceRange(
             sr,
             expand_range,
@@ -172,12 +169,15 @@ class BuildTU
                                 sm.getPresumedLoc(sr.getEnd()),
                                 sr,
                                 nsr);
-        
+
         AstRef ast = Ast::create(clang_obj, required);
+
+        ast->setInMacroExpansion(clang_obj->getLocStart().isMacroID());
+
         spine.push_back(ast);
         return ast;
     }
-    
+
     bool VisitStmt(Stmt * s)
     {
         if (Utils::ShouldVisitStmt(sm, ci->getLangOpts(),

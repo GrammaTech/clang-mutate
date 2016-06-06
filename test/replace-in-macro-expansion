@@ -6,3 +6,6 @@
 
 result="$(run_macros -set -stmt1=3 -value1="int x")"
 contains "$result" "int x" && contains "$result" "SHORT_MACRO + LONG_MACRO"
+
+result="$(run_macros -set -stmt1=8 -value1="int x")"
+contains "$result" "int x" && contains "$result" "SHORT_MACRO + LONG_MACRO"
