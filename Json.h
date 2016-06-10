@@ -165,4 +165,7 @@ struct describe_json<std::map<std::string, X>>
         return oss.str();
     }
 };
+
+void serialize_as_sexpr(const picojson::value &x, std::ostream &os);
+
 #endif

@@ -60,6 +60,7 @@ OPTION( Ids         , bool        , "ids"          , "print count of statement i
 OPTION( Annotate    , bool        , "annotate"     , "annotate each statement with its class");
 OPTION( List        , bool        , "list"         , "list every statement's id, class, and range");
 OPTION( Json        , bool        , "json"         , "list JSON-encoded descriptions for every statement.");
+OPTION( Sexp        , bool        , "sexp"         , "list s-expression encoded descriptions for every statement.");
 OPTION( Cut         , bool        , "cut"          , "cut stmt1");
 OPTION( Insert      , bool        , "insert"       , "copy stmt1 to before stmt2");
 OPTION( InsertV     , bool        , "insert-value" , "insert value1 before stmt1");
@@ -141,6 +142,36 @@ public:
             }
             else {
                 MutateCmd << "json 0";
+            }
+            if (!Aux.empty()) {
+                std::string sep = "";
+                MutateCmd << " aux=";
+                for (auto & aux : Utils::split(Aux, ',')) {
+                    MutateCmd << sep << aux;
+                    sep = ",";
+                }
+            }
+            if (!Fields.empty()) {
+                std::string sep = "";
+                MutateCmd << " fields=";
+                for (auto & key : Utils::split(Fields, ',')) {
+                    MutateCmd << sep << key;
+                    sep = ",";
+                }
+            }
+            MutateCmd << std::endl;
+            if (Stmt1) {
+                MutateCmd << "echo ]" << std::endl;
+            }
+            return clang_mutate::CreateTU(CI);
+        }
+        if (Sexp) {
+            if (Stmt1) {
+                MutateCmd << "echo [" << std::endl;
+                MutateCmd << "ast 0." << Stmt1;
+            }
+            else {
+                MutateCmd << "sexp 0";
             }
             if (!Aux.empty()) {
                 std::string sep = "";

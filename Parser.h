@@ -130,6 +130,7 @@ struct interactive_op
         , aux_op
         , ast_op
         , json_op
+        , sexp_op
         , load_op
         , unload_op
         , help_fields_op
