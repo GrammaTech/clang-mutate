@@ -167,9 +167,9 @@ class Annotator {
 public:
     virtual ~Annotator() {}
 
-    virtual std::string before(const Ast * ast);
-    virtual std::string after (const Ast * ast);
-    virtual std::string describe();
+    virtual std::string before(const Ast * ast) = 0;
+    virtual std::string after (const Ast * ast) = 0;
+    virtual std::string describe() = 0;
 };
 
 class AnnotateOp : public RewritingOp
