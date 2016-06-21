@@ -158,10 +158,6 @@ static Hash define_type(
 {
     if (t == NULL)
         return 0;
-    
-    std::map<const Type*, Hash>::iterator search = seen.find(t);
-    if (search != seen.end())
-        return search->second;
 
     // Check for pointer or array types, and if so we'll update the
     // name later.
@@ -179,6 +175,10 @@ static Hash define_type(
         }
         t = t->getAsArrayTypeUnsafe()->getElementType().getTypePtr();
     }
+
+    std::map<const Type*, Hash>::iterator search = seen.find(t);
+    if (search != seen.end())
+        return search->second;
 
     // Now handle the normal type.
     if (t->getAs<TypedefType>()) {

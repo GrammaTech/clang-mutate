@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# If -aux is provided, the default AuxDB entries do not
+# end up in the output.
+#
+. $(dirname $0)/common
+
+clang-mutate -json etc/recursive-type.c -- > /dev/null
