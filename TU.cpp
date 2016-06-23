@@ -195,6 +195,7 @@ class BuildTU
             ci->getLangOpts());
         if (decl_depth == 1 &&
             d->getIdentifier() != NULL &&
+            !isa<FunctionDecl>(d) &&
             Utils::SelectRange(sm, sm.getMainFileID(), r))
         {
             PresumedLoc beginLoc = sm.getPresumedLoc(r.getBegin());
