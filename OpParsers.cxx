@@ -700,7 +700,7 @@ struct json_op
         oss << "[";
 
         std::set<std::string> aux_keys;
-        std::vector<std::string> auxf = { "types", "decls", "protos" };
+        std::vector<std::string> auxf = { "types", "decls" };
         (void) aux_fields.get(auxf);
         for (auto & a : auxf)
             aux_keys.insert(a);
@@ -756,7 +756,7 @@ struct sexp_op
         oss << "(";
 
         std::set<std::string> aux_keys;
-        std::vector<std::string> auxf = { "types", "decls", "protos" };
+        std::vector<std::string> auxf = { "types", "decls" };
         (void) aux_fields.get(auxf);
         for (auto & a : auxf)
             aux_keys.insert(a);

@@ -57,7 +57,6 @@ class BuildTU
         , tu(_tu)
         , sm(_ci->getSourceManager())
         , decl_scopes(_tu.scopes)
-        , protos(_tu.aux["protos"])
         , decls(_tu.aux["decls"])
         , function_starts(_tu.function_starts)
     {}
@@ -356,7 +355,6 @@ class BuildTU
 
     std::vector<VarScope> var_scopes;
     Scope & decl_scopes;
-    std::vector<picojson::value> & protos;
     std::vector<picojson::value> & decls;
     std::map<AstRef, SourceOffset> & function_starts;
     std::vector<std::pair<AstRef,AstRef> > functions;
