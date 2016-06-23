@@ -184,6 +184,12 @@ picojson::value Ast::toJSON(
             ans[field.first] = field.second->to_json(tu, ast);
         }
     }
+
+    picojson::value aux = to_json(m_aux);
+    assert(aux.is<picojson::object>());
+    for (auto & field : aux.get<picojson::object>()) {
+        ans[field.first] = field.second;
+    }
     return to_json(ans);
 }
 

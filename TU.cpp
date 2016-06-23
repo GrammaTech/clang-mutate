@@ -87,58 +87,20 @@ class BuildTU
             processFunctionDecl(decl.first, decl.second);
     }
 
-    void processFunctionDecl(Decl * d, AstRef body_ast)
+    // FIXME: better name?
+    void processFunctionDecl(AstRef decl_ast, AstRef body_ast)
     {
-        if (!isa<FunctionDecl>(d))
-            return;
-        FunctionDecl * F = static_cast<FunctionDecl*>(d);
-        Stmt * body = F->getBody();
-        if (!body ||
-            !F->doesThisDeclarationHaveABody() ||
-            !Utils::SelectRange(sm, sm.getMainFileID(), F->getSourceRange()))
-        {
-            return;
-        }
+        assert(decl_ast->isDecl());
+        assert(isa<FunctionDecl>(decl_ast->asDecl(*ci)));
 
-        QualType ret = F->getReturnType();
+        FunctionDecl * F = static_cast<FunctionDecl*>(decl_ast->asDecl(*ci));
 
-        std::vector<std::pair<std::string, Hash> > args;
-        for (unsigned int i = 0; i < F->getNumParams(); ++i) {
-            const ParmVarDecl * p = F->getParamDecl(i);
-            args.push_back(std::make_pair(
-                               p->getIdentifier()->getName().str(),
-                               hash_type(p->getType().getTypePtr(), ci)));
-        }
+        AuxDBEntry &proto = decl_ast->aux();
+        proto.set("body", body_ast);
+        proto.set("stmt_range", body_ast->stmt_range());
 
         SourceLocation begin = F->getSourceRange().getBegin();
-        SourceLocation end = body->getSourceRange().getBegin();
-        std::string decl_text = Lexer::getSourceText(
-            CharSourceRange::getCharRange(begin, end),
-            ci->getSourceManager(),
-            ci->getLangOpts(),
-            NULL);
-
-        // Trim trailing whitespace from the declaration
-        size_t endpos = decl_text.find_last_not_of(" \t\n\r");
-        if (endpos != std::string::npos)
-            decl_text = decl_text.substr(0, endpos + 1);
-
         SourceOffset offset = sm.getDecomposedLoc(begin).second;
-
-        // Build a function prototype, which will be added to the
-        // global database. We don't actually need the value here.
-        AuxDBEntry proto;
-        protos.push_back(proto
-                         .set("name", F->getNameAsString())
-                         .set("text", decl_text)
-                         .set("body", body_ast)
-                         .set("src_offset", offset)
-                         .set("stmt_range", body_ast->stmt_range())
-                         .set("ret", hash_type(ret.getTypePtr(), ci))
-                         .set("void_ret", ret.getTypePtr()->isVoidType())
-                         .set("args", args)
-                         .set("varargs", F->isVariadic())
-                         .toJSON());
         function_starts[body_ast] = offset;
     }
 
@@ -212,8 +174,7 @@ class BuildTU
                 if (ast->className() == "CompoundStmt" &&
                     parent->className() == "Function")
                 {
-                    functions.push_back(std::make_pair(parent->asDecl(*ci),
-                                                       ast));
+                    functions.push_back(std::make_pair(parent, ast));
                 }
             }
         }
@@ -292,6 +253,28 @@ class BuildTU
             if (isa<NamedDecl>(d)) {
                 std::string name = static_cast<NamedDecl*>(d)->getNameAsString();
                 ast->addDeclares(name);
+            }
+
+            if (isa<FunctionDecl>(d)) {
+                FunctionDecl * F = static_cast<FunctionDecl*>(d);
+                QualType ret = F->getReturnType();
+
+                std::vector<std::pair<std::string, Hash> > args;
+                for (unsigned int i = 0; i < F->getNumParams(); ++i) {
+                    const ParmVarDecl * p = F->getParamDecl(i);
+                    IdentifierInfo * id = p->getIdentifier();
+                    args.push_back(
+                            std::make_pair(
+                                    id ? id->getName().str() : "",
+                                    hash_type(p->getType().getTypePtr(), ci)));
+                }
+
+                AuxDBEntry &proto = ast->aux();
+                proto.set("name", F->getNameAsString());
+                proto.set("ret", hash_type(ret.getTypePtr(), ci));
+                proto.set("void_ret", ret.getTypePtr()->isVoidType());
+                proto.set("args", args);
+                proto.set("varargs", F->isVariadic());
             }
         }
         return true;
@@ -375,7 +358,7 @@ class BuildTU
     std::vector<picojson::value> & protos;
     std::vector<picojson::value> & decls;
     std::map<AstRef, SourceOffset> & function_starts;
-    std::vector<std::pair<Decl*,AstRef> > functions;
+    std::vector<std::pair<AstRef,AstRef> > functions;
     size_t decl_depth;
 };
 

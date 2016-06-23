@@ -5,6 +5,7 @@
 #include <string>
 
 #include "AstRef.h"
+#include "AuxDB.h"
 #include "Hash.h"
 #include "PointedTree.h"
 #include "BinaryAddressMap.h"
@@ -190,6 +191,9 @@ public:
     AstRef parent() const
     { return m_parent; }
 
+    AuxDBEntry &aux()
+    { return m_aux; }
+
     std::pair<AstRef, AstRef> stmt_range() const;
     
     std::vector<AstRef> children() const
@@ -290,6 +294,8 @@ private:
     SyntacticContext m_syn_ctx;
     bool m_can_have_bytes;
     Replacements m_replacements;
+    // Additional class-specific fields
+    AuxDBEntry m_aux;
 
     // Properties for struct field decls
     bool m_field_decl;
