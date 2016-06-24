@@ -101,15 +101,15 @@ http://clang.llvm.org/docs/LibTooling.html for details.
     *FLAGS*.  *FLAGS* should be a comma delimited list of the
     following keywords.
 
-    protos
-    :   Include prototype information in json output.
-
-    type
+    types
     :   Output a type database as described in section _Type
         Database_.
 
     decls
     :   Include declarations in json output.
+
+    asts
+    :   Include auxiliary AST fields in json output.
 
 -fields=[*FIELDS*]
 :   The fields flag may be used to control the field names calculated

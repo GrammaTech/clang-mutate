@@ -171,7 +171,7 @@ std::map<std::string, Ast::Field*> & Ast::ast_fields()
 }
 
 picojson::value Ast::toJSON(
-    const std::set<std::string> & keys) const
+        const std::set<std::string> & keys, bool include_aux) const
 {
     TU & tu = m_counter.tu();
     Ast & ast = *m_counter;
@@ -185,10 +185,12 @@ picojson::value Ast::toJSON(
         }
     }
 
-    picojson::value aux = to_json(m_aux);
-    assert(aux.is<picojson::object>());
-    for (auto & field : aux.get<picojson::object>()) {
-        ans[field.first] = field.second;
+    if (include_aux) {
+        picojson::value aux = to_json(m_aux);
+        assert(aux.is<picojson::object>());
+        for (auto & field : aux.get<picojson::object>()) {
+            ans[field.first] = field.second;
+        }
     }
     return to_json(ans);
 }

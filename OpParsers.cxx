@@ -673,7 +673,7 @@ struct ast_op
         for (auto & field : parsed_fields)
             ast_fields.insert(field);
         std::ostringstream oss;
-        oss << ast->toJSON(ast_fields);
+        oss << ast->toJSON(ast_fields, true);
         return echo(oss.str());
     }
 
@@ -699,8 +699,9 @@ struct json_op
         std::ostringstream oss;
         oss << "[";
 
+        bool include_aux = false;
         std::set<std::string> aux_keys;
-        std::vector<std::string> auxf = { "types", "decls" };
+        std::vector<std::string> auxf = { "types", "decls", "asts" };
         (void) aux_fields.get(auxf);
         for (auto & a : auxf)
             aux_keys.insert(a);
@@ -710,6 +711,9 @@ struct json_op
                     oss << sep << to_json(entry);
                     sep = ",";
                 }
+            }
+            else if (aux_key == "asts") {
+                include_aux = true;
             }
             else {
                 for (auto & entry : tu.aux[aux_key]) {
@@ -725,7 +729,7 @@ struct json_op
         for (auto & a : astf)
             ast_keys.insert(a);
         for (auto & ast : tu.asts) {
-            oss << sep << ast->toJSON(ast_keys);
+            oss << sep << ast->toJSON(ast_keys, include_aux);
             sep = ",";
         }
         oss << "]";
@@ -755,8 +759,9 @@ struct sexp_op
         std::ostringstream oss;
         oss << "(";
 
+        bool include_aux = false;
         std::set<std::string> aux_keys;
-        std::vector<std::string> auxf = { "types", "decls" };
+        std::vector<std::string> auxf = { "types", "decls", "asts" };
         (void) aux_fields.get(auxf);
         for (auto & a : auxf)
             aux_keys.insert(a);
@@ -767,6 +772,9 @@ struct sexp_op
                     serialize_as_sexpr(entry, oss);
                     sep = "\n";
                 }
+            }
+            else if (aux_key == "asts") {
+                include_aux = true;
             }
             else {
                 for (auto & entry : tu.aux[aux_key]) {
@@ -784,7 +792,7 @@ struct sexp_op
             ast_keys.insert(a);
         for (auto & ast : tu.asts) {
             oss << sep;
-            serialize_as_sexpr(ast->toJSON(ast_keys), oss);
+            serialize_as_sexpr(ast->toJSON(ast_keys, include_aux), oss);
             sep = "\n";
         }
         oss << ")";

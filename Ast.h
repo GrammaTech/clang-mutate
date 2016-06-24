@@ -207,7 +207,8 @@ public:
     child_iterator end_children() const
     { return m_children.end(); }
 
-    picojson::value toJSON(const std::set<std::string> & keys) const;
+    picojson::value toJSON(const std::set<std::string> & keys,
+                           bool include_aux) const;
 
     Ast(clang::Stmt * _stmt,
         AstRef _counter,

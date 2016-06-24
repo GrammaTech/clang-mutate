@@ -5,4 +5,4 @@
 #
 . $(dirname $0)/common
 
-run_aux -json -aux=types | grep -v decl_text && run_aux -json -aux=decls | grep -v hash
+run_aux -json -aux=decls,types | grep -v body && run_aux -json -aux=types,asts | grep -v decl_text && run_aux -json -aux=asts,decls | grep -v hash
