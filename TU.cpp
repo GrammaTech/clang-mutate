@@ -1,6 +1,7 @@
 #include "TU.h"
 
 #include "Bindings.h"
+#include "Cfg.h"
 #include "Macros.h"
 #include "Renaming.h"
 #include "Scopes.h"
@@ -52,13 +53,14 @@ class BuildTU
     typedef std::set<clang::IdentifierInfo*> VarScope;
     
   public:
-    BuildTU(TU & _tu, CompilerInstance * _ci)
+    BuildTU(TU & _tu, CompilerInstance * _ci, bool _with_cfg)
         : ci(_ci)
         , tu(_tu)
         , sm(_ci->getSourceManager())
         , decl_scopes(_tu.scopes)
         , decls(_tu.aux["decls"])
         , function_starts(_tu.function_starts)
+        , with_cfg(_with_cfg)
     {}
 
     ~BuildTU() {}
@@ -84,9 +86,11 @@ class BuildTU
         // Register top-level functions
         for (auto & decl : functions)
             processFunctionDecl(decl.first, decl.second);
+
+        if (with_cfg)
+            GenerateCFG(tu, *ci, Context);
     }
 
-    // FIXME: better name?
     void processFunctionDecl(AstRef decl_ast, AstRef body_ast)
     {
         assert(decl_ast->isDecl());
@@ -359,13 +363,14 @@ class BuildTU
     std::map<AstRef, SourceOffset> & function_starts;
     std::vector<std::pair<AstRef,AstRef> > functions;
     size_t decl_depth;
+    bool with_cfg;
 };
 
 } // namespace clang_mutate
 
 std::unique_ptr<clang::ASTConsumer>
-clang_mutate::CreateTU(clang::CompilerInstance * CI)
+clang_mutate::CreateTU(clang::CompilerInstance * CI, bool WithCfg)
 {
     return std::unique_ptr<clang::ASTConsumer>
-        (new BuildTU(*tu_in_progress, CI));
+        (new BuildTU(*tu_in_progress, CI, WithCfg));
 }

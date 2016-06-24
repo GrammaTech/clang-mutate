@@ -207,6 +207,9 @@ public:
     child_iterator end_children() const
     { return m_children.end(); }
 
+    std::vector<AstRef> successors() const
+    { return m_successors; }
+
     picojson::value toJSON(const std::set<std::string> & keys,
                            bool include_aux) const;
 
@@ -230,6 +233,10 @@ public:
 
     void add_child(AstRef child)
     { m_children.push_back(child); }
+
+    void add_successor(AstRef successor)
+    { m_successors.push_back(successor); }
+
 
     static AstRef create(clang::Stmt * stmt, Requirements & reqs)
     { return impl_create(stmt, reqs); }
@@ -262,6 +269,7 @@ private:
     AstRef m_counter;
     AstRef m_parent;
     std::vector<AstRef> m_children;
+    std::vector<AstRef> m_successors;
 
     // These are all traits of the Stmt/Decl that do not seem
     // to be recoverable after the ActionFactory has run.

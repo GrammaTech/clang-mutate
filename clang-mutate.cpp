@@ -82,6 +82,7 @@ OPTION( Silent      , bool        , "silent"       , "do not print prompts in in
 OPTION( CtrlChar    , bool        , "ctrl"         , "print a control character after output in the interactive mode");
 OPTION( Binary      , std::string , "binary"       , "binary with DWARF information for line->address mapping");
 OPTION( DwarfFilepathMap, std::string, "dwarf-filepath-mapping", "mapping of filepaths used in compilation -> new filepath");
+OPTION( Cfg         , bool        , "cfg"         , "include control-flow information in ASTs");
 
 std::ostringstream MutateCmd;
 
@@ -163,7 +164,7 @@ public:
             if (Stmt1) {
                 MutateCmd << "echo ]" << std::endl;
             }
-            return clang_mutate::CreateTU(CI);
+            return clang_mutate::CreateTU(CI, Cfg);
         }
         if (Sexp) {
             if (Stmt1) {
@@ -193,7 +194,7 @@ public:
             if (Stmt1) {
                 MutateCmd << "echo ]" << std::endl;
             }
-            return clang_mutate::CreateTU(CI);
+            return clang_mutate::CreateTU(CI, Cfg);
         }
         if (Cut) {
             MutateCmd << "cut 0." << Stmt1 << std::endl

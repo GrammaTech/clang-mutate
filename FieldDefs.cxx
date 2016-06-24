@@ -66,6 +66,12 @@ AST_FIELD_P( stmt_list, std::vector<AstRef>,
   { return ast.children(); }
   )
 
+AST_FIELD_P( successors, std::vector<AstRef>,
+  "The list of immediate CFG successors of this node.",
+  (!ast.successors().empty()),
+  { return ast.successors(); }
+  )
+
 AST_FIELD_P( opcode, std::string,
   "For a BinaryOp, the name of the operation.",
   (ast.opcode() != ""),
