@@ -109,7 +109,8 @@ TESTS =	help-text-appears				\
 	replace-then-branch-keeps-semicolon		\
 	macro-src-text-is-correct			\
 	replace-in-macro-expansion			\
-	recursive-type-does-not-crash
+	recursive-type-does-not-crash			\
+	segmentation-fault
 
 etc/hello: etc/hello.c
 	$(CC) -g -O0 $< -o $@

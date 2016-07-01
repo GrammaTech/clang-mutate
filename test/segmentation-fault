@@ -1,0 +1,3 @@
+#!/bin/bash
+
+clang-mutate -ids etc/minimal-ewmh.c --
