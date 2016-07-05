@@ -19,7 +19,52 @@ svn revision 182049 (the latest as of this writing) of llvm/clang.
 |------------+---------------------|
 | llvm/clang | svn revision 182049 |
 
-* Notes Issues and Tasks [6/14]
+* Notes Issues and Tasks [6/15]
+** TODO Fix double-output bug
+#+begin_quote Deby Katz
+Attached is a series of commands that resulted in clang-mutate
+producing its output twice.  (Although the lines for most of the
+commands run over 80 characters, I did not insert line breaks because
+I didn't want to cause confusion.)
+#+end_quote
+
+: > scp dkatz@tuff.grammatech.com:/exports/cached_corpus/e/6/1/1/0/2/6/8/e6110268-11b8-41df-be05-4674b849745a/e6110268-11b8-41df-be05-4674b849745a.tgz /mu0/dkatz/rpms/TARBALLS
+: 
+: > tar tzf /mu0/dkatz/rpms/TARBALLS/e6110268-11b8-41df-be05-4674b849745a.tgz
+: 
+: > tar xzf /mu0/dkatz/rpms/TARBALLS/e6110268-11b8-41df-be05-4674b849745a.tgz -C /mu0/dkatz/rpms/TARBALLS
+: 
+: > sudo yum-builddep /mu0/dkatz/rpms/TARBALLS/dcfldd-1.3.4.1-8.fc19.src.rpm
+: 
+: > bear rpmbuild "-ba" "--rcfile=/mu0/dkatz/base/bed/scripts/muse/rpmrc" --define "_topdir /mu0/dkatz/rpms/" "/mu0/dkatz/rpms/SPECS/dcfldd.spec" exited with return code 0
+: 
+: > mv compile_commands.json /mu0/dkatz/rpms
+: 
+: > sed -i -r 's/-include[[:space:]]+[[:alnum:][:punct:]]+[[:space:]]+//g' /mu0/dkatz/rpms/compile_commands.json
+: 
+: > clang-mutate -json -aux=types -fields=ast_class,src_text,full_stmt,guard_stmt,unbound_funs,unbound_vals,begin_addr,end_addr,binary_contents,types,macros,includes,parent_counter -binary=/mu0/dkatz/rpms/BUILD/dcfldd-1.3.4-1/dcfldd.o -p=/mu0/dkatz/rpms /mu0/dkatz/rpms/BUILD/dcfldd-1.3.4-1/dcfldd.c > clang_mutate.out
+: 
+: 
+: # The output doesn't work with jsonlint (version 1.6), possibly because of 
+: # incompatible character (unicode?) encoding
+: 
+: # Try to decode the output in python
+: >ipython
+: 
+: >> import json
+: >> json_file = open("clang_mutate.out")
+: >> json.load(json_file) 
+: # Produces an error message: Extra data: line 1 column 1315246 - line 1 
+: # column 2630491 (char 1315245 - 2630490)
+: 
+: >> json_contents = json_file.read()
+: >> json_start = json_contents[:1315245]
+: >> json_end = json_contents[1314245:]
+: >> json_start == json_end
+: # True
+: >> json_loads(json_start)
+: # Does not produce an error message
+
 ** TODO report macros and types
 Currently top-level macros and types are not reported, even if they
 may be used by included files.
