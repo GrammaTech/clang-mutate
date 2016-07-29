@@ -151,6 +151,14 @@ picojson::array TypeDBEntry::databaseToJSON()
     return array;
 }
 
+static std::string safe_get_filename(PresumedLoc loc)
+{
+    if (loc.isValid())
+        return loc.getFilename();
+    else
+        return "";
+}
+
 static Hash define_type(
     const Type * t,
     std::map<const Type*, Hash> & seen,
@@ -207,7 +215,7 @@ static Hash define_type(
                 pointer,
                 size_mod,
                 header,
-                beginLoc.getFilename(),
+                safe_get_filename(beginLoc),
                 beginLoc.getLine(),
                 beginLoc.getColumn(),
                 ifiles,
@@ -271,7 +279,7 @@ static Hash define_type(
                     pointer,
                     size_mod,
                     one_line_name,
-                    beginLoc.getFilename(),
+                    safe_get_filename(beginLoc),
                     beginLoc.getLine(),
                     beginLoc.getColumn(),
                     reqs).hash();
@@ -297,7 +305,7 @@ static Hash define_type(
                                                      pointer,
                                                      size_mod,
                                                      text,
-                                                     beginLoc.getFilename(),
+                                                     safe_get_filename(beginLoc),
                                                      beginLoc.getLine(),
                                                      beginLoc.getColumn(),
                                                      reqs);
@@ -354,7 +362,7 @@ static Hash define_type(
                 pointer,
                 size_mod,
                 (t->isStructureType() ? "struct" : "union"),
-                beginLoc.getFilename(),
+                safe_get_filename(beginLoc),
                 beginLoc.getLine(),
                 beginLoc.getColumn());
             // Temporarily make this Type* reference the hash of the
@@ -393,7 +401,7 @@ static Hash define_type(
                                              pointer,
                                              size_mod,
                                              text,
-                                             beginLoc.getFilename(),
+                                             safe_get_filename(beginLoc),
                                              beginLoc.getLine(),
                                              beginLoc.getColumn(),
                                              reqs);
