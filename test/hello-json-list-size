@@ -1,6 +1,6 @@
 #!/bin/bash
-# Test the number of JSON entries returned is 11
+# Test the number of JSON entries returned is 15
 . $(dirname $0)/common
 
 contains "$(run_hello -json | jshon -l)" \
-         "13"
+         "15"

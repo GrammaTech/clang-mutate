@@ -45,6 +45,8 @@ public:
                                  const std::vector<unsigned int> & _iline,
                                  const std::vector<unsigned int> & _icol);
     
+    static TypeDBEntry find_type(Hash hash);
+
     std::string name() const { return m_name; }
     std::string text() const { return m_text; }
     std::string file() const { return m_file; }

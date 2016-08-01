@@ -85,6 +85,11 @@ TypeDBEntry TypeDBEntry::mkInclude(const std::string & _name,
     return ti;
 }
 
+TypeDBEntry TypeDBEntry::find_type(Hash hash)
+{
+    return type_db[hash];
+}
+
 void TypeDBEntry::compute_hash()
 {
     std::hash<std::string> hasher;
@@ -174,7 +179,32 @@ static Hash define_type(
     if (t->isPointerType()) {
         pointer = true;
         t = t->getPointeeType().getTypePtr();
+
+        // Pointer to pointer
+        if (t->isPointerType()) {
+            const PointerType *tp = t->getAs<PointerType>();
+            Hash pointee_hash = define_type(t, seen, ci);
+            std::set<Hash> reqs;
+            reqs.insert(pointee_hash);
+
+            TypeDBEntry pointee = TypeDBEntry::find_type(pointee_hash);
+
+            Hash hash = TypeDBEntry::mkType(
+                    // name of the pointee type
+                    pointee.name() + "*",
+                    true,
+                    size_mod,
+                    // Full name of the type, I think (hence the extra *)
+                    pointee.name() + "**",
+                    "",
+                    0,
+                    0,
+                    reqs).hash();
+            seen[t] = hash;
+            return hash;
     }
+    }
+
     if (t->isArrayType()) {
         switch(t->getAsArrayTypeUnsafe()->getSizeModifier()){
         case ArrayType::Normal : size_mod = "[]";
