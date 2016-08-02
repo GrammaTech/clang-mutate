@@ -20,7 +20,7 @@ Requirements::Requirements(
     , m_ast_context(astContext)
     , m_syn_ctx(_sctx)
     , m_vars(), m_funs(), m_includes(), addl_types(), m_macros()
-    , m_text(""), m_parent(NoAst), m_scope_pos(NoNode)
+    , m_parent(NoAst), m_scope_pos(NoNode)
     , toplev_is_macro(false)
     , is_first(true)
     , ctx()
@@ -204,9 +204,6 @@ std::set<VariableInfo> Requirements::variables() const
     }
     return ans;
 }
-
-std::string Requirements::text() const
-{ return m_text; }
 
 AstRef Requirements::parent() const
 { return m_parent; }

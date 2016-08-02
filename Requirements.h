@@ -72,9 +72,6 @@ public:
     
     bool toplevel_is_macro() const { return toplev_is_macro; }
 
-    void setText(const std::string & _text)
-    { m_text = _text; }
-
     void setParent(AstRef p)
     { m_parent = p; }
 
@@ -115,7 +112,6 @@ private:
     std::set<std::string> m_includes;
     std::set<Hash> addl_types;
     std::set<Macro> m_macros;
-    std::string m_text;
     AstRef m_parent;
     PTNode m_scope_pos;
     clang::PresumedLoc m_begin_ploc;

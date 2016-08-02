@@ -23,20 +23,15 @@ RenameFreeVar::RenameFreeVar(
     Stmt * the_stmt,
     SourceManager & _sm,
     const LangOptions & _langOpts,
+    SourceLocation _begin,
+    SourceLocation _end,
     const Renames & rn)
     : sm(_sm)
     , langOpts(_langOpts)
+    , begin(_begin)
+    , end(_end)
     , renames(rn)
 {
-    SourceRange sr = Utils::getImmediateMacroArgCallerRange(
-        sm,
-        the_stmt->getSourceRange());
-
-    begin = sr.getBegin(); 
-    end = Lexer::getLocForEndOfToken(sr.getEnd(), 
-                                     0,
-                                     sm,
-                                     langOpts);
     TraverseStmt(the_stmt);
 }
 
@@ -44,20 +39,15 @@ RenameFreeVar::RenameFreeVar(
     Decl * the_decl,
     SourceManager & _sm,
     const LangOptions & _langOpts,
+    SourceLocation _begin,
+    SourceLocation _end,
     const Renames & rn)
     : sm(_sm)
     , langOpts(_langOpts)
+    , begin(_begin)
+    , end(_end)
     , renames(rn)
 {
-    SourceRange sr = Utils::getImmediateMacroArgCallerRange(
-        sm,
-        the_decl->getSourceRange());
-
-    begin = sr.getBegin(); 
-    end = Lexer::getLocForEndOfToken(sr.getEnd(), 
-                                     0,
-                                     sm,
-                                     langOpts);
     TraverseDecl(the_decl);
 }
 

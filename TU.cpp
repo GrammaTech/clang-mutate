@@ -110,15 +110,9 @@ class BuildTU
     template <typename T>
     AstRef makeAst(T * clang_obj, Requirements & required)
     {
-        Renames renames(required.variables(),
-                        required.functions());
-        RenameFreeVar renamer(clang_obj, sm, ci->getLangOpts(), renames);
-        required.setText(renamer.getRewrittenString());
-    
         AstRef parent = spine.back();
         required.setParent(parent);
         required.setScopePos(decl_scopes.current_scope_position());
-        required.setReplacements(renamer.getReplacements());
 
         bool expand_range = (required.syn_ctx() == SyntacticContext::FullStmt() ||
                              required.syn_ctx() == SyntacticContext::Field() ||
@@ -138,6 +132,15 @@ class BuildTU
         AstRef ast = Ast::create(clang_obj, required);
 
         ast->setInMacroExpansion(clang_obj->getLocStart().isMacroID());
+
+        Renames renames(required.variables(),
+                        required.functions());
+        RenameFreeVar renamer(clang_obj, sm, ci->getLangOpts(),
+                              ast->sourceRange().getBegin(),
+                              ast->sourceRange().getEnd(),
+                              renames,
+                              global_ast_count == 4);
+        ast->setReplacements(renamer.getReplacements());
 
         spine.push_back(ast);
         return ast;

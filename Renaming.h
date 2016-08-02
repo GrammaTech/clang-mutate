@@ -85,13 +85,17 @@ public:
   RenameFreeVar(clang::Stmt * the_stmt,
                 clang::SourceManager & _sm,
                 const clang::LangOptions & _langOpts,
+                clang::SourceLocation _begin,
+                clang::SourceLocation _end,
                 const Renames & renames);
-  
+
   RenameFreeVar(clang::Decl * the_decl,
                 clang::SourceManager & _sm,
                 const clang::LangOptions & _langOpts,
+                clang::SourceLocation _begin,
+                clang::SourceLocation _end,
                 const Renames & renames);
-  
+
   bool VisitStmt(clang::Stmt * stmt);
 
   std::string getRewrittenString() const;
