@@ -106,13 +106,16 @@ bool RenameFreeVar::VisitStmt(Stmt * stmt)
           Utils::getImmediateMacroArgCallerRange(
               sm,
               stmt->getSourceRange());
+      // Use spelling location to correctly handle macro expansions
+      SourceLocation stmt_begin = sm.getSpellingLoc(sr.getBegin());
+
       if (sm.isInMainFile(sr.getBegin()) &&
           !sm.isMacroBodyExpansion(sr.getBegin()))
       {
         // Not very efficient, but I didn't see a better way to
         // get the size in characters of a CharSourceRange.
         CharSourceRange srcRange =
-            CharSourceRange::getCharRange(begin, sr.getBegin());
+            CharSourceRange::getCharRange(begin, stmt_begin);
         size_t offset = Lexer::getSourceText(
             srcRange,
             sm,

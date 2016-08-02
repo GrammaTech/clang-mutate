@@ -138,8 +138,7 @@ class BuildTU
         RenameFreeVar renamer(clang_obj, sm, ci->getLangOpts(),
                               ast->sourceRange().getBegin(),
                               ast->sourceRange().getEnd(),
-                              renames,
-                              global_ast_count == 4);
+                              renames);
         ast->setReplacements(renamer.getReplacements());
 
         spine.push_back(ast);
