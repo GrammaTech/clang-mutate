@@ -116,7 +116,9 @@ TESTS =	help-text-appears				\
 	find-char-star-type				\
 	segmentation-fault				\
 	replace-var-in-macro				\
-	lighttpd-bug-does-not-crash
+	lighttpd-bug-does-not-crash			\
+	function-bodies-have-no-children                \
+	segmentation-fault
 
 etc/hello: etc/hello.c
 	$(CC) -g -O0 $< -o $@
