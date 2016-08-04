@@ -110,6 +110,7 @@ TESTS =	help-text-appears				\
 	macro-src-text-is-correct			\
 	replace-in-macro-expansion			\
 	recursive-type-does-not-crash			\
+	find-char-star-type				\
 	segmentation-fault
 
 etc/hello: etc/hello.c
