@@ -1,5 +1,5 @@
-/* 
- Class to hold the parsed results of llvm-dwarfdump -debug-dump=line 
+/*
+ Class to hold the parsed results of llvm-dwarfdump -debug-dump=line
  This class will store all compilation units in a binary, the files
  in those compilation units, and the mapping file line number -> address
  in binary.
@@ -61,7 +61,7 @@ namespace clang_mutate{
                                         unsigned int lineNum ) const;
 
     // Retrieve the begin and end addresses in the binary for a given line in a file.
-    BeginEndAddressPair getBeginEndAddressesForLine( const std::string& filePath, 
+    BeginEndAddressPair getBeginEndAddressesForLine( const std::string& filePath,
                                                      unsigned int lineNum) const;
 
     bool lineRangeToAddressRange( const std::string & filePath,
@@ -76,7 +76,7 @@ namespace clang_mutate{
     // Get the raw contents of a binary from [startAddress, endAddress)
     // as a sequence of hex digits.
     std::string getBinaryContentsAsStr( unsigned long startAddress,
-                                        unsigned long endAddress ); 
+                                        unsigned long endAddress );
 
     // Dump the BinaryAddressMap to stream.
     std::ostream& dump(std::ostream& out) const;
@@ -92,11 +92,11 @@ namespace clang_mutate{
     std::vector<std::string> objdumpDisassemble( unsigned long beginAddress,
                                                  unsigned long endAddress);
 
-    // Parse the results of using objdump to disassemble 
+    // Parse the results of using objdump to disassemble
     // into the binary contents cache
     BinaryContentsMap parseObjdumpDisassembly( const std::vector<std::string> &objdumpLines );
 
-    // Fill the binary contents cache with the results of 
+    // Fill the binary contents cache with the results of
     // using objdump to disassemble from [beginAddress, endAddress)
     void fillBinaryContentsCache( unsigned long beginAddress, unsigned long endAddress );
 
@@ -105,7 +105,7 @@ namespace clang_mutate{
     //  %0x#1: Address in binary
     //  %d#1: Line number in source
     //  %d#3: File index
-    FilenameLineNumAddressPair parseAddressLine( const std::string &line, 
+    FilenameLineNumAddressPair parseAddressLine( const std::string &line,
                                                  const std::string &nextLine,
                                                  const std::vector<std::string> &files );
 
@@ -113,15 +113,15 @@ namespace clang_mutate{
     // from the output of llvm-dwarfdump
     //  %d#1: Directory index (1..n)
     //  %s#1: File name
-    // This will return the directory name (%s) 
+    // This will return the directory name (%s)
     // expanded to the full absolute path.
     std::string parseDirectoryLine( const std::string &line,
                                     const std::set<std::string>& sourcePaths );
 
-    // Return the absolute path to filename by testing for the 
+    // Return the absolute path to filename by testing for the
     // existance of directory/fileName and then each sourcepath/directory/fileName
-    // in turn.  This operates equivalently to GDB when attempting to load 
-    // source files.  
+    // in turn.  This operates equivalently to GDB when attempting to load
+    // source files.
     // See sourceware.org/gdb/onlinedocs/gdb/Source-Path.html for more
     // information.
     std::string findOnSourcePath( const std::set<std::string>& sourcePaths,
@@ -134,13 +134,13 @@ namespace clang_mutate{
     //  %d#2: Directory index (1..n)
     //  %s#1: File name
     // This will return the file name appended to the directory associated with this file
-    std::string parseFileLine( const std::string &line, 
-                               const std::set<std::string>& sourcePaths, 
+    std::string parseFileLine( const std::string &line,
+                               const std::set<std::string>& sourcePaths,
                                const std::vector<std::string> &directories );
 
     // Parse the contents of a single .debug_line contents section representing a single
     // compilation unit from the output of llvm-drawfdump.
-    FilesMap parseCompilationUnit( const std::vector<std::string>& drawfDumpLines, 
+    FilesMap parseCompilationUnit( const std::vector<std::string>& drawfDumpLines,
                                    const std::set<std::string>& sourcePaths,
                                    unsigned long long &currentline );
 
@@ -149,7 +149,7 @@ namespace clang_mutate{
     //
     // It is equivalent to the default GDB source path of $cdir:$cwd
     // where $cdir is the compilation directory and $cwd is the
-    // current working directory.  
+    // current working directory.
     // See sourceware.org/gdb/onlinedocs/gdb/Source-Path.html for more
     // information.
     std::set< std::string > getSourcePaths( const std::vector<std::string>& drawfDumpDebugInfo );

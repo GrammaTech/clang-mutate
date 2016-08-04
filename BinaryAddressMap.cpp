@@ -1,4 +1,4 @@
-/* 
+/*
  See BinaryAddressMap.h
 */
 
@@ -30,14 +30,14 @@ namespace clang_mutate{
       }
     }
     pclose(pipe);
-    
+
     return lines;
   }
 
   // Splits a string into a vector of tokens using 'delim' as
   // a delimiter.
   std::vector<std::string> split(
-    const std::string &s, 
+    const std::string &s,
     const std::string &delim)
   {
     size_t i = s.find_first_not_of(delim, 0);
@@ -49,8 +49,8 @@ namespace clang_mutate{
       tokens.push_back( s.substr(i, j-i) );
       i = s.find_first_not_of(delim, j+1);
     }
-   
-    if ( i != std::string::npos ) 
+
+    if ( i != std::string::npos )
       tokens.push_back(s.substr(i));
 
     return tokens;
@@ -61,9 +61,9 @@ namespace clang_mutate{
     unsigned long endAddress)
   {
     std::stringstream cmd;
-    
+
     cmd << "objdump" << " "
-        << "-d" << " " 
+        << "-d" << " "
         << "--start-address=0x" << std::hex << beginAddress << std::dec << " "
         << "--stop-address=0x"  << std::hex << endAddress << std::dec << " "
         << getBinaryPath();
@@ -71,7 +71,7 @@ namespace clang_mutate{
     return exec( cmd.str().c_str() );
   }
 
-  BinaryAddressMap::BinaryContentsMap BinaryAddressMap::parseObjdumpDisassembly( 
+  BinaryAddressMap::BinaryContentsMap BinaryAddressMap::parseObjdumpDisassembly(
     const std::vector<std::string> &objdumpLines )
   {
     BinaryContentsMap binaryContentsMap;
@@ -94,11 +94,11 @@ namespace clang_mutate{
         // The next tokens are a sequence of hex bytes (e.g. "48", "89", "e5")
         // Iterate until we find a token which not a hex byte (e.g. "push" or "mov")
         for ( std::vector<std::string>::const_iterator byteIter = tokens.begin() + 1;
-              byteIter != tokens.end() && 
+              byteIter != tokens.end() &&
               byteIter->find_first_not_of("0123456789abcdef") == std::string::npos;
               byteIter++ )
         {
-          Byte byte = static_cast<Byte>( strtoul(byteIter->c_str(), NULL, 16) ); 
+          Byte byte = static_cast<Byte>( strtoul(byteIter->c_str(), NULL, 16) );
           bytes.push_back( byte );
         }
 
@@ -109,7 +109,7 @@ namespace clang_mutate{
     return binaryContentsMap;
   }
 
-  void BinaryAddressMap::fillBinaryContentsCache( 
+  void BinaryAddressMap::fillBinaryContentsCache(
     unsigned long beginAddress,
     unsigned long endAddress )
   {
@@ -126,7 +126,7 @@ namespace clang_mutate{
   }
 
   BinaryAddressMap::FilenameLineNumAddressPair BinaryAddressMap::parseAddressLine(
-    const std::string &line, 
+    const std::string &line,
     const std::string &nextLine,
     const std::vector<std::string> &files ) {
 
@@ -137,9 +137,9 @@ namespace clang_mutate{
     unsigned long endAddress;
     unsigned int lineNum;
     unsigned int tmp, fileIndex;
-  
+
     // Special: If end_sequence is present, this is the end address of the current
-    // line number. We will just store it as the next line number.      
+    // line number. We will just store it as the next line number.
     bool endSequence = line.find("end_sequence") != std::string::npos;
 
     lineEntriesStream.str( line );
@@ -155,18 +155,18 @@ namespace clang_mutate{
     return filenameLineNumAddressPair;
   }
 
-  std::string BinaryAddressMap::parseDirectoryLine( 
+  std::string BinaryAddressMap::parseDirectoryLine(
     const std::string &line,
     const std::set<std::string>& sourcePaths ) {
     // Regular expressions would be cool...
     size_t startquote = line.find_first_of('\'') + 1;
     size_t endquote = line.find_last_of('\'') - 1;
     std::string directory = line.substr( startquote, endquote - startquote + 1);
-     
+
     return findOnSourcePath(sourcePaths, directory.c_str());
   }
 
-  std::string BinaryAddressMap::findOnSourcePath( 
+  std::string BinaryAddressMap::findOnSourcePath(
     const std::set<std::string>& sourcePaths,
     const std::string& directory,
     const std::string& fileName)
@@ -190,14 +190,14 @@ namespace clang_mutate{
         rpath = Utils::safe_realpath(path);
         if (!rpath.empty()) {
           return rpath;
-        } 
+        }
         else if (m_dwarfFilepathMap.find(path) != m_dwarfFilepathMap.end()) {
           return m_dwarfFilepathMap[path];
         }
       }
     }
 
-    return ""; 
+    return "";
   }
 
   std::string BinaryAddressMap::parseFileLine(
@@ -212,13 +212,13 @@ namespace clang_mutate{
 
     lineEntriesStream >> directoryIndex >> tmp1 >> tmp2 >> fileName;
 
-    return (directoryIndex > 0) ? 
+    return (directoryIndex > 0) ?
             findOnSourcePath( sourcePaths, directories[directoryIndex-1], fileName ) :
             findOnSourcePath( sourcePaths, ".", fileName);
   }
 
-  BinaryAddressMap::FilesMap BinaryAddressMap::parseCompilationUnit( 
-    const std::vector<std::string>& dwarfDumpDebugLine, 
+  BinaryAddressMap::FilesMap BinaryAddressMap::parseCompilationUnit(
+    const std::vector<std::string>& dwarfDumpDebugLine,
     const std::set<std::string>& sourcePaths,
     unsigned long long &currentline ) {
 
@@ -244,11 +244,11 @@ namespace clang_mutate{
         files.push_back( file );
       }
 
-      if ( line.find("0x") == 0 && 
+      if ( line.find("0x") == 0 &&
            currentline+1 < dwarfDumpDebugLine.size() &&
            dwarfDumpDebugLine[currentline+1].find("0x") == 0 ) {
         std::string nextLine = dwarfDumpDebugLine[currentline+1];
-        FilenameLineNumAddressPair fileNameLineNumAddressPair = 
+        FilenameLineNumAddressPair fileNameLineNumAddressPair =
             parseAddressLine( line, nextLine, files );
 
         LineNumsToAddressesMap & ln2am = filesMap[fileNameLineNumAddressPair.first];
@@ -315,7 +315,7 @@ namespace clang_mutate{
     return found;
   }
 
-  std::set< std::string > BinaryAddressMap::getSourcePaths( 
+  std::set< std::string > BinaryAddressMap::getSourcePaths(
     const std::vector<std::string>& dwarfDumpDebugInfo)
   {
     std::set< std::string > sourcePaths;
@@ -329,7 +329,7 @@ namespace clang_mutate{
       {
         size_t pathStart = lineIter->find_first_of("\"") + 1;
         size_t pathEnd = lineIter->find_last_of("\"") - 1;
-        const std::string path = 
+        const std::string path =
           lineIter->substr( pathStart, pathEnd - pathStart + 1 );
 
         sourcePaths.insert( path );
@@ -360,19 +360,19 @@ namespace clang_mutate{
                               const std::set<std::string>& sourcePaths){
     std::string line;
     unsigned int compilationUnit = -1;
-   
+
     for ( unsigned long long currentline = 0;
           currentline < dwarfDumpDebugLine.size();
           currentline++ ) {
       if ( dwarfDumpDebugLine[currentline].find("Line table prologue:") != std::string::npos ) {
         compilationUnit++;
 
-        m_compilationUnitMap[compilationUnit] = 
+        m_compilationUnitMap[compilationUnit] =
           parseCompilationUnit( dwarfDumpDebugLine, sourcePaths, currentline );
       }
     }
   }
-  
+
   BinaryAddressMap::BinaryAddressMap() {
   }
 
@@ -383,23 +383,23 @@ namespace clang_mutate{
     m_binaryPath = Utils::safe_realpath(binary);
 
     parseDwarfFilepathMapping(dwarfFilepathMapping);
- 
+
     if ( !m_binaryPath.empty() ) {
-      const std::string dwarfDumpDebugLineCmd = 
+      const std::string dwarfDumpDebugLineCmd =
         LLVM_DWARFDUMP" -debug-dump=line " + m_binaryPath;
-      const std::string dwarfDumpDebugInfoCmd = 
+      const std::string dwarfDumpDebugInfoCmd =
         LLVM_DWARFDUMP" -debug-dump=info " + m_binaryPath;
 
-      std::vector<std::string> dwarfDumpDebugLine = 
+      std::vector<std::string> dwarfDumpDebugLine =
         exec( dwarfDumpDebugLineCmd.c_str() );
-      std::vector<std::string> dwarfDumpDebugInfo = 
+      std::vector<std::string> dwarfDumpDebugInfo =
         exec( dwarfDumpDebugInfoCmd.c_str() );
 
       init( dwarfDumpDebugLine, getSourcePaths( dwarfDumpDebugInfo ) );
     }
   }
 
-  bool BinaryAddressMap::isEmpty() const { 
+  bool BinaryAddressMap::isEmpty() const {
     return m_compilationUnitMap.empty();
   }
 
@@ -408,38 +408,38 @@ namespace clang_mutate{
   }
 
   bool BinaryAddressMap::canGetBeginAddressForLine(
-    const std::string& filePath, 
+    const std::string& filePath,
     unsigned int lineNum ) const
   {
-    return getBeginAddressForLine( filePath, lineNum ) != 
+    return getBeginAddressForLine( filePath, lineNum ) !=
            static_cast<unsigned long>(-1);
   }
 
   bool BinaryAddressMap::canGetEndAddressForLine(
-    const std::string& filePath, 
+    const std::string& filePath,
     unsigned int lineNum ) const
   {
-    return getEndAddressForLine( filePath, lineNum ) != 
+    return getEndAddressForLine( filePath, lineNum ) !=
            static_cast<unsigned long>(-1);
   }
 
-  unsigned long BinaryAddressMap::getBeginAddressForLine( 
+  unsigned long BinaryAddressMap::getBeginAddressForLine(
     const std::string& filePath,
-    unsigned int lineNum ) const 
+    unsigned int lineNum ) const
   {
     return getBeginEndAddressesForLine(filePath, lineNum ).first;
   }
 
-  unsigned long BinaryAddressMap::getEndAddressForLine( 
+  unsigned long BinaryAddressMap::getEndAddressForLine(
     const std::string& filePath,
-    unsigned int lineNum ) const 
+    unsigned int lineNum ) const
   {
     return getBeginEndAddressesForLine(filePath, lineNum ).second;
   }
 
   // Retrieve the begin and end addresses in the binary for a given line in a file.
-  BinaryAddressMap::BeginEndAddressPair BinaryAddressMap::getBeginEndAddressesForLine( 
-    const std::string& filePath, 
+  BinaryAddressMap::BeginEndAddressPair BinaryAddressMap::getBeginEndAddressesForLine(
+    const std::string& filePath,
     unsigned int lineNum) const {
 
     BeginEndAddressPair beginEndAddresses;
@@ -455,8 +455,8 @@ namespace clang_mutate{
       // Check if file is in the files for this compilation unit
       if ( filesMap.find( filePath ) != filesMap.end() ) {
         LineNumsToAddressesMap lineNumsToAddressesMap = filesMap[filePath];
-       
-        // Check if line number is in file 
+
+        // Check if line number is in file
         if ( lineNumsToAddressesMap.find( lineNum ) != lineNumsToAddressesMap.end() ) {
           // We found a match.  Return the starting and ending address for this line.
           LineNumsToAddressesMap::iterator lineNumsToAddressesMapIter = lineNumsToAddressesMap.find(lineNum);
@@ -464,14 +464,14 @@ namespace clang_mutate{
           beginEndAddresses.first  = lineNumsToAddressesMapIter->second.first;
           beginEndAddresses.second = lineNumsToAddressesMapIter->second.second;
           break;
-        }     
+        }
       }
     }
 
     return beginEndAddresses;
   }
 
-  BinaryAddressMap::Bytes BinaryAddressMap::getBinaryContents( 
+  BinaryAddressMap::Bytes BinaryAddressMap::getBinaryContents(
     unsigned long beginAddress,
     unsigned long endAddress )
   {
@@ -481,7 +481,7 @@ namespace clang_mutate{
     // Note: When compiled with optimization turned on, there is no longer
     // a one-to-one correspondence of line of C/C++ source code ->
     // address range in the binary due to inlining of function calls
-    // and other techniques. Additionally, the ordering of function calls in 
+    // and other techniques. Additionally, the ordering of function calls in
     // the compiled binary may not match the ordering in source.
     if ( beginAddress < endAddress )
     {
@@ -493,7 +493,7 @@ namespace clang_mutate{
         fillBinaryContentsCache( beginAddress, endAddress );
       }
 
-      // Push all bytes for the range [beginAddress, endAddress) into 
+      // Push all bytes for the range [beginAddress, endAddress) into
       // the bytes vector.
       for ( cacheIter = m_binaryContentsCache.lower_bound( beginAddress );
             cacheIter != m_binaryContentsCache.upper_bound( endAddress );
@@ -511,7 +511,7 @@ namespace clang_mutate{
     return bytes;
   }
 
-  std::string BinaryAddressMap::getBinaryContentsAsStr( 
+  std::string BinaryAddressMap::getBinaryContentsAsStr(
     unsigned long startAddress,
     unsigned long endAddress)
   {
@@ -527,7 +527,7 @@ namespace clang_mutate{
       ret << std::setw(2) << static_cast<int>(*byteIter) << " ";
     }
 
-    return ret.str().empty() ? 
+    return ret.str().empty() ?
            ret.str() :
            ret.str().substr(0, ret.str().length() - 1);
   }
@@ -548,14 +548,14 @@ namespace clang_mutate{
         for ( LineNumsToAddressesMap::iterator lineNumsToAddressesMapIter = lineNumsToAddressesMap.begin();
               lineNumsToAddressesMapIter != lineNumsToAddressesMap.end();
               lineNumsToAddressesMapIter++ ) {
-          out << "\t\t" << std::dec << lineNumsToAddressesMapIter->first 
+          out << "\t\t" << std::dec << lineNumsToAddressesMapIter->first
               << ": " << std::hex << lineNumsToAddressesMapIter->second.first
               << ", " << std::hex << lineNumsToAddressesMapIter->second.second
               << std::dec << std::endl;
         }
       }
     }
-   
+
     return out;
   }
 }
