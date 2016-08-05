@@ -15,6 +15,8 @@
 #include <set>
 #include <vector>
 
+#include "third-party/elfio-3.2/elfio/elfio.hpp"
+
 namespace clang_mutate{
   class BinaryAddressMap {
   public:
@@ -27,7 +29,6 @@ namespace clang_mutate{
 
     typedef unsigned char Byte;
     typedef std::vector<Byte> Bytes;
-    typedef std::map<unsigned long, Bytes > BinaryContentsMap;
 
     typedef std::map<std::string, std::string> DwarfFilepathMap;
 
@@ -37,6 +38,12 @@ namespace clang_mutate{
     // Initialize a BinaryAddressMap from an ELF executable.
     BinaryAddressMap(const std::string &binary,
                      const std::string &dwarfFilepathMapping);
+
+    // Copy Constructor
+    BinaryAddressMap(const BinaryAddressMap& other);
+
+    // Overloaded assignment operator
+    BinaryAddressMap& operator=(const BinaryAddressMap& other);
 
     // Return true if the BinaryAddressMap is empty
     bool isEmpty() const;
@@ -82,23 +89,10 @@ namespace clang_mutate{
     std::ostream& dump(std::ostream& out) const;
 
   private:
-    BinaryContentsMap m_binaryContentsCache;
+    ELFIO::elfio m_elf;
     CompilationUnitMap m_compilationUnitMap;
     DwarfFilepathMap m_dwarfFilepathMap;
     std::string m_binaryPath;
-
-    // Return the results of using objdump to disassemble
-    // from [beginAddress, endAddress)
-    std::vector<std::string> objdumpDisassemble( unsigned long beginAddress,
-                                                 unsigned long endAddress);
-
-    // Parse the results of using objdump to disassemble
-    // into the binary contents cache
-    BinaryContentsMap parseObjdumpDisassembly( const std::vector<std::string> &objdumpLines );
-
-    // Fill the binary contents cache with the results of
-    // using objdump to disassemble from [beginAddress, endAddress)
-    void fillBinaryContentsCache( unsigned long beginAddress, unsigned long endAddress );
 
     // Parse two contiguous lines in the form "%0x     %d     %d     %d  %d  %s"
     // from the output of llvm-dwarfdump
@@ -158,11 +152,13 @@ namespace clang_mutate{
     // into the m_dwarfFilepathMap
     void parseDwarfFilepathMapping(const std::string &dwarfFilepathMapping);
 
+    // Deep copy other's members
+    void copy(const BinaryAddressMap& other);
+
     // Initialize from the llvm-drawfdump .debug-dump=line output lines.
     // Source paths is a set of paths to search when locating files.
     void init(const std::vector<std::string>& drawfDumpDebugLine,
               const std::set< std::string >& searchPaths);
-
   };
 }
 

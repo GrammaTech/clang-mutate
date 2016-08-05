@@ -56,75 +56,6 @@ namespace clang_mutate{
     return tokens;
   }
 
-  std::vector<std::string> BinaryAddressMap::objdumpDisassemble(
-    unsigned long beginAddress,
-    unsigned long endAddress)
-  {
-    std::stringstream cmd;
-
-    cmd << "objdump" << " "
-        << "-d" << " "
-        << "--start-address=0x" << std::hex << beginAddress << std::dec << " "
-        << "--stop-address=0x"  << std::hex << endAddress << std::dec << " "
-        << getBinaryPath();
-
-    return exec( cmd.str().c_str() );
-  }
-
-  BinaryAddressMap::BinaryContentsMap BinaryAddressMap::parseObjdumpDisassembly(
-    const std::vector<std::string> &objdumpLines )
-  {
-    BinaryContentsMap binaryContentsMap;
-
-    // Iterate over each line returned by objdump
-    for ( std::vector<std::string>::const_iterator iter = objdumpLines.begin();
-          iter != objdumpLines.end();
-          iter++ )
-    {
-      std::vector<std::string> tokens = split(*iter, " \t\r\n:");
-
-      unsigned long address = 0;
-      Bytes bytes;
-
-      if ( tokens.size() > 0 )
-      {
-        // The first token is the address in the binary (e.g. "4004f4")
-        address = strtoul( tokens.begin()->c_str(), NULL, 16 );
-
-        // The next tokens are a sequence of hex bytes (e.g. "48", "89", "e5")
-        // Iterate until we find a token which not a hex byte (e.g. "push" or "mov")
-        for ( std::vector<std::string>::const_iterator byteIter = tokens.begin() + 1;
-              byteIter != tokens.end() &&
-              byteIter->find_first_not_of("0123456789abcdef") == std::string::npos;
-              byteIter++ )
-        {
-          Byte byte = static_cast<Byte>( strtoul(byteIter->c_str(), NULL, 16) );
-          bytes.push_back( byte );
-        }
-
-        binaryContentsMap[address] = bytes;
-      }
-    }
-
-    return binaryContentsMap;
-  }
-
-  void BinaryAddressMap::fillBinaryContentsCache(
-    unsigned long beginAddress,
-    unsigned long endAddress )
-  {
-    std::vector<std::string> objdumpLines = objdumpDisassemble( beginAddress, endAddress );
-    BinaryContentsMap binaryContentsMap = parseObjdumpDisassembly( objdumpLines );
-
-    // Update the binary contents cache with the objdump results
-    for ( BinaryContentsMap::iterator iter = binaryContentsMap.begin();
-          iter != binaryContentsMap.end();
-          iter++ )
-    {
-      m_binaryContentsCache[iter->first] = iter->second;
-    }
-  }
-
   BinaryAddressMap::FilenameLineNumAddressPair BinaryAddressMap::parseAddressLine(
     const std::string &line,
     const std::string &nextLine,
@@ -293,7 +224,13 @@ namespace clang_mutate{
             continue;
 
         LineNumsToAddressesMap const& ln2am = fmsearch->second;
-        LineNumsToAddressesMap::const_iterator search = ln2am.find(lineRange.first);
+        LineNumsToAddressesMap::const_iterator search = ln2am.end();
+
+        // Find the first line with address information
+        while (search == ln2am.end() && lineRange.first <= lineRange.second) {
+            search = ln2am.find(lineRange.first);
+            lineRange.first++;
+        }
 
         while (search != ln2am.end() && search->first <= lineRange.second) {
             if (!found) {
@@ -356,9 +293,17 @@ namespace clang_mutate{
       }
     }
   }
+
+  void BinaryAddressMap::copy(const BinaryAddressMap& other){
+    m_binaryPath = other.m_binaryPath;
+    m_compilationUnitMap = other.m_compilationUnitMap;
+    m_dwarfFilepathMap = other.m_dwarfFilepathMap;
+
+    m_elf.load(m_binaryPath);
+  }
+
   void BinaryAddressMap::init(const std::vector<std::string>& dwarfDumpDebugLine,
                               const std::set<std::string>& sourcePaths){
-    std::string line;
     unsigned int compilationUnit = -1;
 
     for ( unsigned long long currentline = 0;
@@ -381,6 +326,7 @@ namespace clang_mutate{
                                      const std::string &dwarfFilepathMapping)
   {
     m_binaryPath = Utils::safe_realpath(binary);
+    m_elf.load(m_binaryPath);
 
     parseDwarfFilepathMapping(dwarfFilepathMapping);
 
@@ -397,6 +343,18 @@ namespace clang_mutate{
 
       init( dwarfDumpDebugLine, getSourcePaths( dwarfDumpDebugInfo ) );
     }
+  }
+
+  BinaryAddressMap::BinaryAddressMap(const BinaryAddressMap& other) {
+    copy(other);
+  }
+
+  BinaryAddressMap& BinaryAddressMap::operator=(const BinaryAddressMap& other) {
+    if (this != &other) {
+      copy(other);
+    }
+
+    return *this;
   }
 
   bool BinaryAddressMap::isEmpty() const {
@@ -475,7 +433,6 @@ namespace clang_mutate{
     unsigned long beginAddress,
     unsigned long endAddress )
   {
-    BinaryContentsMap::const_iterator cacheIter;
     Bytes bytes;
 
     // Note: When compiled with optimization turned on, there is no longer
@@ -485,25 +442,14 @@ namespace clang_mutate{
     // the compiled binary may not match the ordering in source.
     if ( beginAddress < endAddress )
     {
-      // Test if we could find the bytes for the range [beginAddress, endAddress)
-      // in the cache.  If not, fill it.
-      if ( m_binaryContentsCache.find(beginAddress) == m_binaryContentsCache.end() ||
-           m_binaryContentsCache.find(endAddress) == m_binaryContentsCache.end() )
-      {
-        fillBinaryContentsCache( beginAddress, endAddress );
-      }
+      for (unsigned int i = 0; i < m_elf.sections.size(); i++) {
+        ELFIO::section* sec = m_elf.sections[i];
+        if ( sec->get_address() <= beginAddress &&
+             endAddress < sec->get_address() + sec->get_size() ) {
+          const char* data = sec->get_data();
 
-      // Push all bytes for the range [beginAddress, endAddress) into
-      // the bytes vector.
-      for ( cacheIter = m_binaryContentsCache.lower_bound( beginAddress );
-            cacheIter != m_binaryContentsCache.upper_bound( endAddress );
-            cacheIter++ )
-      {
-        for ( Bytes::const_iterator byteIter = cacheIter->second.begin();
-              byteIter != cacheIter->second.end();
-              byteIter++ )
-        {
-          bytes.push_back( *byteIter );
+          bytes.assign( data + beginAddress - sec->get_address(),
+                        data + endAddress - sec->get_address() );
         }
       }
     }
