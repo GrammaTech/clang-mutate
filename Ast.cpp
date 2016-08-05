@@ -67,6 +67,9 @@ AstRef Ast::impl_create(T * clang_obj, Requirements & required)
             parentStmt);
         ref->setCanHaveAssociatedBytes(has_bytes);
     }
+    else if (ref->isFunctionDecl()) {
+        ref->setCanHaveAssociatedBytes(true);
+    }
     else {
         ref->setCanHaveAssociatedBytes(false);
     }

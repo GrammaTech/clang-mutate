@@ -162,6 +162,13 @@ public:
     void setInMacroExpansion(bool yn)
     { m_in_macro_expansion = yn; }
 
+    bool isFunctionDecl() const
+    { return m_class == "Function" ||
+             m_class == "CXXMethod" ||
+             m_class == "CXXConstructor" ||
+             m_class == "CXXConversionDecl" ||
+             m_class == "CXXDestructor"; }
+
     bool is_field_decl() const
     { return m_field_decl; }
 
