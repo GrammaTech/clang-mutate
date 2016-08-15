@@ -1,0 +1,17 @@
+#!/bin/bash
+#
+# Ensure that free variable replacement works in a macro invocation.
+#
+. $(dirname $0)/common
+
+# Variable in macro invocation
+equals "$(run_macros2 -json 2>/dev/null | json_filter counter 5 | jshon -e src_text -u)" \
+       "INNER((|var|))"
+
+# Variable in nested macro invocation
+equals "$(run_macros2 -json 2>/dev/null | json_filter counter 7 | jshon -e src_text -u)" \
+       "OUTER((|var|))"
+
+# Variable in macro expansion (should not be replaced)
+equals "$(run_macros2 -json 2>/dev/null | json_filter counter 9 | jshon -e src_text -u)" \
+       "OUTER(VAR)"

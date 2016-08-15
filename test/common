@@ -21,6 +21,8 @@ DECLS=etc/decls.c
 
 MACROS=etc/macros.c
 
+MACROS2=etc/macros2.c
+
 AUX=etc/aux.c
 
 LIST=etc/list.c
@@ -43,6 +45,9 @@ run_decls(){
 
 run_macros(){
     clang-mutate "$@" $MACROS --; }
+
+run_macros2(){
+    clang-mutate "$@" $MACROS2 --; }
 
 run_aux(){
     clang-mutate "$@" $AUX --; }
@@ -111,3 +116,9 @@ not_contains(){
             exit 1;
         fi
     done; }
+
+equals() {
+    if [ ! "$1" == "$2" ]; then
+        echo "\"$1\" != \"$2\""
+        exit 1;
+    fi }

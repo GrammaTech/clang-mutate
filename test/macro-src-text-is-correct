@@ -4,8 +4,8 @@
 #
 . $(dirname $0)/common
 
-test "$(run_macros -json | json_filter counter 3 | jshon -e src_text -u)" = \
-     "MULTI_STATEMENT_1"
+equals "$(run_macros -json | json_filter counter 3 | jshon -e src_text -u)" \
+       "MULTI_STATEMENT_1"
 
-test "$(run_macros -json | json_filter counter 8 | jshon -e src_text -u)" = \
-     "MULTI_STATEMENT_2(foo)"
+equals "$(run_macros -json | json_filter counter 8 | jshon -e src_text -u)" \
+       "MULTI_STATEMENT_2(foo)"

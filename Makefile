@@ -111,7 +111,8 @@ TESTS =	help-text-appears				\
 	replace-in-macro-expansion			\
 	recursive-type-does-not-crash			\
 	find-char-star-type				\
-	segmentation-fault
+	segmentation-fault				\
+	replace-var-in-macro
 
 etc/hello: etc/hello.c
 	$(CC) -g -O0 $< -o $@
