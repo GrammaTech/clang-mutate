@@ -26,10 +26,10 @@
 class Replacements
 {
 public:
-    void add(size_t offset, size_t size, const std::string & s);
+    void add(size_t offset, const std::string & old_str, const std::string & new_str);
     std::string apply_to(const std::string & input) const;
 private:
-    std::map<size_t, std::pair<size_t, std::string> > replacements;
+    std::map<size_t, std::pair<std::string, std::string> > replacements;
 };
 
 enum RenameKind
