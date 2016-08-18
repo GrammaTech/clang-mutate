@@ -225,4 +225,9 @@ AST_FIELD( in_macro_expansion, bool,
   { return ast.inMacroExpansion(); }
   )
 
+AST_FIELD( annotations, std::vector<std::string>,
+	   "Annotations of a declaration. (Found from __attribute(( annotate(...) ))).",
+	   { return ast.annotations(); }
+	   )
+
 #undef FIELD_DEF

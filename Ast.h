@@ -217,6 +217,9 @@ public:
     std::vector<AstRef> successors() const
     { return m_successors; }
 
+    std::vector<std::string> annotations() const
+      { return m_annotations; }
+
     picojson::value toJSON(const std::set<std::string> & keys,
                            bool include_aux) const;
 
@@ -321,6 +324,9 @@ private:
     unsigned long m_array_length;
 
     SourceOffset m_norm_start_off, m_norm_end_off, m_start_off, m_end_off;
+
+    std::vector<std::string> m_annotations;
+
 };
 
 } // namespace clang_mutate

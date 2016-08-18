@@ -423,4 +423,9 @@ Ast::Ast(Decl * _decl,
     // will grab everything up to (but not including) the semicolon.
     if (isa<FieldDecl>(_decl))
         m_range = m_normalized_range;
+
+    //Get annotations from the declaration
+    for (const auto *I : _decl->specific_attrs<AnnotateAttr>()) {
+        m_annotations.push_back(I->getAnnotation());
+    }
 }
