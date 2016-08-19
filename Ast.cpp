@@ -380,6 +380,10 @@ Ast::Ast(Stmt * _stmt,
         m_opcode = static_cast<BinaryOperator*>(m_stmt)
             ->getOpcodeStr().str();
     }
+    if (isa<UnaryOperator>(m_stmt)) {
+      m_opcode = static_cast<UnaryOperator*>(m_stmt)
+	->getOpcodeStr(static_cast<UnaryOperator*>(m_stmt)->getOpcode()).str();
+    }
 }
 
 Ast::Ast(Decl * _decl,
