@@ -375,6 +375,8 @@ Ast::Ast(Stmt * _stmt,
     , m_bit_field(false)
     , m_bit_field_width(0)
     , m_array_length(0)
+    , m_label_name()
+    , m_is_member_expr(false)
 {
     if (isa<BinaryOperator>(m_stmt)) {
         m_opcode = static_cast<BinaryOperator*>(m_stmt)
@@ -383,6 +385,12 @@ Ast::Ast(Stmt * _stmt,
     if (isa<UnaryOperator>(m_stmt)) {
       m_opcode = static_cast<UnaryOperator*>(m_stmt)
 	->getOpcodeStr(static_cast<UnaryOperator*>(m_stmt)->getOpcode()).str();
+    }
+
+    if (isa<MemberExpr>(m_stmt)) {
+      m_label_name = static_cast<MemberExpr*>(m_stmt)
+	->getMemberDecl()->getNameAsString();
+      m_is_member_expr = true;
     }
 }
 
@@ -421,6 +429,8 @@ Ast::Ast(Decl * _decl,
     , m_bit_field(false)
     , m_bit_field_width(0)
     , m_array_length(0)
+    , m_label_name()
+    , m_is_member_expr(false)
 {
     // clang seems to give us the wrong source ranges for FieldDecls.
     // Work around this by setting the range to the normalized range, which

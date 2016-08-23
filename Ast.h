@@ -220,6 +220,12 @@ public:
     std::vector<std::string> annotations() const
       { return m_annotations; }
 
+    std::string label_name() const
+      { return m_label_name; }
+
+    bool isMemberExpr() const
+      { return m_is_member_expr; }
+
     picojson::value toJSON(const std::set<std::string> & keys,
                            bool include_aux) const;
 
@@ -262,6 +268,7 @@ public:
     };
 
     static std::map<std::string, Ast::Field*> & ast_fields();
+
 
 private:
     void update_range_offsets(clang::CompilerInstance * ci);
@@ -322,6 +329,9 @@ private:
     bool m_bit_field;
     unsigned m_bit_field_width;
     unsigned long m_array_length;
+    // Properties for member exprs
+    std::string m_label_name;
+    bool m_is_member_expr;
 
     SourceOffset m_norm_start_off, m_norm_end_off, m_start_off, m_end_off;
 

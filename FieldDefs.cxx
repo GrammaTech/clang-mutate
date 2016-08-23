@@ -225,9 +225,17 @@ AST_FIELD( in_macro_expansion, bool,
   { return ast.inMacroExpansion(); }
   )
 
-AST_FIELD( annotations, std::vector<std::string>,
+AST_FIELD_P( annotations, std::vector<std::string>,
 	   "Annotations of a declaration. (Found from __attribute(( annotate(...) ))).",
+	     !ast.annotations().empty();,
 	   { return ast.annotations(); }
 	   )
+
+AST_FIELD_P(accessed_label_name, std::string,
+	    "Label name of a struct member access.",
+	    ast.isStmt() && ast.isMemberExpr(),
+	    { return ast.label_name(); }
+	   )
+
 
 #undef FIELD_DEF
