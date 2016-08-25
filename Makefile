@@ -14,6 +14,8 @@ endif
 ifeq "$(origin CXX)" "default"
 CXX = $(LLVM_HOME)clang++$(LLVM_POSTFIX)
 endif
+REPO ?= clang-mutate
+BRANCH ?= master
 RTTIFLAG := -fno-rtti
 PICOJSON_INCS := -I third-party/picojson-1.3.0
 PICOJSON_DEFINES := -D PICOJSON_USE_INT64
@@ -128,10 +130,43 @@ check/%: test/% etc/hello
 	fi
 	@printf "\e[1;1m%s\e[1;0m\n" $*
 
+testbot-check/%: test/% etc/hello
+	@XML_FILE=$$(mktemp /tmp/clang-mutate-tests.XXXXX); \
+	if [ -z $$GTHOME ]; then \
+		printf "GTHOME must be set prior to datamanager submission"; \
+		exit 1; \
+	fi; \
+	printf "<test_run>\n" >> $$XML_FILE; \
+	printf "  <name>$*</name>\n" >> $$XML_FILE; \
+	printf "  <host>$$(hostname)</host>\n" $* >> $$XML_FILE; \
+	printf "  <branch>$(BRANCH)</branch>\n" >> $$XML_FILE; \
+	printf "  <project>$(REPO)</project>\n" >> $$XML_FILE; \
+	printf "  <genus>regressions</genus>\n" >> $$XML_FILE; \
+	printf "  <date_time>$$(date +%Y-%m-%dT%H:%M:%S)</date_time>\n" >> $$XML_FILE; \
+	printf "  <key_value>\n" >> $$XML_FILE; \
+	printf "    <key>User</key>\n" >> $$XML_FILE; \
+	printf "    <text>$$USER</text>\n" >> $$XML_FILE; \
+	printf "  </key_value>\n" >> $$XML_FILE; \
+	printf "  <key_value>\n" >> $$XML_FILE; \
+	printf "    <key>Result</key>\n" >> $$XML_FILE; \
+	if ./$< >/dev/null 2>/dev/null;then \
+	printf "    <text>Pass</text>\n" >> $$XML_FILE; \
+	printf "    <number>5</number>\n" >> $$XML_FILE; \
+	else \
+	printf "    <text>Fail</text>\n" >> $$XML_FILE; \
+	printf "    <number>1</number>\n" >> $$XML_FILE; \
+	fi; \
+	printf "  </key_value>\n" >> $$XML_FILE; \
+	printf "</test_run>\n" >> $$XML_FILE; \
+	python $$GTHOME/gtr/scons/tools/gtnetcat.py datamanager 55555 $$XML_FILE \
+			>/dev/null 2>/dev/null; \
+	rm $$XML_FILE
+
 desc/%: check/%
 	@test/$* -d
 
 check: $(addprefix check/, $(TESTS))
+testbot-check: $(addprefix testbot-check/, $(TESTS))
 desc-check: $(addprefix desc/, $(TESTS))
 
 # Makefile target to support automated testing.
