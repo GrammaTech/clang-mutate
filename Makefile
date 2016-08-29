@@ -115,7 +115,8 @@ TESTS =	help-text-appears				\
 	recursive-type-does-not-crash			\
 	find-char-star-type				\
 	segmentation-fault				\
-	replace-var-in-macro
+	replace-var-in-macro				\
+	lighttpd-bug-does-not-crash
 
 etc/hello: etc/hello.c
 	$(CC) -g -O0 $< -o $@

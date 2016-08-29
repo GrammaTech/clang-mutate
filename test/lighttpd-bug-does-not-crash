@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+# Bug found while creating ASTs for lighttpd, simple struct, causes
+# segfault currently. Notably the arguments are those used in
+# EVO-RINGS, for reference.
+#
+. $(dirname $0)/common
+
+clang-mutate -sexp -fields=ast_class,counter,unbound_vals,unbound_funs,types,stmt_list,src_text,parent_counter,macros,guard_stmt,full_stmt,begin_src_line,end_src_line,begin_src_col,end_src_col,begin_addr,end_addr,includes,declares,scopes,is_decl,in_macro_expansion,opcode,children -aux=asts,types,decls etc/lighttpd_sample.c -- -g -O2 -Wall -W -Wshadow -pedantic -std=gnu99 > /dev/null
