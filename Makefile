@@ -56,6 +56,10 @@ all: $(EXES)
 clang-mutate: $(OBJECTS)
 	$(CXX) -o $@ $^ $(CLANGLIBS) $(LLVMLDFLAGS) $(SYSLIBS)
 
+man:
+doc:
+	make -C man
+
 clean:
 	-rm -f $(EXES) $(OBJECTS) compile_commands.json a.out etc/hello etc/loop *~
 
