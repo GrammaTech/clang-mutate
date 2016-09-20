@@ -1,0 +1,12 @@
+#!/bin/bash
+# Test Type has name and a hash value
+
+. $(dirname $0)/common
+
+type_hash=$(clang-mutate ../etc/muse_list.c -json -- | json_filter type "\"LIST"\" | jshon -e hash)
+
+if [ -z $type_hash ]; then
+    exit 0
+else
+    exit 1
+fi

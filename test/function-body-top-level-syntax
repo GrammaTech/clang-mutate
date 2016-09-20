@@ -1,0 +1,10 @@
+#!/bin/bash
+# Test function is a top level systax
+
+. $(dirname $0)/common
+
+syn_ctx=$(clang-mutate ../etc/muse_list.c -json -- | json_filter name "\"AddNode"\" | jshon -e syn_ctx)
+
+if [ ! $syn_ctx == "TopLevel" ]; then
+    exit 1;
+fi

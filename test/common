@@ -39,6 +39,8 @@ MORE_LOOPS=etc/more-loops.c
 
 ARRAY_LIST=etc/array_list.c
 
+MUSE_LIST=etc/muse_list.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -74,6 +76,9 @@ run_array_list(){
 
 run_more_loops(){
     clang-mutate "$@" $MORE_LOOPS --; }
+
+run_muse_list(){
+    clang-mutate "$@" $MUSE_LIST --; }
 
 json_filter(){
     cat -|jshon -a -j|grep "\"${1}\":${2}\(,\|}\)"; }

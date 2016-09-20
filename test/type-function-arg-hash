@@ -1,0 +1,14 @@
+#!/bin/bash
+# Test if the function argument the hash value
+
+. $(dirname $0)/common
+
+type_hash=$(clang-mutate ../etc/muse_list.c -json -- |    json_filter type "\"LIST"\" | jshon -e hash)
+
+arg=$(clang-mutate ../etc/muse_list.c -json -- | json_filter name "\"AddNode"\" | jshon -e arg)
+
+if [ [ "$args" =~ $type_hash ]]; then
+    :
+else
+    exit 1
+fi

@@ -122,7 +122,12 @@ TESTS =	help-text-appears				\
 	replace-var-in-macro				\
 	lighttpd-bug-does-not-crash			\
 	function-bodies-have-no-children                \
-	segmentation-fault
+	segmentation-fault				\
+	type-has-name-hash				\
+	function-body-top-level-syntax			\
+	type-function-arg-hash				\
+	type-function-body-hash				\
+	type-function-ret-hash
 
 etc/hello: etc/hello.c
 	$(CC) -g -O0 $< -o $@
