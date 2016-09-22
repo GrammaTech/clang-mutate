@@ -1,14 +1,13 @@
 #!/bin/bash
-# Test if type field in the body has the  hash value
-
+#
+# Test if type field in the body has the hash value
+#
 . $(dirname $0)/common
 
-type_hash=$(clang-mutate ../etc/muse_list.c -json -- |    json_filter type "\"LIST"\" | jshon -e hash)
+type_hash=$(clang-mutate ${MUSE_LIST} -json -- |json_filter type "\"LIST"\" |jshon -e hash)
 
-types=$(clang-mutate ../etc/muse_list.c -json -- | json_filter name "\"AddNode"\" | jshon -e types)
-
-if [ [ "$types" =~ $type_hash ]]; then
-    echo " contains ";
-else
-    exit 1
-fi
+# This types list should include the type found above.
+clang-mutate ${MUSE_LIST} -json --  \
+    |json_filter name "\"AddNode"\" \
+    |jshon -e types  -a -j          \
+    |contains "$type_hash"
