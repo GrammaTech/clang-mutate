@@ -96,6 +96,14 @@ AST_FIELD( types, std::set<Hash>,
   { return ast.types(); }
   )
 
+AST_FIELD_P( expr_type, Hash,
+  "For an Expr, the type of the expression.\n"
+  "Given as a hash that can be looked up\n"
+  "in the auxiliary type database. See _Type Database_.\n",
+  ( ast.expr_type() != 0 ),
+  { return ast.expr_type(); }
+  )
+
 AST_FIELD( unbound_vals, std::set<VariableInfo>,
   "Free variables appearing in this node.",
   { return ast.freeVariables(); }

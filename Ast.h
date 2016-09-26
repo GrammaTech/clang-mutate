@@ -92,6 +92,9 @@ public:
     void setTypes(const std::set<Hash> & types)
     { m_types = types; }
 
+    void setExprType(Hash type)
+    { m_expr_type = type; }
+
     void setMacros(const std::set<Macro> & macros)
     { m_macros = macros; }
 
@@ -100,6 +103,9 @@ public:
 
     std::set<Hash> types() const
     { return m_types; }
+
+    Hash expr_type() const
+    { return m_expr_type; }
 
     std::set<Macro> macros() const
     { return m_macros; }
@@ -202,7 +208,7 @@ public:
     { return m_aux; }
 
     std::pair<AstRef, AstRef> stmt_range() const;
-    
+
     std::vector<AstRef> children() const
     { return m_children; }
 
@@ -309,6 +315,7 @@ private:
     std::vector<std::string> m_declares;
     bool m_guard;
     std::set<Hash> m_types;
+    Hash m_expr_type;
     std::set<std::string> m_includes;
     PTNode m_scope_pos;
     std::set<Macro> m_macros;

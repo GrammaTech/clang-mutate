@@ -1,6 +1,7 @@
 #include "Ast.h"
 #include "TU.h"
 #include "Rewrite.h"
+#include "TypeDBEntry.h"
 
 #include <sstream>
 
@@ -66,6 +67,12 @@ AstRef Ast::impl_create(T * clang_obj, Requirements & required)
             ref->asStmt(*required.CI()),
             parentStmt);
         ref->setCanHaveAssociatedBytes(has_bytes);
+        Stmt *stmt = ref->asStmt(*required.CI());
+        if (isa<Expr>(stmt)) {
+            Expr *expr = static_cast<Expr *>(stmt);
+            QualType qt = expr->getType();
+            ref->setExprType(hash_type(qt.getTypePtrOrNull(), required.CI()));
+        }
     }
     else if (ref->isFunctionDecl()) {
         ref->setCanHaveAssociatedBytes(true);
@@ -360,6 +367,7 @@ Ast::Ast(Stmt * _stmt,
     , m_end_loc(pEnd)
     , m_declares()
     , m_guard(false)
+    , m_expr_type(0)
     , m_scope_pos(NoNode)
     , m_macros()
     , m_free_vars()
@@ -414,6 +422,7 @@ Ast::Ast(Decl * _decl,
     , m_end_loc(pEnd)
     , m_declares()
     , m_guard(false)
+    , m_expr_type(0)
     , m_scope_pos(NoNode)
     , m_macros()
     , m_free_vars()
