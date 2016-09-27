@@ -3,8 +3,12 @@
 
 . $(dirname $0)/common
 
-syn_ctx=$(clang-mutate ../etc/muse_list.c -json -- | json_filter name "\"AddNode"\" | jshon -e syn_ctx)
+syn_ctx=$(clang-mutate ${MUSE_LIST} -json -- \
+              |json_filter name "\"AddNode"\" \
+              |jshon -e syn_ctx)
 
-if [ ! $syn_ctx == "TopLevel" ]; then
+if [ $syn_ctx == "\"TopLevel\"" ];then
+    exit 0;
+else
     exit 1;
 fi

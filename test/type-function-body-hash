@@ -4,10 +4,13 @@
 #
 . $(dirname $0)/common
 
-type_hash=$(clang-mutate ${MUSE_LIST} -json -- |json_filter type "\"LIST"\" |jshon -e hash)
+type_hash=$(clang-mutate ${MUSE_LIST} -json -- \
+                |json_filter type "\"LIST"\"   \
+                |jshon -e hash)
 
 # This types list should include the type found above.
-clang-mutate ${MUSE_LIST} -json --  \
-    |json_filter name "\"AddNode"\" \
-    |jshon -e types  -a -j          \
-    |contains "$type_hash"
+arg=$(clang-mutate ${MUSE_LIST} -json --  \
+          |json_filter name "\"AddNode"\" \
+          |jshon -e types -a -j)
+
+contains "$arg" "$type_hash"

@@ -4,9 +4,11 @@
 #
 . $(dirname $0)/common
 
-body=$(run_array_list -json|json_filter name "\"al_init\""|jshon -e body)
+body=$(run_array_list -json|json_filter name "\"al_init\"" \
+           |jshon -e body)
 
-children=$(run_array_list -json|json_filter counter $body|jshon -e children|jshon -a -j|paste -s -d " ")
+children=$(run_array_list -json|json_filter counter $body \
+               |jshon -e children|jshon -a -j|paste -s -d " ")
 
 if [ -z "${children}" ]; then
     exit 0

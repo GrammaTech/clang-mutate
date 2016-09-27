@@ -3,10 +3,12 @@
 
 . $(dirname $0)/common
 
-type_hash=$(clang-mutate ../etc/muse_list.c -json -- | json_filter type "\"LIST"\" | jshon -e hash)
+type_hash=$(clang-mutate ${MUSE_LIST} -json -- \
+                |json_filter type "\"LIST"\"   \
+                |jshon -e hash)
 
 if [ -z $type_hash ]; then
-    exit 0
-else
     exit 1
+else
+    exit 0
 fi

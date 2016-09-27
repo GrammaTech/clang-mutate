@@ -3,10 +3,10 @@
 
 . $(dirname $0)/common
 
-type_hash=$(clang-mutate ../etc/muse_list.c -json -- | json_filter type "\"LISTNODE"\" | jshon -e hash)
+type_hash=$(clang-mutate ${MUSE_LIST} -json -- | json_filter type "\"LISTNODE"\" | jshon -e hash)
 
 
-ret=$(clang-mutate ../etc/muse_list.c -json -- | json_filter name "\"AddNode"\" | jshon -e ret)
+ret=$(clang-mutate ${MUSE_LIST} -json -- | json_filter name "\"AddNode"\" | jshon -e ret)
 
 if [ ! $ret == $type_hash ]; then
     exit 1;
