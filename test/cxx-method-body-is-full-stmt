@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# Test to ensure that CXXMethod decls have a body field.
+. $(dirname $0)/common
+
+full=$(run_class -json|json_filter ast_class "\"CompoundStmt\""|json_wrap|
+              jshon -a -e full_stmt)
+not_contains "$full" "false"

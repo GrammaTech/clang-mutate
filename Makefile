@@ -128,8 +128,9 @@ TESTS =	help-text-appears				\
 	type-function-arg-hash				\
 	type-function-body-hash				\
 	type-function-ret-hash				\
-	full-stmt-in-switch
-
+	full-stmt-in-switch                             \
+	cxx-method-has-body                             \
+	cxx-method-body-is-full-stmt
 
 etc/hello: etc/hello.c
 	$(CC) -g -O0 $< -o $@

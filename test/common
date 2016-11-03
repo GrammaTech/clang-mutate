@@ -43,6 +43,8 @@ MUSE_LIST=etc/muse_list.c
 
 SWITCH=etc/switch.c
 
+CLASS=etc/class.cpp
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -84,6 +86,9 @@ run_muse_list(){
 
 run_switch(){
     clang-mutate "$@" $SWITCH --; }
+
+run_class(){
+    clang-mutate "$@" $CLASS --; }
 
 json_filter(){
     cat -|jshon -a -j|grep "\"${1}\":${2}\(,\|}\)"; }

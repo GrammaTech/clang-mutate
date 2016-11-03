@@ -177,7 +177,7 @@ class BuildTU
                         Utils::IsGuardStmt(s, parent_stmt));
                 }
                 if (ast->className() == "CompoundStmt" &&
-                    parent->className() == "Function")
+                    Utils::is_function_decl(parent, *ci))
                 {
                     functions.push_back(std::make_pair(parent, ast));
                 }

@@ -116,6 +116,9 @@ bool read_uint(const std::string & s, unsigned int & n);
 
 bool read_yesno(const std::string & s, bool & yesno);
 
+bool is_function_decl(clang_mutate::AstRef ast,
+                      clang::CompilerInstance const& ci);
+
 template <typename T>
 bool is_full_stmt(T * clang_obj, clang_mutate::AstRef parent,
                   clang::CompilerInstance const&);
