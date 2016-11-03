@@ -41,6 +41,8 @@ ARRAY_LIST=etc/array_list.c
 
 MUSE_LIST=etc/muse_list.c
 
+SWITCH=etc/switch.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -79,6 +81,9 @@ run_more_loops(){
 
 run_muse_list(){
     clang-mutate "$@" $MUSE_LIST --; }
+
+run_switch(){
+    clang-mutate "$@" $SWITCH --; }
 
 json_filter(){
     cat -|jshon -a -j|grep "\"${1}\":${2}\(,\|}\)"; }

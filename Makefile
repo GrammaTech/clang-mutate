@@ -127,7 +127,9 @@ TESTS =	help-text-appears				\
 	function-body-top-level-syntax			\
 	type-function-arg-hash				\
 	type-function-body-hash				\
-	type-function-ret-hash
+	type-function-ret-hash				\
+	full-stmt-in-switch
+
 
 etc/hello: etc/hello.c
 	$(CC) -g -O0 $< -o $@

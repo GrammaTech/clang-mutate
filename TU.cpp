@@ -151,7 +151,7 @@ class BuildTU
                                    sm.getMainFileID(), s))
         {
             AstRef parent = spine.back();
-            SyntacticContext syn_ctx = Utils::is_full_stmt(s, parent)
+            SyntacticContext syn_ctx = Utils::is_full_stmt(s, parent, *ci)
                 ? SyntacticContext::FullStmt()
                 : SyntacticContext::Generic();
             Stmt *parent_stmt = parent->isStmt() ? parent->asStmt(*ci) : NULL;

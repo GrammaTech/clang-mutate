@@ -1,0 +1,19 @@
+#!/bin/bash
+#
+# Test that full_stmt is set correctly within a switch.
+. $(dirname $0)/common
+
+full=$(run_switch -json|json_filter ast_class "\"CallExpr\""|
+              json_wrap|jshon -e 0 -e full_stmt)
+
+if [ ${full} == false ];then
+    echo "Statement is not full."
+    exit 1
+fi
+
+full=$(run_switch -json|json_filter ast_class "\"IntegerLiteral\""|
+              json_wrap|jshon -e 0 -e full_stmt)
+if [ ${full} == true ];then
+    echo "Case expression is full."
+    exit 1
+fi

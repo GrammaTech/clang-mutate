@@ -506,15 +506,21 @@ bool read_yesno(const std::string & s, bool & yesno)
     return false;
 }
 
-bool is_full_stmt(Stmt * stmt, AstRef parent)
+bool is_full_stmt(Stmt * stmt, AstRef parent, clang::CompilerInstance const& ci)
 {
     return parent->className() == "CompoundStmt"
         || parent->className() == "LabelStmt"
         || (parent->className() == "Function" &&
-            std::string(stmt->getStmtClassName()) == "CompoundStmt");
+            std::string(stmt->getStmtClassName()) == "CompoundStmt")
+        // The first child of a CaseStmt is the condition. The rest are full
+        // statements.
+        || (parent->className() == "CaseStmt" &&
+            // If stmt is first child, it may not have been added to parent yet
+            parent->children().size() > 0 &&
+            stmt != parent->children()[0]->asStmt(ci));
 }
 
-bool is_full_stmt(Decl * decl, AstRef parent)
+bool is_full_stmt(Decl * decl, AstRef parent, clang::CompilerInstance const& ci)
 {
     return parent == NoAst;
 }
