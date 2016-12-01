@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# This pound define currently causes a seg fault in clang-mutate.
+# Originates from libxml2 (from BRASS) -- specifically libxml2/os400/rpgsupport.c
+#
+. $(dirname $0)/common
+
+run_pound_define
