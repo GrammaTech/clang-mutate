@@ -19,6 +19,8 @@ HELLO_EXE=etc/hello
 
 DECLS=etc/decls.c
 
+POUND_DEF=/etc/pound-define-func.c
+
 MACROS=etc/macros.c
 
 MACROS2=etc/macros2.c
@@ -50,6 +52,9 @@ run_hello(){
 
 run_decls(){
     clang-mutate "$@" $DECLS --; }
+
+run_pound_define(){
+    clang-mutate "$@" $POUND_DEF --; }
 
 run_macros(){
     clang-mutate "$@" $MACROS --; }
