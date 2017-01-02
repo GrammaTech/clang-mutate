@@ -47,6 +47,8 @@ SWITCH=etc/switch.c
 
 CLASS=etc/class.cpp
 
+MULTIDIMENSIONAL_ARRAY=etc/multidimensional_array.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -94,6 +96,9 @@ run_switch(){
 
 run_class(){
     clang-mutate "$@" $CLASS --; }
+
+run_multidimensional_array(){
+    clang-mutate "$@" $MULTIDIMENSIONAL_ARRAY --; }
 
 json_filter(){
     cat -|jshon -a -j|grep "\"${1}\":${2}\(,\|}\)"; }

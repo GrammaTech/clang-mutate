@@ -205,11 +205,17 @@ static Hash define_type(
     }
     }
 
-    if (t->isArrayType()) {
+    while (t->isArrayType()) {
         switch(t->getAsArrayTypeUnsafe()->getSizeModifier()){
-        case ArrayType::Normal : size_mod = "[]";
-        case ArrayType::Static : size_mod = "[static]";
-        case ArrayType::Star : size_mod = "[*]";
+        case ArrayType::Normal:
+            size_mod += "[]";
+            break;
+        case ArrayType::Static:
+            size_mod += "[static]";
+            break;
+        case ArrayType::Star:
+            size_mod += "[*]";
+            break;
         }
         t = t->getAsArrayTypeUnsafe()->getElementType().getTypePtr();
     }
