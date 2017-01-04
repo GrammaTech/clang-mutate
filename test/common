@@ -49,6 +49,8 @@ CLASS=etc/class.cpp
 
 MULTIDIMENSIONAL_ARRAY=etc/multidimensional_array.c
 
+GLOBAL_VAR=etc/global_var.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -99,6 +101,9 @@ run_class(){
 
 run_multidimensional_array(){
     clang-mutate "$@" $MULTIDIMENSIONAL_ARRAY --; }
+
+run_global_var(){
+    clang-mutate "$@" $GLOBAL_VAR --; }
 
 json_filter(){
     cat -|jshon -a -j|grep "\"${1}\":${2}\(,\|}\)"; }

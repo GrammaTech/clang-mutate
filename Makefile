@@ -132,7 +132,8 @@ TESTS =	help-text-appears				\
 	full-stmt-in-switch                             \
 	cxx-method-has-body                             \
 	cxx-method-body-is-full-stmt \
-	multidimensional-array-has-type
+	multidimensional-array-has-type \
+	global-var-has-type
 
 etc/hello: etc/hello.c
 	$(CC) -g -O0 $< -o $@

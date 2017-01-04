@@ -1,0 +1,10 @@
+#!/bin/bash
+#
+# Test to ensure that multi-dimensional array decls have a type
+. $(dirname $0)/common
+
+types=$(run_global_var -json |
+        json_filter decl_name "\"r1\"" |
+        json_wrap |
+        jshon -a -e types)
+contains "$types" "[-1839767438739749983]"

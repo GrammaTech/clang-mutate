@@ -211,7 +211,17 @@ class BuildTU
                                               r.getEnd().getLocWithOffset(1)),
                 sm, ci->getLangOpts(), NULL);
             std::string decl_name = d->getIdentifier()->getName().str();
-            
+
+            std::set<Hash> types;
+            const Type * tdecl = (isa<VarDecl>(d)) ?
+                                 static_cast<VarDecl*>(d)->getTypeSourceInfo()
+                                                         ->getType()
+                                                         .getTypePtrOrNull() :
+                                 NULL;
+            if (tdecl) {
+                types.insert(hash_type(tdecl, ci));
+            }
+
             AuxDBEntry decl;
             decls.push_back(decl
                             .set("decl_text"     , decl_text)
@@ -220,6 +230,7 @@ class BuildTU
                             .set("begin_src_col" , beginLoc.getColumn())
                             .set("end_src_line"  , endLoc.getLine())
                             .set("end_src_col"   , endLoc.getColumn())
+                            .set("types"         , types)
                             .toJSON());
         }
         return true;
