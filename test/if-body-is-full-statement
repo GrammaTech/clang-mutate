@@ -1,0 +1,12 @@
+#!/bin/bash
+#
+# Test to ensure that non-CompoundStatement if clauses
+# are full statements
+. $(dirname $0)/common
+
+full=$(run_if_non_compound_body -json|
+       json_filter ast_class "\"CallExpr\""|
+       json_wrap|
+       jshon -a -e full_stmt)
+
+not_contains "$full" "false"

@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# Test to ensure that non-CompoundStatement for loop bodies are full statements
+. $(dirname $0)/common
+
+full=$(run_for_loop_non_compound_body -json|
+       json_filter ast_class "\"CallExpr\""|
+       json_wrap|
+       jshon -a -e full_stmt)
+
+not_contains "$full" "false"

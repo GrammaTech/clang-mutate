@@ -49,6 +49,14 @@ CLASS=etc/class.cpp
 
 MULTIDIMENSIONAL_ARRAY=etc/multidimensional_array.c
 
+DO_LOOP_NON_COMPOUND_BODY=etc/do-loop-non-compound-body.c
+
+FOR_LOOP_NON_COMPOUND_BODY=etc/for-loop-non-compound-body.c
+
+WHILE_LOOP_NON_COMPOUND_BODY=etc/while-loop-non-compound-body.c
+
+IF_NON_COMPOUND_BODY=etc/if-non-compound-body.c
+
 GLOBAL_VAR=etc/global_var.c
 
 run_hello(){
@@ -101,6 +109,18 @@ run_class(){
 
 run_multidimensional_array(){
     clang-mutate "$@" $MULTIDIMENSIONAL_ARRAY --; }
+
+run_do_loop_non_compound_body() {
+    clang-mutate "$@" $DO_LOOP_NON_COMPOUND_BODY --; }
+
+run_for_loop_non_compound_body(){
+    clang-mutate "$@" $FOR_LOOP_NON_COMPOUND_BODY --; }
+
+run_while_loop_non_compound_body() {
+    clang-mutate "$@" $WHILE_LOOP_NON_COMPOUND_BODY --; }
+
+run_if_non_compound_body() {
+    clang-mutate "$@" $IF_NON_COMPOUND_BODY --; }
 
 run_global_var(){
     clang-mutate "$@" $GLOBAL_VAR --; }

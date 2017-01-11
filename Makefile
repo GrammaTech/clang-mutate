@@ -133,7 +133,11 @@ TESTS =	help-text-appears				\
 	cxx-method-has-body                             \
 	cxx-method-body-is-full-stmt \
 	multidimensional-array-has-type \
-	global-var-has-type
+	global-var-has-type \
+	for-loop-body-is-full-statement \
+	while-loop-body-is-full-statement \
+	do-loop-body-is-full-statement \
+	if-body-is-full-statement
 
 etc/hello: etc/hello.c
 	$(CC) -g -O0 $< -o $@

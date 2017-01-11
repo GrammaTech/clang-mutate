@@ -513,16 +513,29 @@ bool is_function_decl(AstRef ast, CompilerInstance const& ci)
 
 bool is_full_stmt(Stmt * stmt, AstRef parent, CompilerInstance const& ci)
 {
-    return parent->className() == "CompoundStmt"
-        || parent->className() == "LabelStmt"
-        || (is_function_decl(parent, ci) &&
-            std::string(stmt->getStmtClassName()) == "CompoundStmt")
+    std::string parentClass = parent->className();
+    std::string stmtClass = std::string(stmt->getStmtClassName());
+
+    return (parentClass == "CompoundStmt" && stmtClass != "CompoundStmt")
+        || parentClass == "LabelStmt"
+        || (is_function_decl(parent, ci) && stmtClass == "CompoundStmt")
         // The first child of a CaseStmt is the condition. The rest are full
         // statements.
-        || (parent->className() == "CaseStmt" &&
+        || (parentClass == "CaseStmt" &&
             // If stmt is first child, it may not have been added to parent yet
             parent->children().size() > 0 &&
-            stmt != parent->children()[0]->asStmt(ci));
+            stmt != parent->children()[0]->asStmt(ci))
+        || (parentClass == "DoStmt" && stmtClass != "CompoundStmt" &&
+            stmt == static_cast<DoStmt*>(parent->asStmt(ci))->getBody())
+        || (parentClass == "ForStmt" && stmtClass != "CompoundStmt" &&
+            stmt == static_cast<ForStmt*>(parent->asStmt(ci))->getBody())
+        || (parentClass == "CXXForRangeStmt" && stmtClass != "CompoundStmt" &&
+            stmt == static_cast<CXXForRangeStmt*>(parent->asStmt(ci))->getBody())
+        || (parentClass == "WhileStmt" && stmtClass != "CompoundStmt" &&
+            stmt == static_cast<WhileStmt*>(parent->asStmt(ci))->getBody())
+        || (parentClass == "IfStmt" && stmtClass != "CompoundStmt" &&
+            (stmt == static_cast<IfStmt*>(parent->asStmt(ci))->getThen() ||
+             stmt == static_cast<IfStmt*>(parent->asStmt(ci))->getElse()));
 }
 
 bool is_full_stmt(Decl * decl, AstRef parent, CompilerInstance const& ci)
