@@ -1,5 +1,6 @@
 
 #include "Requirements.h"
+#include "Reversed.h"
 #include "TypeDBEntry.h"
 #include "TU.h"
 
@@ -28,7 +29,7 @@ Requirements::Requirements(
     // Initialize the map from variable name to depth ("how many
     // scopes back was the definition from where we are now?")
     size_t depth = scopes.size() - 1;
-    for (auto & scope : reversed(scopes)) {
+    for (auto & scope : Utils::reversed(scopes)) {
         for (auto & var : scope) {
             decl_depth[var] = depth;
         }

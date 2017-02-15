@@ -16,6 +16,7 @@ if [ ! -z "$1" ] &&
 
 HELLO=etc/hello.c
 HELLO_EXE=etc/hello
+HELLO_LLVM_IR=etc/hello.ll
 
 DECLS=etc/decls.c
 

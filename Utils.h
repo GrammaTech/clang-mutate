@@ -12,20 +12,6 @@
 #include "clang/Lex/Lexer.h"
 #include "clang/Frontend/CompilerInstance.h"
 
-template <typename T>
-struct Reversed
-{
-    typedef typename T::const_reverse_iterator const_iterator;
-    const_iterator begin() const { return x.rbegin(); }
-    const_iterator end()   const { return x.rend(); }
-    Reversed(const T & _x) : x(_x) {}
-private:
-    const T & x;
-};
-
-template <typename T> Reversed<T> reversed(const T & x)
-{ return Reversed<T>(x); }
-
 namespace Utils {
 
 std::string escape  (const std::string & s);
@@ -79,11 +65,12 @@ bool ShouldVisitDecl(clang::SourceManager & SM,
                      clang::FileID MainFileID,
                      clang::Decl * decl);
 
-bool ShouldAssociateBytesWithStmt(clang::Stmt *S, clang::Stmt *P);
+bool ShouldAssociateCompilationDataWithStmt(clang::Stmt *S, clang::Stmt *P);
 bool IsSingleLineStmt(clang::Stmt *S, clang::Stmt *P);
 bool IsGuardStmt(clang::Stmt *S, clang::Stmt *P);
 bool IsLoopOrIfBody(clang::Stmt *stmt, clang::Stmt *parent);
 
+bool fileExists(const std::string & path);
 std::string filenameToContents(const std::string & str);
 
 std::string trim(const std::string &input);

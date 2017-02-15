@@ -9,7 +9,7 @@ digraph ClangMutate
         ast [label="AST.h, AST.cpp\nOur representation of\nclang Stmts and Decls"];
         pt [label="PointedTree.h\nA stack data structure that\nsupports snapshots."];
         aux [label="AuxDB.h, AuxDB.cpp\nExtra JSON database entries"];
-        bam [label="BinaryAddressMap.h, BinaryAddressMap.cpp\nManages mapping from source positions\nto binary positions"];
+        cdm [label="CompilationDataMap.h\nManages mapping from source positions\nto compilation data"];
         faf [label="FAF.h\nCustomized verison of clang's\nFrontendActionFactory that allows the\ncaller to manage the new CompilerInstances."];
         req [label="Requirements.h, Requirements.cpp\nManages the data required to build an AST."];
         
@@ -57,7 +57,7 @@ digraph ClangMutate
         buildtu -> req -> ast -> asttable;
         astref -> ast;
         aux -> tu;
-        bam -> tu;
+        cdm -> tu;
         
         hash -> types -> req;
         

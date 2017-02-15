@@ -1,0 +1,24 @@
+#!/bin/bash
+# Test the default fields are present when nothing is specified
+# for -fields
+. $(dirname $0)/common
+
+contains "$(run_hello -json -llvm_ir=${HELLO_LLVM_IR}|jshon -a -k|sort|uniq)" \
+         "ast_class" \
+         "begin_src_col" \
+         "begin_src_line" \
+         "counter" \
+         "end_src_col" \
+         "end_src_line" \
+         "full_stmt" \
+         "guard_stmt" \
+         "llvm_ir_file_path" \
+         "llvm_ir" \
+         "macros" \
+         "parent_counter" \
+         "src_file_name" \
+         "src_text" \
+         "stmt_list" \
+         "types" \
+         "unbound_funs" \
+         "unbound_vals"

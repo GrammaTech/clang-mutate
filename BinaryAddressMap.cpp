@@ -9,12 +9,10 @@
 #include <cstdlib>
 #include <cstdio>
 #include <climits>
-#include <iomanip>
 #include <map>
 #include <string>
 #include <sstream>
 #include <vector>
-#include <iostream>
 
 namespace clang_mutate{
   // Executes a command a returns the output as a vector of strings
@@ -56,7 +54,8 @@ namespace clang_mutate{
     return tokens;
   }
 
-  BinaryAddressMap::FilenameLineNumAddressPair BinaryAddressMap::parseAddressLine(
+  BinaryAddressMap::FilenameLineNumAddressPair
+  BinaryAddressMap::parseAddressLine(
     const std::string &line,
     const std::string &nextLine,
     const std::vector<std::string> &files ) {
@@ -148,7 +147,8 @@ namespace clang_mutate{
             findOnSourcePath( sourcePaths, ".", fileName);
   }
 
-  BinaryAddressMap::FilesMap BinaryAddressMap::parseCompilationUnit(
+  BinaryAddressMap::FilesMap
+  BinaryAddressMap::parseCompilationUnit(
     const std::vector<std::string>& dwarfDumpDebugLine,
     const std::set<std::string>& sourcePaths,
     unsigned long long &currentline ) {
@@ -186,7 +186,7 @@ namespace clang_mutate{
         if (!ln2am.insert( fileNameLineNumAddressPair.second ).second)
         {
             // Already had an address range for this line; we need to expand it.
-            BeginEndAddressPair & range = ln2am[fileNameLineNumAddressPair.second.first];
+            AddressRange & range = ln2am[fileNameLineNumAddressPair.second.first];
             if (range.first > fileNameLineNumAddressPair.second.second.first)
                 range.first = fileNameLineNumAddressPair.second.second.first;
             if (range.second < fileNameLineNumAddressPair.second.second.second)
@@ -200,56 +200,6 @@ namespace clang_mutate{
     currentline--;
 
     return filesMap;
-  }
-
-  bool
-  BinaryAddressMap::lineRangeToAddressRange(
-      const std::string & filePath,
-      std::pair<unsigned int, unsigned int> lineRange,
-      BeginEndAddressPair & addrRange) const
-  {
-    bool found = false;
-
-    // Iterate over each compilation unit
-    for ( CompilationUnitMap::const_iterator
-              compilationUnitMapIter = m_compilationUnitMap.begin();
-          compilationUnitMapIter != m_compilationUnitMap.end();
-          compilationUnitMapIter++ )
-    {
-        FilesMap const& filesMap = compilationUnitMapIter->second;
-
-        // Check if file is in the files for this compilation unit
-        FilesMap::const_iterator fmsearch = filesMap.find( filePath );
-        if ( fmsearch == filesMap.end() )
-            continue;
-
-        LineNumsToAddressesMap const& ln2am = fmsearch->second;
-        LineNumsToAddressesMap::const_iterator search = ln2am.end();
-
-        // Find the first line with address information
-        while (search == ln2am.end() && lineRange.first <= lineRange.second) {
-            search = ln2am.find(lineRange.first);
-            lineRange.first++;
-        }
-
-        while (search != ln2am.end() && search->first <= lineRange.second) {
-            if (!found) {
-                // First address found in the given line range.
-                addrRange = search->second;
-                found = true;
-            }
-            else {
-                // Found another address range in the line range,
-                // expand the current address range.
-                if (search->second.first < addrRange.first)
-                    addrRange.first = search->second.first;
-                if (search->second.second > addrRange.second)
-                    addrRange.second = search->second.second;
-            }
-            ++search;
-        }
-    }
-    return found;
   }
 
   std::set< std::string > BinaryAddressMap::getSourcePaths(
@@ -330,7 +280,7 @@ namespace clang_mutate{
 
     parseDwarfFilepathMapping(dwarfFilepathMapping);
 
-    if ( !m_binaryPath.empty() ) {
+    if ( !m_binaryPath.empty() && Utils::fileExists(m_binaryPath) ) {
       const std::string dwarfDumpDebugLineCmd =
         LLVM_DWARFDUMP" -debug-dump=line " + m_binaryPath;
       const std::string dwarfDumpDebugInfoCmd =
@@ -357,81 +307,92 @@ namespace clang_mutate{
     return *this;
   }
 
+  BinaryAddressMap::~BinaryAddressMap() {
+  }
+
   bool BinaryAddressMap::isEmpty() const {
     return m_compilationUnitMap.empty();
   }
 
-  std::string BinaryAddressMap::getBinaryPath() const {
+  std::string BinaryAddressMap::getPath() const {
     return m_binaryPath;
   }
 
-  bool BinaryAddressMap::canGetBeginAddressForLine(
-    const std::string& filePath,
-    unsigned int lineNum ) const
-  {
-    return getBeginAddressForLine( filePath, lineNum ) !=
-           static_cast<unsigned long>(-1);
+  Utils::Optional<BinaryData>
+  BinaryAddressMap::getCompilationData(const std::string & filePath,
+                                       const LineRange & lineRange) const {
+    BinaryData binaryData;
+    Utils::Optional<AddressRange> addrRange =
+        getAddressRangeForLines(filePath, lineRange);
+
+    if (addrRange) {
+      binaryData.first = addrRange.value();
+      binaryData.second = getBinaryContents(addrRange.value().first,
+                                            addrRange.value().second);
+      return Utils::Optional<BinaryData>(binaryData);
+    }
+    else {
+      return Utils::Optional<BinaryData>();
+    }
   }
 
-  bool BinaryAddressMap::canGetEndAddressForLine(
+  Utils::Optional<AddressRange>
+  BinaryAddressMap::getAddressRangeForLines(
     const std::string& filePath,
-    unsigned int lineNum ) const
-  {
-    return getEndAddressForLine( filePath, lineNum ) !=
-           static_cast<unsigned long>(-1);
-  }
-
-  unsigned long BinaryAddressMap::getBeginAddressForLine(
-    const std::string& filePath,
-    unsigned int lineNum ) const
-  {
-    return getBeginEndAddressesForLine(filePath, lineNum ).first;
-  }
-
-  unsigned long BinaryAddressMap::getEndAddressForLine(
-    const std::string& filePath,
-    unsigned int lineNum ) const
-  {
-    return getBeginEndAddressesForLine(filePath, lineNum ).second;
-  }
-
-  // Retrieve the begin and end addresses in the binary for a given line in a file.
-  BinaryAddressMap::BeginEndAddressPair BinaryAddressMap::getBeginEndAddressesForLine(
-    const std::string& filePath,
-    unsigned int lineNum) const {
-
-    BeginEndAddressPair beginEndAddresses;
-    beginEndAddresses.first  = (unsigned long) -1;
-    beginEndAddresses.second = (unsigned long) -1;
+    const LineRange& lineRange) const {
+    AddressRange addrRange;
+    LineRange tempLineRange(lineRange);
+    bool found = false;
 
     // Iterate over each compilation unit
-    for ( CompilationUnitMap::const_iterator compilationUnitMapIter = m_compilationUnitMap.begin();
+    for ( CompilationUnitMap::const_iterator
+              compilationUnitMapIter = m_compilationUnitMap.begin();
           compilationUnitMapIter != m_compilationUnitMap.end();
-          compilationUnitMapIter++ ) {
-      FilesMap filesMap = compilationUnitMapIter->second;
+          compilationUnitMapIter++ )
+    {
+        FilesMap const& filesMap = compilationUnitMapIter->second;
 
-      // Check if file is in the files for this compilation unit
-      if ( filesMap.find( filePath ) != filesMap.end() ) {
-        LineNumsToAddressesMap lineNumsToAddressesMap = filesMap[filePath];
+        // Check if file is in the files for this compilation unit
+        FilesMap::const_iterator fmsearch = filesMap.find( filePath );
+        if ( fmsearch == filesMap.end() )
+            continue;
 
-        // Check if line number is in file
-        if ( lineNumsToAddressesMap.find( lineNum ) != lineNumsToAddressesMap.end() ) {
-          // We found a match.  Return the starting and ending address for this line.
-          LineNumsToAddressesMap::iterator lineNumsToAddressesMapIter = lineNumsToAddressesMap.find(lineNum);
+        LineNumsToAddressesMap const& ln2am = fmsearch->second;
+        LineNumsToAddressesMap::const_iterator search = ln2am.end();
 
-          beginEndAddresses.first  = lineNumsToAddressesMapIter->second.first;
-          beginEndAddresses.second = lineNumsToAddressesMapIter->second.second;
-          break;
+        // Find the first line with address information
+        while (search == ln2am.end() &&
+               tempLineRange.first <= lineRange.second) {
+            search = ln2am.find(tempLineRange.first);
+            tempLineRange.first++;
         }
-      }
+
+        while (search != ln2am.end() && search->first <= lineRange.second) {
+            if (!found) {
+                // First address found in the given line range.
+                addrRange = search->second;
+                found = true;
+            }
+            else {
+                // Found another address range in the line range,
+                // expand the current address range.
+                if (search->second.first < addrRange.first)
+                    addrRange.first = search->second.first;
+                if (search->second.second > addrRange.second)
+                    addrRange.second = search->second.second;
+            }
+            ++search;
+        }
     }
 
-    return beginEndAddresses;
+    return found?
+           Utils::Optional<AddressRange>(addrRange) :
+           Utils::Optional<AddressRange>();
   }
 
-  BinaryAddressMap::Bytes BinaryAddressMap::getBinaryContents(
+  Bytes BinaryAddressMap::getBinaryContents(
     unsigned long beginAddress,
-    unsigned long endAddress )
+    unsigned long endAddress ) const
   {
     Bytes bytes;
 
@@ -455,53 +416,5 @@ namespace clang_mutate{
     }
 
     return bytes;
-  }
-
-  std::string BinaryAddressMap::getBinaryContentsAsStr(
-    unsigned long startAddress,
-    unsigned long endAddress)
-  {
-    std::stringstream ret;
-    Bytes bytes = getBinaryContents( startAddress, endAddress );
-
-    ret << std::hex << std::setfill('0');
-
-    for ( Bytes::const_iterator byteIter = bytes.begin();
-          byteIter != bytes.end();
-          byteIter++ )
-    {
-      ret << std::setw(2) << static_cast<int>(*byteIter) << " ";
-    }
-
-    return ret.str().empty() ?
-           ret.str() :
-           ret.str().substr(0, ret.str().length() - 1);
-  }
-
-  std::ostream& BinaryAddressMap::dump(std::ostream& out) const {
-    for ( CompilationUnitMap::const_iterator compilationUnitMapIter = m_compilationUnitMap.begin();
-          compilationUnitMapIter != m_compilationUnitMap.end();
-          compilationUnitMapIter++ ) {
-      FilesMap filesMap = compilationUnitMapIter->second;
-      out << "CU: " << compilationUnitMapIter->first << std::endl;
-
-      for ( FilesMap::iterator filesMapIter = filesMap.begin();
-            filesMapIter != filesMap.end();
-            filesMapIter++ ) {
-        LineNumsToAddressesMap lineNumsToAddressesMap = filesMapIter->second;
-
-        out << "\t" << filesMapIter->first << ": " << std::endl;
-        for ( LineNumsToAddressesMap::iterator lineNumsToAddressesMapIter = lineNumsToAddressesMap.begin();
-              lineNumsToAddressesMapIter != lineNumsToAddressesMap.end();
-              lineNumsToAddressesMapIter++ ) {
-          out << "\t\t" << std::dec << lineNumsToAddressesMapIter->first
-              << ": " << std::hex << lineNumsToAddressesMapIter->second.first
-              << ", " << std::hex << lineNumsToAddressesMapIter->second.second
-              << std::dec << std::endl;
-        }
-      }
-    }
-
-    return out;
   }
 }

@@ -226,7 +226,7 @@ template <typename P>
 struct optional
 {
     constexpr static bool is_productive = false;
-    typedef Optional<typename P::type> type;
+    typedef Utils::Optional<typename P::type> type;
     template <typename Ctx> static parsed<type> run(Ctx & ctx)
     {
         parsed<type> ans;

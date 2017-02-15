@@ -3,6 +3,7 @@
 #include "Rewrite.h"
 #include "TypeDBEntry.h"
 
+#include <iomanip>
 #include <sstream>
 
 using namespace clang_mutate;
@@ -63,10 +64,11 @@ AstRef Ast::impl_create(T * clang_obj, Requirements & required)
         : parent->asStmt(*required.CI());
 
     if (ref->isStmt()) {
-        bool has_bytes = Utils::ShouldAssociateBytesWithStmt(
-            ref->asStmt(*required.CI()),
-            parentStmt);
-        ref->setCanHaveAssociatedBytes(has_bytes);
+        bool has_compilation_data =
+            Utils::ShouldAssociateCompilationDataWithStmt(
+                ref->asStmt(*required.CI()),
+                parentStmt);
+        ref->setCanHaveCompilationData(has_compilation_data);
         Stmt *stmt = ref->asStmt(*required.CI());
         if (isa<Expr>(stmt)) {
             Expr *expr = static_cast<Expr *>(stmt);
@@ -75,10 +77,10 @@ AstRef Ast::impl_create(T * clang_obj, Requirements & required)
         }
     }
     else if (ref->isFunctionDecl()) {
-        ref->setCanHaveAssociatedBytes(true);
+        ref->setCanHaveCompilationData(true);
     }
     else {
-        ref->setCanHaveAssociatedBytes(false);
+        ref->setCanHaveCompilationData(false);
     }
 
     if (ref->isDecl() && isa<FieldDecl>(ref->asDecl(*required.CI()))) {
@@ -95,20 +97,45 @@ template AstRef Ast::impl_create<Decl>(Decl * stmt, Requirements & reqs);
 std::string Ast::srcFilename() const
 { return m_counter.tu().filename; }
 
-bool Ast::binaryAddressRange(
-    BinaryAddressMap::BeginEndAddressPair & addrRange) const
+Utils::Optional<AddressRange>
+Ast::binaryAddressRange() const
 {
     TU & tu = m_counter.tu();
-    if (tu.addrMap.isEmpty())
-        return false;
+    LineRange lineRange(m_begin_loc.getLine(),
+                        m_end_loc.getLine());
+    Utils::Optional<BinaryData> binaryData =
+        tu.addrMap.getCompilationData(srcFilename(),
+                                      lineRange);
 
-    unsigned int beginSrcLine = m_begin_loc.getLine();
-    unsigned int   endSrcLine = m_end_loc.getLine();
+    return binaryData?
+           Utils::Optional<AddressRange>(binaryData.value().first) :
+           Utils::Optional<AddressRange>();
+}
 
-    return tu.addrMap.lineRangeToAddressRange(
-        srcFilename(),
-        std::make_pair(beginSrcLine, endSrcLine),
-        addrRange);
+Utils::Optional<Bytes>
+Ast::bytes() const
+{
+    TU & tu = m_counter.tu();
+    LineRange lineRange(m_begin_loc.getLine(),
+                        m_end_loc.getLine());
+    Utils::Optional<BinaryData> binaryData =
+        tu.addrMap.getCompilationData(srcFilename(),
+                                      lineRange);
+
+    return binaryData?
+           Utils::Optional<Bytes>(binaryData.value().second) :
+           Utils::Optional<Bytes>();
+}
+
+Utils::Optional<Instructions>
+Ast::llvm_ir() const
+{
+    TU & tu = m_counter.tu();
+    LineRange lineRange(m_begin_loc.getLine(),
+                        m_end_loc.getLine());
+
+    return tu.llvmInstrMap.getCompilationData(srcFilename(),
+                                              lineRange);
 }
 
 void Ast::setFieldDeclProperties(ASTContext * context,
@@ -207,9 +234,14 @@ picojson::value Ast::toJSON(
 
 bool Ast::has_bytes() const
 {
-    BinaryAddressMap::BeginEndAddressPair _;
-    return canHaveAssociatedBytes()
-        && binaryAddressRange(_);
+    return canHaveCompilationData()
+        && binaryAddressRange();
+}
+
+bool Ast::has_llvm_ir() const
+{
+    return canHaveCompilationData()
+        && llvm_ir();
 }
 
 SourceLocation findEndOfToken(CompilerInstance * ci, SourceLocation loc,
@@ -376,7 +408,7 @@ Ast::Ast(Stmt * _stmt,
     , m_full_stmt(false)
     , m_in_macro_expansion(false)
     , m_syn_ctx(syn_ctx)
-    , m_can_have_bytes(false)
+    , m_can_have_compilation_data(false)
     , m_replacements()
     , m_field_decl(false)
     , m_base_type()
@@ -431,7 +463,7 @@ Ast::Ast(Decl * _decl,
     , m_full_stmt(false)
     , m_in_macro_expansion(false)
     , m_syn_ctx(syn_ctx)
-    , m_can_have_bytes(false)
+    , m_can_have_compilation_data(false)
     , m_replacements()
     , m_field_decl(false)
     , m_base_type()

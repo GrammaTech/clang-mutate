@@ -82,7 +82,8 @@ OPTION( Silent      , bool        , "silent"       , "do not print prompts in in
 OPTION( CtrlChar    , bool        , "ctrl"         , "print a control character after output in the interactive mode");
 OPTION( Binary      , std::string , "binary"       , "binary with DWARF information for line->address mapping");
 OPTION( DwarfFilepathMap, std::string, "dwarf-filepath-mapping", "mapping of filepaths used in compilation -> new filepath");
-OPTION( Cfg         , bool        , "cfg"         , "include control-flow information in ASTs");
+OPTION( LLVMIR      , std::string , "llvm_ir"      , "llvm-ir with debug information for line->instruction mapping");
+OPTION( Cfg         , bool        , "cfg"          , "include control-flow information in ASTs");
 
 std::ostringstream MutateCmd;
 
@@ -98,12 +99,15 @@ public:
     }
 
     std::unique_ptr<clang::ASTConsumer> newASTConsumer() {
-
         if (!Binary.empty()) {
             MutateCmd << "binary 0 " << Binary
                       << " " << DwarfFilepathMap << std::endl;
         }
-        
+
+        if (!LLVMIR.empty()) {
+            MutateCmd << "llvm_ir 0 " << LLVMIR << std::endl;
+        }
+
         if (!File1.empty()) {
             Value1 = Utils::filenameToContents(File1);
         }

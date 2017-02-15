@@ -8,7 +8,7 @@ namespace clang_mutate {
 using namespace clang;
 using namespace parser_templates;
 
-template <typename T> using Optional = parser_templates::Optional<T>;
+template <typename T> using Optional = Utils::Optional<T>;
 
 extern const char get_[]  = "get";
 extern const char as_[] = "as";
@@ -336,6 +336,28 @@ struct binary_op
     }
 };
 
+extern const char llvm_ir_[] = "llvm_ir";
+struct llvm_ir_op
+{
+    typedef str_<llvm_ir_> command;
+    typedef tokens< command, p_tu, p_text > parser;
+
+    static RewritingOpPtr make(
+        TURef const& tuid,
+        std::string const& llvmIRPath)
+    {
+        TUs[tuid]->llvmInstrMap = LLVMInstructionMap(llvmIRPath);
+        std::ostringstream oss;
+        oss << "set TU " << tuid << "'s LLVM IR path to " << llvmIRPath;
+        return note(oss.str());
+    }
+
+    static std::vector<std::string> purpose()
+    {
+        return { "Provide LLVM IR for a given translation unit." };
+    }
+};
+        
 extern const char ids_[] = "ids";
 struct ids_op
 {
@@ -479,11 +501,11 @@ struct list_op
                     ast->end_src_pos().getLine(),
                     ast->end_src_pos().getColumn(),
                     ast->className().c_str());
-            BinaryAddressMap::BeginEndAddressPair addrRange;
-            if (ast->binaryAddressRange(addrRange)) {
+            Utils::Optional<AddressRange> addrRange = ast->binaryAddressRange();
+            if (addrRange) {
                 sprintf(msg + strlen(msg), " %#016lx %#016lx",
-                        addrRange.first,
-                        addrRange.second);
+                        addrRange.value().first,
+                        addrRange.value().second);
             }
             oss << msg << std::endl;
         }
@@ -810,7 +832,7 @@ struct load_op
     typedef str_<load_> command;
     typedef tokens< command
                   , p_text
-                  , fmap<FromOptional<std::vector<std::string>>,
+                  , fmap<Utils::FromOptional<std::vector<std::string>>,
                          optional<sepBy<p_text, spaces>>>
                   > parser;
 

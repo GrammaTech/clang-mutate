@@ -178,37 +178,56 @@ AST_FIELD( src_text, std::string,
 AST_FIELD_P( binary_file_path, std::string,
   "Path to compiled binary.",
   ast.has_bytes(),
-  { return tu.addrMap.getBinaryPath(); }
+  { return tu.addrMap.getPath(); }
   )
 
 AST_FIELD_P( begin_addr, unsigned long,
   "Initial address of the binary range for this statement.",
   ast.has_bytes(),
   {
-      BinaryAddressMap::BeginEndAddressPair addrRange;
-      ast.binaryAddressRange(addrRange);
-      return addrRange.first;
+      return ast.binaryAddressRange().value().first;
   } )
 
 AST_FIELD_P( end_addr, unsigned long,
   "Final address of the binary range for this statement.",
   ast.has_bytes(),
   {
-      BinaryAddressMap::BeginEndAddressPair addrRange;
-      ast.binaryAddressRange(addrRange);
-      return addrRange.second;
+      return ast.binaryAddressRange().value().second;
   } )
 
 AST_FIELD_P( binary_contents, std::string,
   "A hex string representation of the bytes associated to this statement.",
   ast.has_bytes(),
   {
-      BinaryAddressMap::BeginEndAddressPair addrRange;
-      ast.binaryAddressRange(addrRange);
-      return tu.addrMap.getBinaryContentsAsStr(
-          addrRange.first,
-          addrRange.second);
+      Bytes bytes = ast.bytes().value();
+      std::stringstream ret;
+
+      ret << std::hex << std::setfill('0');
+      for ( Bytes::const_iterator byteIter = bytes.begin();
+            byteIter != bytes.end();
+            byteIter++ )
+      {
+        ret << std::setw(2) << static_cast<int>(*byteIter) << " ";
+      }
+
+      return ret.str().empty() ?
+             ret.str() :
+             ret.str().substr(0, ret.str().length() - 1);
   } )
+
+AST_FIELD_P( llvm_ir, Instructions,
+  "A list of LLVM instructions associated to this statement.",
+  ast.has_llvm_ir(),
+  {
+      return ast.llvm_ir().value();
+  } )
+
+AST_FIELD_P( llvm_ir_file_path, std::string,
+  "Path to compiled LLVM IR.",
+  ast.has_llvm_ir(),
+  { return tu.llvmInstrMap.getPath(); }
+  )
+
 
 AST_FIELD_P( base_type, std::string,
   { "For field declarations, the base type name." },

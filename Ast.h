@@ -9,7 +9,9 @@
 #include "Hash.h"
 #include "PointedTree.h"
 #include "BinaryAddressMap.h"
+#include "LLVMInstructionMap.h"
 #include "Macros.h"
+#include "Optional.h"
 #include "Renaming.h"
 #include "Requirements.h"
 #include "Renaming.h"
@@ -143,18 +145,23 @@ public:
     std::set<FunctionInfo> freeFunctions() const
     { return m_free_funs; }
 
-    void setCanHaveAssociatedBytes(bool yn)
-    { m_can_have_bytes = yn; }
+    void setCanHaveCompilationData(bool yn)
+    { m_can_have_compilation_data = yn; }
 
-    bool canHaveAssociatedBytes() const
-    { return m_can_have_bytes; }
+    bool canHaveCompilationData() const
+    { return m_can_have_compilation_data; }
 
     std::string srcFilename() const;
 
     bool has_bytes() const;
 
-    bool binaryAddressRange(
-        BinaryAddressMap::BeginEndAddressPair & addrRange) const;
+    bool has_llvm_ir() const;
+
+    Utils::Optional<AddressRange> binaryAddressRange() const;
+
+    Utils::Optional<Bytes> bytes() const;
+
+    Utils::Optional<Instructions> llvm_ir() const;
 
     bool isFullStmt() const
     { return m_full_stmt; }
@@ -325,7 +332,7 @@ private:
     bool m_full_stmt;
     bool m_in_macro_expansion;
     SyntacticContext m_syn_ctx;
-    bool m_can_have_bytes;
+    bool m_can_have_compilation_data;
     Replacements m_replacements;
     // Additional class-specific fields
     AuxDBEntry m_aux;

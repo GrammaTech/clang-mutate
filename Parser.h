@@ -115,6 +115,7 @@ struct interactive_op
         , types_op
         , echo_op
         , binary_op
+        , llvm_ir_op
         , ids_op
         , annotate_op
         , number_op

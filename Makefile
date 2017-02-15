@@ -16,16 +16,17 @@ CXX = $(LLVM_HOME)clang++$(LLVM_POSTFIX)
 endif
 REPO ?= clang-mutate
 BRANCH ?= master
+LLVM_INCS ?= -I ../third-party/llvm/include/
 RTTIFLAG := -fno-rtti
 PICOJSON_INCS := -I third-party/picojson-1.3.0
 PICOJSON_DEFINES := -D PICOJSON_USE_INT64
 ELFIO_INCS := -I third-party/elfio-3.2
 LLVM_CONFIG := $(LLVM_HOME)llvm-config$(LLVM_POSTFIX)
 LLVM_DWARFDUMP := $(LLVM_HOME)llvm-dwarfdump$(LLVM_POSTFIX)
-CXXFLAGS := $(shell $(LLVM_CONFIG) --cxxflags) -I. $(RTTIFLAG) $(PICOJSON_INCS) $(PICOJSON_DEFINES) $(ELFIO_INCS) -DLLVM_DWARFDUMP='"$(LLVM_DWARFDUMP)"'
+CXXFLAGS := $(shell $(LLVM_CONFIG) --cxxflags) -I. $(RTTIFLAG) $(PICOJSON_INCS) $(PICOJSON_DEFINES) $(ELFIO_INCS) $(LLVM_INCS) -DLLVM_DWARFDUMP='"$(LLVM_DWARFDUMP)"'
 LLVMLDFLAGS := $(shell $(LLVM_CONFIG) --ldflags --libs) -ldl
 
-SOURCES = Rewrite.cpp EditBuffer.cpp SyntacticContext.cpp Interactive.cpp Function.cpp Variable.cpp Ast.cpp TU.cpp Requirements.cpp Bindings.cpp Renaming.cpp Scopes.cpp Macros.cpp TypeDBEntry.cpp AuxDB.cpp BinaryAddressMap.cpp Json.cpp Utils.cpp Cfg.cpp clang-mutate.cpp
+SOURCES = Rewrite.cpp EditBuffer.cpp SyntacticContext.cpp Interactive.cpp Function.cpp Variable.cpp Ast.cpp TU.cpp Requirements.cpp Bindings.cpp Renaming.cpp Scopes.cpp Macros.cpp TypeDBEntry.cpp AuxDB.cpp BinaryAddressMap.cpp LLVMInstructionMap.cpp Json.cpp Utils.cpp Cfg.cpp clang-mutate.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 EXES = clang-mutate
 SYSLIBS = \
@@ -61,7 +62,7 @@ doc:
 	make -C man
 
 clean:
-	-rm -f $(EXES) $(OBJECTS) compile_commands.json a.out etc/hello etc/loop *~
+	-rm -f $(EXES) $(OBJECTS) compile_commands.json a.out etc/hello etc/hello.ll etc/loop *~
 
 install: clang-mutate
 	cp $< $$(dirname $$(which clang$(LLVM_POSTFIX)))
@@ -87,6 +88,8 @@ TESTS =	help-text-appears				\
 	hello-json-entries-in-counter-order		\
 	hello-json-bin-default-fields			\
 	hello-json-bin-number-of-stmts-w-binary-data	\
+	hello-json-llvm-ir-default-fields			\
+	hello-json-llvm-ir-number-of-stmts-w-llvm-ir	\
 	hello-set2-w-values				\
 	hello-no-semi-colon-on-end-of-statement-json	\
 	hello-semi-colon-on-end-of-statement-insert	\
@@ -140,11 +143,14 @@ TESTS =	help-text-appears				\
 	if-body-is-full-statement
 
 etc/hello: etc/hello.c
-	$(CC) -g -O0 $< -o $@
+	$(CXX) -g -O0 $< -o $@
+
+etc/hello.ll: etc/hello.c
+	$(CXX) -S -emit-llvm -g -O0 $< -o $@
 
 PASS=\e[1;1m\e[1;32mPASS\e[1;0m
 FAIL=\e[1;1m\e[1;31mFAIL\e[1;0m
-check/%: test/% etc/hello
+check/%: test/% etc/hello etc/hello.ll
 	@if ./$< >/dev/null 2>/dev/null;then \
 	printf "$(PASS)\t"; \
 	else \
@@ -152,7 +158,7 @@ check/%: test/% etc/hello
 	fi
 	@printf "\e[1;1m%s\e[1;0m\n" $*
 
-testbot-check/%: test/% etc/hello
+testbot-check/%: test/% etc/hello etc/hello.ll
 	@XML_FILE=$$(mktemp /tmp/clang-mutate-tests.XXXXX); \
 	if [ -z $$GTHOME ]; then \
 		printf "GTHOME must be set prior to datamanager submission"; \

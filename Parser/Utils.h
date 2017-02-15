@@ -297,48 +297,6 @@ struct detuple<std::tuple<X,Y>>
     { return std::make_pair(std::get<0>(x), std::get<1>(x)); }
 };
 
-//
-//  Optional<T>: a value of type T, or nothing at all.
-//
-template <typename T>
-struct Optional
-{
-public:
-    Optional() : has_value(false), value() {}
-    Optional(const T & t) : has_value(true), value(t) {}
-    Optional(const Optional & x)
-      : has_value(x.has_value)
-      , value(x.value)
-    {}
-
-    bool get(T & x) const
-    {
-        if (has_value)
-            x = value;
-        return has_value;
-    }
-private:
-    bool has_value;
-    T value;
-};
-
-//
-//  FromOptional<T>: Extract the value from an Optional<T> or
-//                   use the default constructor for T.
-//
-template <typename T>
-struct FromOptional
-{
-    typedef Optional<T> dom;
-    typedef T           cod;
-    static cod apply(dom x) {
-        cod ans;
-        if (x.get(ans))
-            return ans;
-        return cod();
-    }
-};
-
 } // end namespace parser_templates
 
 #endif

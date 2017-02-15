@@ -153,7 +153,7 @@ bool ShouldVisitDecl(SourceManager & SM,
     }
 }
 
-bool ShouldAssociateBytesWithStmt(Stmt *S, Stmt *P)
+bool ShouldAssociateCompilationDataWithStmt(Stmt *S, Stmt *P)
 {
     if ( S != NULL )
     {
@@ -275,6 +275,11 @@ bool IsLoopOrIfBody(Stmt *S, Stmt *P)
              P->getStmtClass() == Stmt::ForStmtClass));
 }
 
+bool fileExists(const std::string & path)
+{
+    std::ifstream infile(path);
+    return infile.good();
+}
 
 std::string filenameToContents(const std::string & str)
 {

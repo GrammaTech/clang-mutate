@@ -11,24 +11,26 @@
 #define BINARY_ADDRESS_MAP_HPP
 
 #include <map>
-#include <string>
 #include <set>
 #include <vector>
 
 #include "third-party/elfio-3.2/elfio/elfio.hpp"
 
+#include "CompilationDataMap.h"
+
 namespace clang_mutate{
-  class BinaryAddressMap {
+  typedef std::pair<unsigned long, unsigned long> AddressRange;
+  typedef unsigned char Byte;
+  typedef std::vector<Byte> Bytes;
+  typedef std::pair<AddressRange, Bytes> BinaryData;
+
+  class BinaryAddressMap : public CompilationDataMap<BinaryData> {
   public:
-    typedef std::pair<unsigned long, unsigned long> BeginEndAddressPair;
-    typedef std::pair<unsigned int, BeginEndAddressPair> LineNumAddressPair;
+    typedef std::pair<unsigned int, AddressRange> LineNumAddressPair;
     typedef std::pair<std::string, LineNumAddressPair> FilenameLineNumAddressPair;
-    typedef std::map<unsigned int, BeginEndAddressPair> LineNumsToAddressesMap;
+    typedef std::map<unsigned int, AddressRange> LineNumsToAddressesMap;
     typedef std::map<std::string, LineNumsToAddressesMap> FilesMap;
     typedef std::map<unsigned int, FilesMap> CompilationUnitMap;
-
-    typedef unsigned char Byte;
-    typedef std::vector<Byte> Bytes;
 
     typedef std::map<std::string, std::string> DwarfFilepathMap;
 
@@ -45,49 +47,19 @@ namespace clang_mutate{
     // Overloaded assignment operator
     BinaryAddressMap& operator=(const BinaryAddressMap& other);
 
+    // Destructor
+    ~BinaryAddressMap();
+
     // Return true if the BinaryAddressMap is empty
-    bool isEmpty() const;
+    virtual bool isEmpty() const override;
 
     // Return the path to the executable utilized to populate the map.
-    std::string getBinaryPath() const;
+    virtual std::string getPath() const override;
 
-    // Return true if the begin address for a given line in a file can be found.
-    bool canGetBeginAddressForLine( const std::string& filePath,
-                                    unsigned int lineNum ) const;
-
-    // Return true if the end address for a given line in a file can be found.
-    bool canGetEndAddressForLine( const std::string& filePath,
-                                  unsigned int lineNum ) const;
-
-    // Retrieve the begin address for a given line in a file.
-    unsigned long getBeginAddressForLine( const std::string& filePath,
-                                          unsigned int lineNum ) const;
-
-    // Retrieve the end address for a given line in a file.
-    unsigned long getEndAddressForLine( const std::string& filePath,
-                                        unsigned int lineNum ) const;
-
-    // Retrieve the begin and end addresses in the binary for a given line in a file.
-    BeginEndAddressPair getBeginEndAddressesForLine( const std::string& filePath,
-                                                     unsigned int lineNum) const;
-
-    bool lineRangeToAddressRange( const std::string & filePath,
-                                  std::pair<unsigned int, unsigned int> lineRange,
-                                  BeginEndAddressPair & addrRange) const;
-
-    // Get the raw contents of a binary from [startAddress, endAddress)
-    // as a sequence of hex digits.
-    Bytes getBinaryContents( unsigned long startAddress,
-                             unsigned long endAddress );
-
-    // Get the raw contents of a binary from [startAddress, endAddress)
-    // as a sequence of hex digits.
-    std::string getBinaryContentsAsStr( unsigned long startAddress,
-                                        unsigned long endAddress );
-
-    // Dump the BinaryAddressMap to stream.
-    std::ostream& dump(std::ostream& out) const;
-
+    virtual Utils::Optional<BinaryData>
+    getCompilationData( const std::string & filePath,
+                        const LineRange & lineRange )
+                        const override;
   private:
     ELFIO::elfio m_elf;
     CompilationUnitMap m_compilationUnitMap;
@@ -151,6 +123,16 @@ namespace clang_mutate{
     // Parse mappings of the form <Dwarf filepath1>=<NewFilePath1>,...
     // into the m_dwarfFilepathMap
     void parseDwarfFilepathMapping(const std::string &dwarfFilepathMapping);
+
+    // Return the binary address range for the given file:start,end
+    Utils::Optional<AddressRange>
+    getAddressRangeForLines( const std::string& filePath,
+                             const LineRange & lineRange) const;
+
+    // Get the raw contents of a binary from [startAddress, endAddress)
+    // as a sequence of hex digits.
+    Bytes getBinaryContents( unsigned long startAddress,
+                             unsigned long endAddress ) const;
 
     // Deep copy other's members
     void copy(const BinaryAddressMap& other);

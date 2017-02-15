@@ -4,6 +4,7 @@
 #include "Ast.h"
 #include "Scopes.h"
 #include "BinaryAddressMap.h"
+#include "LLVMInstructionMap.h"
 #include "Json.h"
 
 #include "clang/Basic/LLVM.h"
@@ -20,12 +21,14 @@ struct TU
       : tuid(_tuid)
       , asts()
       , addrMap()
+      , llvmInstrMap()
     {}
     ~TU();
     TURef tuid;
     bool allowDeclAsts;
     std::vector<Ast*> asts;
     BinaryAddressMap addrMap;
+    LLVMInstructionMap llvmInstrMap;
     std::string source;
     Scope scopes;
     std::map<std::string, std::vector<picojson::value> > aux;
