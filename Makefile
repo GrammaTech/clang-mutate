@@ -14,6 +14,7 @@ endif
 ifeq "$(origin CXX)" "default"
 CXX = $(LLVM_HOME)clang++$(LLVM_POSTFIX)
 endif
+CLANG = $(LLVM_HOME)clang++$(LLVM_POSTFIX)
 REPO ?= clang-mutate
 BRANCH ?= master
 LLVM_INCS ?= -I ../third-party/llvm/include/
@@ -146,7 +147,7 @@ etc/hello: etc/hello.c
 	$(CXX) -g -O0 $< -o $@
 
 etc/hello.ll: etc/hello.c
-	$(CXX) -S -emit-llvm -g -O0 $< -o $@
+	$(CLANG) -S -emit-llvm -g -O0 $< -o $@
 
 PASS=\e[1;1m\e[1;32mPASS\e[1;0m
 FAIL=\e[1;1m\e[1;31mFAIL\e[1;0m

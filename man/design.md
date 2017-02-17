@@ -25,6 +25,7 @@ file, including:
 * The clang CompilerInstance for the compilation.
 * A table of clang-mutate ASTs.
 * An optional BinaryAddressMap, when DWARF information is available.
+* An optional LLVMInstructionMap, when LLVM information is available.
 * Data about the variables in scope at each program point.
 * JSON entries for auxiliary database information.
 

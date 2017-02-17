@@ -46,6 +46,9 @@ http://clang.llvm.org/docs/LibTooling.html for details.
 -binary
 :   Binary with DWARF information for line-to-address mapping.
 
+-llvm_ir
+:   LLVM IR with debug information for line-to-instruction mapping.
+
 ## Mutation operations
 
 -cut
