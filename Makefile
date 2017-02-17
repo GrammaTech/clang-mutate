@@ -23,7 +23,7 @@ PICOJSON_INCS := -I third-party/picojson-1.3.0
 PICOJSON_DEFINES := -D PICOJSON_USE_INT64
 ELFIO_INCS := -I third-party/elfio-3.2
 LLVM_CONFIG := $(LLVM_HOME)llvm-config$(LLVM_POSTFIX)
-LLVM_DWARFDUMP := $(LLVM_HOME)llvm-dwarfdump$(LLVM_POSTFIX)
+LLVM_DWARFDUMP ?= llvm-dwarfdump
 CXXFLAGS := $(shell $(LLVM_CONFIG) --cxxflags) -I. $(RTTIFLAG) $(PICOJSON_INCS) $(PICOJSON_DEFINES) $(ELFIO_INCS) $(LLVM_INCS) -DLLVM_DWARFDUMP='"$(LLVM_DWARFDUMP)"'
 LLVMLDFLAGS := $(shell $(LLVM_CONFIG) --ldflags --libs) -ldl
 
