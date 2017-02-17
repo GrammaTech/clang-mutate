@@ -47,8 +47,9 @@ locations*.
 
 # Full statements
 
-A *full statement* is an AST whose parent is either a block statement
-(class "CompoundStmt") or NoAst (for top-level declarations).
+A *full statement* is an AST whose parent is a block statement
+(class "CompoundStmt"), could be made to be a block statement (for
+single statement if/loop bodies), or NoAst (for top-level declarations).
 
 # Source ranges
 

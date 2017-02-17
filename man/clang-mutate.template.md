@@ -195,9 +195,8 @@ decisions below.
 
 ## Insertion of semicolons
 
-In general full statements (within a `clang::CompoundStmt`) require a
-terminating semi-colon, while regular statements (e.g., inside of a
-`clang::Stmt`) do not need such termination.  When performing AST
+In general full statements require a terminating semi-colon, while
+regular statements do not need such termination.  When performing AST
 commands (e.g., `insert`, `swap`) `clang-mutate` will automatically
 add semicolons to full statements, however when performing value
 commands (e.g., `insert-value`, `set`) `clang-mutate` will not
@@ -221,9 +220,10 @@ TODO
 # TERMINOLOGY
 
 full statement
-:   A `clang::Stmt` whose parent is a `clang::CompoundStmt`.  These
-    correspond to top-level statements which should be terminated in
-    semicolons.  These are labeled *full_stmt* in json output.
+:   A `clang::Stmt` whose parent is a block statement (`clang::CompoundStmt`),
+    could be made to be a block statement (for single statement if/loop
+    bodies), or NoAst (for top-level declarations).  There are labeled *full-stmt*
+    in json output.
 
 guard statement
 :   A `clang::Stmt` which exists in a `if` or `for` conditional
