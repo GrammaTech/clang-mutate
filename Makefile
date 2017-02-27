@@ -126,6 +126,7 @@ TESTS =	help-text-appears				\
 	replace-var-in-macro				\
 	lighttpd-bug-does-not-crash			\
 	pound-define-func-test				\
+	pound-define-struct-test			\
 	function-bodies-have-no-children                \
 	segmentation-fault				\
 	type-has-name-hash				\

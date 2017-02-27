@@ -20,7 +20,8 @@ HELLO_LLVM_IR=etc/hello.ll
 
 DECLS=etc/decls.c
 
-POUND_DEF=/etc/pound-define-func.c
+POUND_DEF=etc/pound-define-func.c
+POUND_DEF_STRUCT=etc/pound-define-struct.c
 
 MACROS=etc/macros.c
 
@@ -65,6 +66,9 @@ run_hello(){
 
 run_decls(){
     clang-mutate "$@" $DECLS --; }
+
+run_pound_define_struct(){
+    clang-mutate "$@" $POUND_DEF_STRUCT --; }
 
 run_pound_define(){
     clang-mutate "$@" $POUND_DEF --; }

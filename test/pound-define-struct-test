@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# This pound define currently causes a seg fault in clang-mutate.
+# Originates from PHP Zend engine (from BRASS, prophet benchmarks) -- specifically php-src/Zend/zend_exceptions.c
+#
+. $(dirname $0)/common
+
+run_pound_define_struct -json
