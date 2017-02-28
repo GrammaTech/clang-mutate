@@ -265,7 +265,7 @@ SourceLocation findEndOfToken(CompilerInstance * ci, SourceLocation loc,
     // want to use that. Instead, call getFileLoc() to translate our macro
     // location to a file location, and then get the end of the token. This
     // should always give us a valid location.
-    if (end_of_token.isInvalid() && !parent->inMacroExpansion())
+    if (end_of_token.isInvalid() && (parent == NoAst || !parent->inMacroExpansion()))
         return Lexer::getLocForEndOfToken(sm.getFileLoc(loc),
                                           0, sm, ci->getLangOpts());
     else
