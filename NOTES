@@ -19,7 +19,7 @@ svn revision 182049 (the latest as of this writing) of llvm/clang.
 |------------+---------------------|
 | llvm/clang | svn revision 182049 |
 
-* Notes Issues and Tasks [6/15]
+* Notes Issues and Tasks [5/13]
 ** TODO Fix double-output bug
 #+begin_quote Deby Katz
 Attached is a series of commands that resulted in clang-mutate
@@ -398,3 +398,31 @@ superfluous semicolons.
 Probably want to break the range up into Beg and End, then move the
 End.  Look in earlier versions of the code for comments in DeleteStmt
 and possibly a partial implementation.
+** TODO Add C++ "this" and member variables to scopes/unbound_vals
+Expressions like "this->foo", "(*this).foo", and "foo", where "foo" is
+a member variable, are not DeclRefExprs and therefore are not treated
+like variables by the Requirements class.
+
+All three of the above examples are MemberExprs. In the first two, the
+identifier "this" is a CXXThisExpr, and there is no AST corresponding
+to "foo". In the last example, "foo" is a MemberExpr, with a child
+CXXThisExpr (the source text of which is also "foo").
+
+The CXXThisExpr class has an "isImplicit()" method that I think will
+distinguish between the two cases if necessary (not tested).
+
+*** Implementation
+Existing vars are handled in Requirements::VisitDeclRefExpr. We'd need
+to do something similar in VisitCXXThisExpr:
+ + get an IdentifierInfo for "this" (not obvious how to do this)
+ + create a BindingCtx and insert it into m_vars
+
+We also need to modify Scopes to insert "this" and any necessary
+member variables at method level. This may be a little tricky.
+
+*** Implications for SEL
+"this" and member variables will appear as in-scope variables but we
+won't be able to find decls for them in the usual way. Functions such
+as declared-type, declaration-of, and decl-of-var will have to account
+for this. At the very least they should handle the case where a decl
+isn't found.
