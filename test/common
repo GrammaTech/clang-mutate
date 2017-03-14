@@ -22,6 +22,7 @@ DECLS=etc/decls.c
 
 POUND_DEF=etc/pound-define-func.c
 POUND_DEF_STRUCT=etc/pound-define-struct.c
+TYPEDEF_TYPE_HASH=etc/typedef-type-hash.c
 
 MACROS=etc/macros.c
 
@@ -68,6 +69,9 @@ run_hello(){
 
 run_decls(){
     clang-mutate "$@" $DECLS --; }
+
+run_typedef_type_hash_test(){
+    clang-mutate "$@" $TYPEDEF_TYPE_HASH --; }
 
 run_pound_define_struct(){
     clang-mutate "$@" $POUND_DEF_STRUCT --; }

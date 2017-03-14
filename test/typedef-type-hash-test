@@ -1,0 +1,7 @@
+#!/bin/bash
+#
+# Originates from libgmp (from BRASS, prophet benchmarks) -- specifically gmp-src/tests/mpz/reuse.c
+#
+. $(dirname $0)/common
+
+run_typedef_type_hash_test -json

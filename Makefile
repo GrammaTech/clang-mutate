@@ -136,6 +136,7 @@ TESTS =	jshon-is-available				\
 	type-function-arg-hash				\
 	type-function-body-hash				\
 	type-function-ret-hash				\
+	typedef-type-hash-test				\
 	full-stmt-in-switch                             \
 	cxx-method-has-body                             \
 	cxx-method-body-is-full-stmt			\
