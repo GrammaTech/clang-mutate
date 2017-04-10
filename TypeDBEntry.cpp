@@ -176,13 +176,28 @@ static Hash define_type(
     // name later.
     bool pointer = false;
     std::string size_mod = "";
+
+    while (t->isArrayType()) {
+        switch(t->getAsArrayTypeUnsafe()->getSizeModifier()){
+        case ArrayType::Normal:
+            size_mod += "[]";
+            break;
+        case ArrayType::Static:
+            size_mod += "[static]";
+            break;
+        case ArrayType::Star:
+            size_mod += "[*]";
+            break;
+        }
+        t = t->getAsArrayTypeUnsafe()->getElementType().getTypePtr();
+    }
+
     if (t->isPointerType()) {
         pointer = true;
         t = t->getPointeeType().getTypePtr();
 
         // Pointer to pointer
         if (t->isPointerType()) {
-            const PointerType *tp = t->getAs<PointerType>();
             Hash pointee_hash = define_type(t, seen, ci);
             std::set<Hash> reqs;
             reqs.insert(pointee_hash);
@@ -203,21 +218,6 @@ static Hash define_type(
             seen[t] = hash;
             return hash;
     }
-    }
-
-    while (t->isArrayType()) {
-        switch(t->getAsArrayTypeUnsafe()->getSizeModifier()){
-        case ArrayType::Normal:
-            size_mod += "[]";
-            break;
-        case ArrayType::Static:
-            size_mod += "[static]";
-            break;
-        case ArrayType::Star:
-            size_mod += "[*]";
-            break;
-        }
-        t = t->getAsArrayTypeUnsafe()->getElementType().getTypePtr();
     }
 
     std::map<const Type*, Hash>::iterator search = seen.find(t);

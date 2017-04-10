@@ -122,6 +122,7 @@ TESTS =	help-text-appears				\
 	replace-in-macro-expansion			\
 	recursive-type-does-not-crash			\
 	find-char-star-type				\
+	array-of-pointers-has-type		\
 	segmentation-fault				\
 	replace-var-in-macro				\
 	lighttpd-bug-does-not-crash			\

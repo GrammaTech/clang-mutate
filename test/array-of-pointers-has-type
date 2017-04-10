@@ -1,0 +1,16 @@
+#!/bin/bash
+#
+# Test to ensure that the type of array of pointers are parsed correctly
+. $(dirname $0)/common
+
+num_types=$(run_array_of_pointers -json |
+        json_filter ast_class "\"DeclStmt\"" |
+        jshon -e types |
+        jshon -l)
+
+if [ ${num_types} -eq 1 ]; then
+    exit 0
+else
+    exit 1
+fi
+

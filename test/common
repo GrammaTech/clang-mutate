@@ -61,6 +61,8 @@ IF_NON_COMPOUND_BODY=etc/if-non-compound-body.c
 
 GLOBAL_VAR=etc/global_var.c
 
+ARRAY_OF_PTRS=etc/array_of_pointers.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -114,6 +116,9 @@ run_class(){
 
 run_multidimensional_array(){
     clang-mutate "$@" $MULTIDIMENSIONAL_ARRAY --; }
+
+run_array_of_pointers(){
+    clang-mutate "$@" $ARRAY_OF_PTRS --; }
 
 run_do_loop_non_compound_body() {
     clang-mutate "$@" $DO_LOOP_NON_COMPOUND_BODY --; }
