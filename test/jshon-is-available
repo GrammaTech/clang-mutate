@@ -1,0 +1,6 @@
+#!/bin/bash
+#
+# Test to ensure that jshon is in the PATH
+. $(dirname $0)/common
+
+which jshon

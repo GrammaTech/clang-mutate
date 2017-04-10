@@ -80,7 +80,8 @@ compile_commands.json:
 
 
 # Tests
-TESTS =	help-text-appears				\
+TESTS =	jshon-is-available				\
+	help-text-appears				\
 	hello-second-stmt-says-hello-json		\
 	hello-json-list-size                            \
 	hello-json-list-size-with-stmt1-filter          \
@@ -89,7 +90,7 @@ TESTS =	help-text-appears				\
 	hello-json-entries-in-counter-order		\
 	hello-json-bin-default-fields			\
 	hello-json-bin-number-of-stmts-w-binary-data	\
-	hello-json-llvm-ir-default-fields			\
+	hello-json-llvm-ir-default-fields		\
 	hello-json-llvm-ir-number-of-stmts-w-llvm-ir	\
 	hello-set2-w-values				\
 	hello-no-semi-colon-on-end-of-statement-json	\
@@ -122,7 +123,7 @@ TESTS =	help-text-appears				\
 	replace-in-macro-expansion			\
 	recursive-type-does-not-crash			\
 	find-char-star-type				\
-	array-of-pointers-has-type		\
+	array-of-pointers-has-type			\
 	segmentation-fault				\
 	replace-var-in-macro				\
 	lighttpd-bug-does-not-crash			\
@@ -137,12 +138,12 @@ TESTS =	help-text-appears				\
 	type-function-ret-hash				\
 	full-stmt-in-switch                             \
 	cxx-method-has-body                             \
-	cxx-method-body-is-full-stmt \
-	multidimensional-array-has-type \
-	global-var-has-type \
-	for-loop-body-is-full-statement \
-	while-loop-body-is-full-statement \
-	do-loop-body-is-full-statement \
+	cxx-method-body-is-full-stmt			\
+	multidimensional-array-has-type			\
+	global-var-has-type				\
+	for-loop-body-is-full-statement			\
+	while-loop-body-is-full-statement		\
+	do-loop-body-is-full-statement			\
 	if-body-is-full-statement
 
 etc/hello: etc/hello.c
