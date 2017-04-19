@@ -177,47 +177,48 @@ static Hash define_type(
     bool pointer = false;
     std::string size_mod = "";
 
-    while (t->isArrayType()) {
-        switch(t->getAsArrayTypeUnsafe()->getSizeModifier()){
-        case ArrayType::Normal:
-            size_mod += "[]";
-            break;
-        case ArrayType::Static:
-            size_mod += "[static]";
-            break;
-        case ArrayType::Star:
-            size_mod += "[*]";
-            break;
+    while (t->isArrayType() || t->isPointerType()) {
+        if (t->isArrayType()) {
+            switch(t->getAsArrayTypeUnsafe()->getSizeModifier()){
+            case ArrayType::Normal:
+                size_mod += "[]";
+                break;
+            case ArrayType::Static:
+                size_mod += "[static]";
+                break;
+            case ArrayType::Star:
+                size_mod += "[*]";
+                break;
+            }
+            t = t->getAsArrayTypeUnsafe()->getElementType().getTypePtr();
         }
-        t = t->getAsArrayTypeUnsafe()->getElementType().getTypePtr();
-    }
-
-    if (t->isPointerType()) {
-        pointer = true;
-        t = t->getPointeeType().getTypePtr();
-
-        // Pointer to pointer
         if (t->isPointerType()) {
-            Hash pointee_hash = define_type(t, seen, ci);
-            std::set<Hash> reqs;
-            reqs.insert(pointee_hash);
+            pointer = true;
+            t = t->getPointeeType().getTypePtr();
 
-            TypeDBEntry pointee = TypeDBEntry::find_type(pointee_hash);
+            // Pointer to pointer
+            if (t->isPointerType()) {
+                Hash pointee_hash = define_type(t, seen, ci);
+                std::set<Hash> reqs;
+                reqs.insert(pointee_hash);
 
-            Hash hash = TypeDBEntry::mkType(
-                    // name of the pointee type
-                    pointee.name() + "*",
-                    true,
-                    size_mod,
-                    // Full name of the type, I think (hence the extra *)
-                    pointee.name() + "**",
-                    "",
-                    0,
-                    0,
-                    reqs).hash();
-            seen[t] = hash;
-            return hash;
-    }
+                TypeDBEntry pointee = TypeDBEntry::find_type(pointee_hash);
+
+                Hash hash = TypeDBEntry::mkType(
+                        // name of the pointee type
+                        pointee.name() + "*",
+                        true,
+                        size_mod,
+                        // Full name of the type, I think (hence the extra *)
+                        pointee.name() + "**",
+                        "",
+                        0,
+                        0,
+                        reqs).hash();
+                seen[t] = hash;
+                return hash;
+            }
+        }
     }
 
     std::map<const Type*, Hash>::iterator search = seen.find(t);

@@ -64,6 +64,8 @@ GLOBAL_VAR=etc/global_var.c
 
 ARRAY_OF_PTRS=etc/array_of_pointers.c
 
+PTR_TO_ARRAY=etc/pointer_to_array.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -123,6 +125,9 @@ run_multidimensional_array(){
 
 run_array_of_pointers(){
     clang-mutate "$@" $ARRAY_OF_PTRS --; }
+
+run_pointer_to_array(){
+    clang-mutate "$@" $PTR_TO_ARRAY --; }
 
 run_do_loop_non_compound_body() {
     clang-mutate "$@" $DO_LOOP_NON_COMPOUND_BODY --; }

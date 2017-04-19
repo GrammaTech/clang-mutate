@@ -124,6 +124,7 @@ TESTS =	jshon-is-available				\
 	recursive-type-does-not-crash			\
 	find-char-star-type				\
 	array-of-pointers-has-type			\
+	pointer-to-array-has-type			\
 	segmentation-fault				\
 	replace-var-in-macro				\
 	lighttpd-bug-does-not-crash			\
