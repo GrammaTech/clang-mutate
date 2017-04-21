@@ -1,7 +1,7 @@
 # jshon - command line JSON parsing
 
-CFLAGS := -std=c99 -Wall -pedantic -Wextra -Werror ${CFLAGS}
-LDLIBS  = -ljansson
+CFLAGS := -std=c99 -Wall -pedantic -Wextra -Werror -I../jansson/include -static -L../jansson/lib -ljansson.a ${CFLAGS}
+LDLIBS := -static -L../jansson/lib -ljansson
 INSTALL=install
 DESTDIR?=/
 MANDIR=$(DESTDIR)/usr/share/man/man1/

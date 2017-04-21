@@ -3,5 +3,5 @@
 # is 1
 . $(dirname $0)/common
 
-contains "$(run_hello -json -stmt1=2 | jshon -l)" \
+contains "$(run_hello -json -stmt1=2 | json -l)" \
          "1"

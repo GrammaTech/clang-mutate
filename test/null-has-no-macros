@@ -1,4 +1,4 @@
 #!/bin/bash
 . $(dirname $0)/common
 
-run_null -json|json_filter counter 1|jshon -e macros|json_has_length 0
+run_null -json|json_filter counter 1|json -e macros|json_has_length 0

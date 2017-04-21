@@ -14,6 +14,7 @@ describe(){
 if [ ! -z "$1" ] &&
    $(echo "$1"|grep -q "^\-d$");then describe; fi
 
+JSHON=third-party/jshon/jshon
 HELLO=etc/hello.c
 HELLO_EXE=etc/hello
 HELLO_LLVM_IR=etc/hello.ll
@@ -144,14 +145,17 @@ run_if_non_compound_body() {
 run_global_var(){
     clang-mutate "$@" $GLOBAL_VAR --; }
 
+json() {
+    cat -|$JSHON "$@"; }
+
 json_filter(){
-    cat -|jshon -a -j|grep "\"${1}\":${2}\(,\|}\)"; }
+    cat -|$JSHON -a -j|grep "\"${1}\":${2}\(,\|}\)"; }
 
 with_src_text(){
-    cat -|jshon -a -j|grep "\"src_text\":\"${1}\"\(,\|}\)"; }
+    cat -|$JSHON -a -j|grep "\"src_text\":\"${1}\"\(,\|}\)"; }
 
 json_key_filter(){
-    cat -|jshon -a -j|grep "\"${1}\":"; }
+    cat -|$JSHON -a -j|grep "\"${1}\":"; }
 
 # Wrap lines of json objects into a json array.
 json_wrap(){

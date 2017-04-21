@@ -6,5 +6,5 @@
 types=$(run_global_var -json |
         json_filter decl_name "\"r1\"" |
         json_wrap |
-        jshon -a -e types)
+        json -a -e types)
 contains "$types" "[-1839767438739749983]"

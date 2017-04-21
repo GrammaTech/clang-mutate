@@ -5,7 +5,7 @@
 
 syn_ctx=$(clang-mutate ${MUSE_LIST} -json -- \
               |json_filter name "\"AddNode"\" \
-              |jshon -e syn_ctx)
+              |json -e syn_ctx)
 
 if [ $syn_ctx == "\"TopLevel\"" ];then
     exit 0;

@@ -18,7 +18,7 @@ class FAF : public clang::tooling::FrontendActionFactory
 public:
     ~FAF() override;
 
-    virtual bool runInvocation(clang::CompilerInvocation * Invocation,
+    virtual bool runInvocation(std::shared_ptr<clang::CompilerInvocation> Invocation,
                                clang::FileManager * Files,
                                std::shared_ptr<clang::PCHContainerOperations> PCHContainerOps,
                                clang::DiagnosticConsumer * DiagConsumer) override;
@@ -26,7 +26,7 @@ public:
 
 FAF::~FAF() {}
 
-bool FAF::runInvocation(clang::CompilerInvocation * Invocation,
+bool FAF::runInvocation(std::shared_ptr<clang::CompilerInvocation> Invocation,
                         clang::FileManager * Files,
                         std::shared_ptr<clang::PCHContainerOperations> PCHContainerOps,
                         clang::DiagnosticConsumer * DiagConsumer)

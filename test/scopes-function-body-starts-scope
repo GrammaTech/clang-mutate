@@ -4,5 +4,5 @@
 #
 . $(dirname $0)/common
 
-contains $(run_scopes -json | json_filter counter 9 | jshon -e scopes -e 1 -e 0) \
+contains $(run_scopes -json | json_filter counter 9 | json -e scopes -e 1 -e 0) \
          "local"

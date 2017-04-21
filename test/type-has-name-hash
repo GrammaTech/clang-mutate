@@ -5,7 +5,7 @@
 
 type_hash=$(clang-mutate ${MUSE_LIST} -json -- \
                 |json_filter type "\"LIST"\"   \
-                |jshon -e hash)
+                |json -e hash)
 
 if [ -z $type_hash ]; then
     exit 1

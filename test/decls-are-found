@@ -4,5 +4,5 @@
 #
 . $(dirname $0)/common
 
-contains "$(run_decls -json |json_key_filter decl_text | wc)" \
-         "      2      11     260"
+contains "$(run_decls -json |json_key_filter decl_text | wc -l)" \
+         "2"

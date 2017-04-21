@@ -1,5 +1,5 @@
 #!/bin/bash
 . $(dirname $0)/common
 
-run_hello -json|json_filter counter 5|jshon -e src_text -u \
+run_hello -json|json_filter counter 5|json -e src_text -u \
     |grep -q hello

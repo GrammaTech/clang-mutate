@@ -5,8 +5,8 @@
 
 num_types=$(run_array_of_pointers -json |
         json_filter ast_class "\"DeclStmt\"" |
-        jshon -e types |
-        jshon -l)
+        json -e types |
+        json -l)
 
 if [ ${num_types} -eq 1 ]; then
     exit 0

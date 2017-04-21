@@ -3,6 +3,6 @@
 # for -fields
 . $(dirname $0)/common
 
-RAW="$(run_hello -json|jshon -a -e counter)"
+RAW="$(run_hello -json|json -a -e counter)"
 
 diff <(echo "$RAW") <(echo "$RAW"|sort -n)

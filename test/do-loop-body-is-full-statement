@@ -6,6 +6,6 @@
 full=$(run_do_loop_non_compound_body -json|
        json_filter ast_class "\"CallExpr\""|
        json_wrap|
-       jshon -a -e full_stmt)
+       json -a -e full_stmt)
 
 not_contains "$full" "false"

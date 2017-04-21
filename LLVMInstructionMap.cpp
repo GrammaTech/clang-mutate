@@ -20,8 +20,9 @@ LLVMInstructionMap::LLVMInstructionMap(const std::string &llvm) {
 
     if (!m_llvmPath.empty() && Utils::fileExists(m_llvmPath)) {
         llvm::SMDiagnostic err;
+        llvm::LLVMContext ctx;
         std::unique_ptr<llvm::Module> mod =
-            parseIRFile(m_llvmPath, err, llvm::getGlobalContext());
+            parseIRFile(m_llvmPath, err, ctx);
 
         for (auto functionIter = mod->begin();
              functionIter != mod->end();

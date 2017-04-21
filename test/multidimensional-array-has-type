@@ -6,5 +6,5 @@
 types=$(run_multidimensional_array -json |
         json_filter ast_class "\"DeclStmt\"" |
         json_wrap |
-        jshon -a -e types)
+        json -a -e types)
 not_contains "$types" "[]"

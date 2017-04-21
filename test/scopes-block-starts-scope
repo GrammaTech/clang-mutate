@@ -4,5 +4,5 @@
 #
 . $(dirname $0)/common
 
-contains $(run_scopes -json | json_filter counter 11 | jshon -e scopes -e 0 -e 0) \
+contains $(run_scopes -json | json_filter counter 11 | json -e scopes -e 0 -e 0) \
          "inner"

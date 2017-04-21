@@ -148,9 +148,11 @@ void Ast::setFieldDeclProperties(ASTContext * context,
     QualType Type = D->getType();
 
     if (Type->isArrayType()) {
-        const ConstantArrayType *AT = context->getAsConstantArrayType(Type);
+        const ArrayType *AT = context->getAsArrayType(Type);
         m_base_type = AT->getElementType().getAsString();
-        m_array_length = AT->getSize().getLimitedValue();
+        if (context->getAsConstantArrayType(Type))
+            m_array_length = context->getConstantArrayElementCount(
+                                 context->getAsConstantArrayType(Type));
     }
     else {
         m_base_type = Type.getAsString();

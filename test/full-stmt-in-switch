@@ -4,7 +4,7 @@
 . $(dirname $0)/common
 
 full=$(run_switch -json|json_filter ast_class "\"CallExpr\""|
-              json_wrap|jshon -e 0 -e full_stmt)
+              json_wrap|json -e 0 -e full_stmt)
 
 if [ ${full} == false ];then
     echo "Statement is not full."
@@ -12,7 +12,7 @@ if [ ${full} == false ];then
 fi
 
 full=$(run_switch -json|json_filter ast_class "\"IntegerLiteral\""|
-              json_wrap|jshon -e 0 -e full_stmt)
+              json_wrap|json -e 0 -e full_stmt)
 if [ ${full} == true ];then
     echo "Case expression is full."
     exit 1

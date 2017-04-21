@@ -1,4 +1,4 @@
 #!/bin/bash
 . $(dirname $0)/common
 
-run_hello -list -json|json_filter counter 2|jshon -e src_text -u|grep -q ";$"
+run_hello -list -json|json_filter counter 2|json -e src_text -u|grep -q ";$"

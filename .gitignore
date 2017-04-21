@@ -3,6 +3,7 @@ a.out
 mutate
 mutate2
 clang-mutate
+!clang-mutate/
 compile_commands.json
 *_num.c
 *_del.c

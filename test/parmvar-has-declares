@@ -2,4 +2,4 @@
 # Test that ParmVar ASTs have their "declares" fields populated.
 . $(dirname $0)/common
 
-run_hello -json|json_filter ast_class ".*ParmVar.*"|head -1|jshon -e declares
+run_hello -json|json_filter ast_class ".*ParmVar.*"|head -1|json -e declares

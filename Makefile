@@ -1,3 +1,4 @@
+BASEDIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
 # Set personal or machine-local flags in a file named local.mk
 ifneq ("$(wildcard local.mk)","")
@@ -49,6 +50,11 @@ CLANGLIBS = \
 	-lclangBasic \
 	-lclangRewrite
 
+JSHON_DIR = $(BASEDIR)/third-party/jshon
+JANSSON_DIR = $(BASEDIR)/third-party/jansson
+JSHON_BIN = $(JSHON_DIR)/jshon
+JANSSON_LIB = $(JANSSON_DIR)/lib/libjansson.a
+
 all: $(EXES)
 .PHONY: clean install tests.md auto-check
 
@@ -62,26 +68,40 @@ man:
 doc:
 	make -C man
 
+.PHONY: clean
 clean:
-	-rm -f $(EXES) $(OBJECTS) compile_commands.json a.out etc/hello etc/hello.ll etc/loop *~
+	-rm -f $(EXES) $(OBJECTS) a.out etc/hello etc/hello.ll etc/loop *~
+
+.PHONY: real-clean
+real-clean: clean
+	-rm -f $(JSHON_BIN) $(JANSSON_LIB)
+	-$(MAKE) -C $(JANSSON_DIR) clean
+	-$(MAKE) -C $(JSHON_DIR) clean
 
 install: clang-mutate
 	cp $< $$(dirname $$(which clang$(LLVM_POSTFIX)))
 
-# An alternative to giving compiler info after -- on the command line
-compile_commands.json:
-	echo -e "[\n\
-	  {\n\
-	    \"directory\": \"$$(pwd)\",\n\
-	    \"command\": \"$$(which clang) $$(pwd)/etc/hello.c\",\n\
-	    \"file\": \"$$(pwd)/etc/hello.c\"\n\
-	  }\n\
-	]\n" > $@
+
+# Test prerequisite binaries
+$(JANSSON_LIB):
+	cd $(JANSSON_DIR) && \
+	autoreconf -i && \
+	./configure --prefix=$(JANSSON_DIR) && \
+	$(MAKE) && \
+	$(MAKE) install
+
+.PHONY: jannson
+jansson: $(JANSSON_LIB)
+
+$(JSHON_BIN): $(JANSSON_LIB)
+	cd $(JSHON_DIR) && $(MAKE)
+
+.PHONY: jshon
+jshon: $(JSHON_BIN)
 
 
 # Tests
-TESTS =	jshon-is-available				\
-	help-text-appears				\
+TESTS =	help-text-appears				\
 	hello-second-stmt-says-hello-json		\
 	hello-json-list-size                            \
 	hello-json-list-size-with-stmt1-filter          \
@@ -130,7 +150,7 @@ TESTS =	jshon-is-available				\
 	lighttpd-bug-does-not-crash			\
 	pound-define-func-test				\
 	pound-define-struct-test			\
-	function-bodies-have-no-children                \
+	function-bodies-have-children                \
 	segmentation-fault				\
 	type-has-name-hash				\
 	function-body-top-level-syntax			\
@@ -156,7 +176,7 @@ etc/hello.ll: etc/hello.c
 
 PASS=\e[1;1m\e[1;32mPASS\e[1;0m
 FAIL=\e[1;1m\e[1;31mFAIL\e[1;0m
-check/%: test/% etc/hello etc/hello.ll
+check/%: test/% etc/hello etc/hello.ll $(JSHON_BIN)
 	@if ./$< >/dev/null 2>/dev/null;then \
 	printf "$(PASS)\t"; \
 	else \
@@ -164,7 +184,18 @@ check/%: test/% etc/hello etc/hello.ll
 	fi
 	@printf "\e[1;1m%s\e[1;0m\n" $*
 
-testbot-check/%: test/% etc/hello etc/hello.ll
+runner-check/%: test/% etc/hello etc/hello.ll $(JSHON_BIN)
+	@./$< >/dev/null 2>/dev/null; \
+	EXIT_CODE=$$?; \
+	if [ $$EXIT_CODE -eq 0 ];then \
+	printf "$(PASS)\t"; \
+	else \
+	printf "$(FAIL)\t"; \
+	fi; \
+	printf "\e[1;1m%s\e[1;0m\n" $*; \
+	exit $$EXIT_CODE;
+
+testbot-check/%: test/% etc/hello etc/hello.ll $(JSHON_BIN)
 	@XML_FILE=$$(mktemp /tmp/clang-mutate-tests.XXXXX); \
 	if [ -z $$GTHOME ]; then \
 		printf "GTHOME must be set prior to datamanager submission"; \
@@ -200,6 +231,7 @@ desc/%: check/%
 	@test/$* -d
 
 check: $(addprefix check/, $(TESTS))
+runner-check: $(addprefix runner-check/, $(TESTS))
 testbot-check: $(addprefix testbot-check/, $(TESTS))
 desc-check: $(addprefix desc/, $(TESTS))
 

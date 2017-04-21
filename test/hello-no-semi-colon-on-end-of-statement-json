@@ -8,4 +8,4 @@
 #
 . $(dirname $0)/common
 
-run_hello -json|json_filter counter 2|jshon -e src_text -u|grep -vq ";$"
+run_hello -json|json_filter counter 2|json -e src_text -u|grep -vq ";$"
