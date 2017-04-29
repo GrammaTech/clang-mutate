@@ -18,9 +18,7 @@ Installation
   clang-mutate executable works best when run from the same directory
   as clang.  Run "make install" to build and install.
 
-  On Arch Linux, aur scripts are provided in aur/ which may be used to
-  install both llvm/clang with header files and clang-mutate.  Known
-  working versions are listed in the aur PKGBUILD files and in NOTES.
+  A PKGBUILD file is provided for installation on Arch Linux systems.
 
   [1] http://clang.llvm.org/docs/LibTooling.html
 
