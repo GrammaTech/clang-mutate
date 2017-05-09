@@ -55,7 +55,6 @@ JANSSON_DIR = third-party/jansson
 JSHON_BIN = $(JSHON_DIR)/jshon
 JANSSON_LIB = $(JANSSON_DIR)/lib/libjansson.a
 GTR_DIR = third-party/gtr
-GTNETCAT_SCRIPT = $(GTR_DIR)/gtnetcat.py
 
 all: $(EXES)
 .PHONY: clean install tests.md auto-check
@@ -76,7 +75,7 @@ clean:
 
 .PHONY: real-clean
 real-clean: clean
-	-rm -f $(JSHON_BIN) $(JANSSON_LIB) $(GTNETCAT_SCRIPT)
+	-rm -f $(JSHON_BIN) $(JANSSON_LIB)
 	-$(MAKE) -C $(JANSSON_DIR) clean
 	-$(MAKE) -C $(JSHON_DIR) clean
 
@@ -100,12 +99,6 @@ $(JSHON_BIN): $(JANSSON_LIB)
 
 .PHONY: jshon
 jshon: $(JSHON_BIN)
-
-$(GTNETCAT_SCRIPT):
-	svn export svn+ssh://svn/svn/trunk/gtr/scons/tools/gtnetcat.py $(GTNETCAT_SCRIPT)
-
-.PHONY: gtnetcat.py
-gtnetcat.py: $(GTNETCAT_SCRIPT)
 
 
 # Tests
@@ -194,11 +187,11 @@ check/%: test/% etc/hello etc/hello.ll $(JSHON_BIN)
 	fi
 	@printf "\e[1;1m%s\e[1;0m\n" $*
 
-testbot-check/%: test/% etc/hello etc/hello.ll $(JSHON_BIN) $(GTNETCAT_SCRIPT)
+testbot-check/%: test/% etc/hello etc/hello.ll $(JSHON_BIN)
 	@XML_FILE=$$(mktemp /tmp/clang-mutate-tests.XXXXX); \
 	printf "<test_run>\n" >> $$XML_FILE; \
 	printf "  <name>$*</name>\n" >> $$XML_FILE; \
-	printf "  <host>$$(hostname)</host>\n" $* >> $$XML_FILE; \
+	printf "  <host>$$HOSTNAME</host>\n" $* >> $$XML_FILE; \
 	printf "  <branch>$(BRANCH)</branch>\n" >> $$XML_FILE; \
 	printf "  <project>$(REPO)</project>\n" >> $$XML_FILE; \
 	printf "  <genus>regressions</genus>\n" >> $$XML_FILE; \
@@ -220,7 +213,7 @@ testbot-check/%: test/% etc/hello etc/hello.ll $(JSHON_BIN) $(GTNETCAT_SCRIPT)
 	fi; \
 	printf "  </key_value>\n" >> $$XML_FILE; \
 	printf "</test_run>\n" >> $$XML_FILE; \
-	python $(GTNETCAT_SCRIPT) datamanager 55555 $$XML_FILE \
+	python $(BASEDIR)/third-party/gtr/gtnetcat.py datamanager 55555 $$XML_FILE \
 			>/dev/null 2>/dev/null; \
 	rm $$XML_FILE; \
 	exit $$EXIT_CODE;

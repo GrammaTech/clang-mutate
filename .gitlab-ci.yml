@@ -10,6 +10,7 @@ stages:
   - build
   - test
   - deploy
+  - dependents
   - cleanup
 
 build_image:
@@ -28,12 +29,21 @@ tag_image:
   script:
     - docker tag $LOCAL_IMAGE_NAME $DOCKER_REGISTRY/$CI_PROJECT_PATH:$CI_BUILD_REF_NAME
     - docker push $DOCKER_REGISTRY/$CI_PROJECT_PATH:$CI_BUILD_REF_NAME
+  except:
+    - master
 
 tag_image_master:
   stage: deploy
   script:
     - docker tag $LOCAL_IMAGE_NAME $DOCKER_REGISTRY/$CI_PROJECT_PATH:latest
     - docker push $DOCKER_REGISTRY/$CI_PROJECT_PATH:latest
+  only:
+    - master
+
+trigger_cl:
+  stage: dependents
+  script:
+    - "curl -X POST -F token=e89405aa157de24364bb6e4ba0f3c3 -F ref=master https://git.grammatech.com/api/v4/projects/194/trigger/pipeline"
   only:
     - master
 
