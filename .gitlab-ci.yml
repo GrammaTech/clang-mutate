@@ -9,7 +9,7 @@ before_script:
 stages:
   - build
   - test
-  - tag
+  - deploy
   - cleanup
 
 build_image:
@@ -24,13 +24,13 @@ test_image:
     - docker run $LOCAL_IMAGE_NAME /bin/bash -c "cd clang-mutate && make runner-check"
 
 tag_image:
-  stage: tag
+  stage: deploy
   script:
     - docker tag $LOCAL_IMAGE_NAME $DOCKER_REGISTRY/$CI_PROJECT_PATH:$CI_BUILD_REF_NAME
     - docker push $DOCKER_REGISTRY/$CI_PROJECT_PATH:$CI_BUILD_REF_NAME
 
 tag_image_master:
-  stage: tag
+  stage: deploy
   script:
     - docker tag $LOCAL_IMAGE_NAME $DOCKER_REGISTRY/$CI_PROJECT_PATH:latest
     - docker push $DOCKER_REGISTRY/$CI_PROJECT_PATH:latest
