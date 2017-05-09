@@ -21,7 +21,7 @@ build_image:
 test_image:
   stage: test
   script:
-    - docker run $LOCAL_IMAGE_NAME /bin/bash -c "cd clang-mutate && make runner-check"
+    - docker run $LOCAL_IMAGE_NAME /bin/bash -c "cd clang-mutate && make -k testbot-check"
 
 tag_image:
   stage: deploy

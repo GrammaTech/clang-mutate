@@ -50,10 +50,12 @@ CLANGLIBS = \
 	-lclangBasic \
 	-lclangRewrite
 
-JSHON_DIR = $(BASEDIR)/third-party/jshon
-JANSSON_DIR = $(BASEDIR)/third-party/jansson
+JSHON_DIR = third-party/jshon
+JANSSON_DIR = third-party/jansson
 JSHON_BIN = $(JSHON_DIR)/jshon
 JANSSON_LIB = $(JANSSON_DIR)/lib/libjansson.a
+GTR_DIR = third-party/gtr
+GTNETCAT_SCRIPT = $(GTR_DIR)/gtnetcat.py
 
 all: $(EXES)
 .PHONY: clean install tests.md auto-check
@@ -74,7 +76,7 @@ clean:
 
 .PHONY: real-clean
 real-clean: clean
-	-rm -f $(JSHON_BIN) $(JANSSON_LIB)
+	-rm -f $(JSHON_BIN) $(JANSSON_LIB) $(GTNETCAT_SCRIPT)
 	-$(MAKE) -C $(JANSSON_DIR) clean
 	-$(MAKE) -C $(JSHON_DIR) clean
 
@@ -86,7 +88,7 @@ install: clang-mutate
 $(JANSSON_LIB):
 	cd $(JANSSON_DIR) && \
 	autoreconf -i && \
-	./configure --prefix=$(JANSSON_DIR) && \
+	./configure --prefix=$(BASEDIR)/$(JANSSON_DIR) && \
 	$(MAKE) && \
 	$(MAKE) install
 
@@ -98,6 +100,12 @@ $(JSHON_BIN): $(JANSSON_LIB)
 
 .PHONY: jshon
 jshon: $(JSHON_BIN)
+
+$(GTNETCAT_SCRIPT):
+	svn export svn+ssh://svn/svn/trunk/gtr/scons/tools/gtnetcat.py $(GTNETCAT_SCRIPT)
+
+.PHONY: gtnetcat.py
+gtnetcat.py: $(GTNETCAT_SCRIPT)
 
 
 # Tests
@@ -186,23 +194,8 @@ check/%: test/% etc/hello etc/hello.ll $(JSHON_BIN)
 	fi
 	@printf "\e[1;1m%s\e[1;0m\n" $*
 
-runner-check/%: test/% etc/hello etc/hello.ll $(JSHON_BIN)
-	@./$< >/dev/null 2>/dev/null; \
-	EXIT_CODE=$$?; \
-	if [ $$EXIT_CODE -eq 0 ];then \
-	printf "$(PASS)\t"; \
-	else \
-	printf "$(FAIL)\t"; \
-	fi; \
-	printf "\e[1;1m%s\e[1;0m\n" $*; \
-	exit $$EXIT_CODE;
-
-testbot-check/%: test/% etc/hello etc/hello.ll $(JSHON_BIN)
+testbot-check/%: test/% etc/hello etc/hello.ll $(JSHON_BIN) $(GTNETCAT_SCRIPT)
 	@XML_FILE=$$(mktemp /tmp/clang-mutate-tests.XXXXX); \
-	if [ -z $$GTHOME ]; then \
-		printf "GTHOME must be set prior to datamanager submission"; \
-		exit 1; \
-	fi; \
 	printf "<test_run>\n" >> $$XML_FILE; \
 	printf "  <name>$*</name>\n" >> $$XML_FILE; \
 	printf "  <host>$$(hostname)</host>\n" $* >> $$XML_FILE; \
@@ -216,7 +209,9 @@ testbot-check/%: test/% etc/hello etc/hello.ll $(JSHON_BIN)
 	printf "  </key_value>\n" >> $$XML_FILE; \
 	printf "  <key_value>\n" >> $$XML_FILE; \
 	printf "    <key>Result</key>\n" >> $$XML_FILE; \
-	if ./$< >/dev/null 2>/dev/null;then \
+	./$< >/dev/null 2>/dev/null; \
+	EXIT_CODE=$$?; \
+	if [ $$EXIT_CODE -eq 0 ];then \
 	printf "    <text>Pass</text>\n" >> $$XML_FILE; \
 	printf "    <number>5</number>\n" >> $$XML_FILE; \
 	else \
@@ -225,15 +220,15 @@ testbot-check/%: test/% etc/hello etc/hello.ll $(JSHON_BIN)
 	fi; \
 	printf "  </key_value>\n" >> $$XML_FILE; \
 	printf "</test_run>\n" >> $$XML_FILE; \
-	python $$GTHOME/gtr/scons/tools/gtnetcat.py datamanager 55555 $$XML_FILE \
+	python $(GTNETCAT_SCRIPT) datamanager 55555 $$XML_FILE \
 			>/dev/null 2>/dev/null; \
-	rm $$XML_FILE
+	rm $$XML_FILE; \
+	exit $$EXIT_CODE;
 
 desc/%: check/%
 	@test/$* -d
 
 check: $(addprefix check/, $(TESTS))
-runner-check: $(addprefix runner-check/, $(TESTS))
 testbot-check: $(addprefix testbot-check/, $(TESTS))
 desc-check: $(addprefix desc/, $(TESTS))
 
