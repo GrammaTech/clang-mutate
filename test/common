@@ -67,6 +67,12 @@ ARRAY_OF_PTRS=etc/array_of_pointers.c
 
 PTR_TO_ARRAY=etc/pointer_to_array.c
 
+TYPEDEF=etc/typedef.c
+
+ARRAY_INITIALIZER=etc/array-initializer.c
+
+ARROW_OPERATOR=etc/arrow-operator.cpp
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -147,6 +153,15 @@ run_global_var(){
 
 json() {
     cat -|$JSHON "$@"; }
+
+run_typedef(){
+    clang-mutate "$@" $TYPEDEF --; }
+
+run_array_initializer(){
+    clang-mutate "$@" $ARRAY_INITIALIZER --; }
+
+run_arrow_operator(){
+    clang-mutate "$@" $ARROW_OPERATOR --; }
 
 json_filter(){
     cat -|$JSHON -a -j|grep "\"${1}\":${2}\(,\|}\)"; }

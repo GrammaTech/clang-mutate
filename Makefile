@@ -166,7 +166,9 @@ TESTS =	help-text-appears				\
 	for-loop-body-is-full-statement			\
 	while-loop-body-is-full-statement		\
 	do-loop-body-is-full-statement			\
-	if-body-is-full-statement
+	if-body-is-full-statement                       \
+	array-initializer-has-correct-children 		\
+	operator-call-expr-ranges
 
 etc/hello: etc/hello.c
 	$(CXX) -g -O0 $< -o $@

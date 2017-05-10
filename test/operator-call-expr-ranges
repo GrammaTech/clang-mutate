@@ -1,0 +1,32 @@
+#!/bin/bash
+. $(dirname $0)/common
+
+json=$(run_arrow_operator -json)
+operator_call=$(echo $json | json_filter counter 10)
+implicit_cast=$(echo $json | json_filter counter 11)
+
+# The expression "i->x" generates a MemberExpr with a single
+# CXXOperatorCallExpr child. The source text of the latter is just
+# "i", which is clearly wrong. It should probably be "i->".
+
+# That AST in turn has two ImplicitCastExpr children, corresponding to
+# "->" and "i". The former is problematic, because its source range is
+# disjoint from its parent's range.
+
+# The solution is most likely to extend the range of the
+# CXXOperatorCallExpr so its text is "i->".
+
+equals '"CXXOperatorCallExpr"' $(echo $operator_call | json -e ast_class)
+equals '"ImplicitCastExpr"' $(echo $implicit_cast | json -e ast_class)
+
+if [ ! $(echo $operator_call | json -e begin_off) -le \
+       $(echo $implicit_cast | json -e begin_off) ]; then
+    echo "Child begins before parent."
+    exit 1
+fi
+
+if [ ! $(echo $operator_call | json -e end_off) -ge \
+       $(echo $implicit_cast | json -e end_off) ]; then
+    echo "Child ends after parent."
+    exit 1
+fi
