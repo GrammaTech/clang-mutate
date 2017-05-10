@@ -296,7 +296,27 @@ class BuildTU
         }
         return true;
     }
-    
+
+    bool TraverseInitListExpr(InitListExpr *S) {
+        // InitListExpr has both syntactic and semantic forms (the latter has
+        // some implicit stuff filled in). By default, both will be visited,
+        // leading to duplication in the AST. To prevent problems, only visit
+        // the syntactic form (and its children).
+        InitListExpr *Syn = S->isSemanticForm() ? S->getSyntacticForm() : S;
+        if (!Syn)
+            Syn = S;
+
+        if (Syn) {
+            if (!WalkUpFromInitListExpr(Syn))
+                return false;
+            for (Stmt *SubStmt : Syn->children()) {
+                if (!TraverseStmt(SubStmt))
+                    return false;
+            }
+        }
+        return true;
+    }
+
     bool TraverseStmt(Stmt * s)
     {
         if (Utils::ShouldVisitStmt(sm, ci->getLangOpts(),
