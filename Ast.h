@@ -267,6 +267,8 @@ public:
     { m_successors.push_back(successor); }
 
 
+    void expand_to_child_ranges();
+
     static AstRef create(clang::Stmt * stmt, Requirements & reqs)
     { return impl_create(stmt, reqs); }
 

@@ -381,6 +381,23 @@ void Ast::update_range_offsets(CompilerInstance * ci)
     }
 }
 
+void Ast::expand_to_child_ranges()
+{
+    // In some cases, AST's source range will be smaller than children. This
+    // seems to be a bug in clang and will cause weird source text and other
+    // problems. Expand ranges so they are at least as large as child ranges.
+    for (AstRef c : children()) {
+        if (c->m_start_off < this->m_start_off)
+            this->m_start_off = c->m_start_off;
+        if (c->m_norm_start_off < this->m_norm_start_off)
+            this->m_norm_start_off = c->m_norm_start_off;
+        if (c->m_end_off > this->m_end_off)
+            this->m_end_off = c->m_end_off;
+        if (c->m_norm_end_off > this->m_norm_end_off)
+            this->m_norm_end_off = c->m_norm_end_off;
+    }
+}
+
 Ast::Ast(Stmt * _stmt,
          AstRef _counter,
          AstRef _parent,

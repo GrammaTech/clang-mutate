@@ -330,8 +330,10 @@ class BuildTU
             bool keep_going = base::TraverseStmt(s);
             // If we created a new node, remove it from the spine
             // now that the traversal of this Stmt is complete.
-            while (spine.size() > original_spine_size)
+            while (spine.size() > original_spine_size) {
+                spine.back()->expand_to_child_ranges();
                 spine.pop_back();
+            }
 
             if (begins_scope(s)) {
                 var_scopes.pop_back();
