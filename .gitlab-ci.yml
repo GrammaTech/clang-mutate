@@ -3,42 +3,36 @@ variables:
   LOCAL_IMAGE_NAME: '$CI_BUILD_REF_NAME-$CI_PIPELINE_ID'
 
 before_script:
-  - docker info
   - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $DOCKER_REGISTRY
 
 stages:
-  - build
-  - test
-  - deploy
+  - build-test-tag
   - dependents
-  - cleanup
 
-build_image:
-  stage: build
+build-test-tag:
+  stage: build-test-tag
   script:
     - docker pull $DOCKER_REGISTRY/synthesis/clang:latest
-    - make -C docker $CI_PROJECT_NAME
+    - cat Dockerfile|sed "s/CI_COMMIT_SHA/$CI_COMMIT_SHA/" > Dockerfile.tmp
+    - docker build -f Dockerfile.tmp -t $LOCAL_IMAGE_NAME .
 
-test_image:
-  stage: test
-  script:
-    - docker run $LOCAL_IMAGE_NAME /bin/bash -c "cd clang-mutate && make -k testbot-check"
+    # If on master branch, push test results to DataManager; otherwise, run locally.
+    - if [ "$CI_BUILD_REF_NAME" = "master" ];
+      then
+          docker run $LOCAL_IMAGE_NAME /bin/bash -c "cd /gt/clang-mutate && make check-testbot";
+      else
+          docker run $LOCAL_IMAGE_NAME /bin/bash -c "cd /gt/clang-mutate && make check";
+      fi
 
-tag_image:
-  stage: deploy
-  script:
-    - docker tag $LOCAL_IMAGE_NAME $DOCKER_REGISTRY/$CI_PROJECT_PATH:$CI_BUILD_REF_NAME
-    - docker push $DOCKER_REGISTRY/$CI_PROJECT_PATH:$CI_BUILD_REF_NAME
-  except:
-    - master
+    # If on master branch, push up a new "latest" image.
+    - '[ "$CI_BUILD_REF_NAME" = "master" ] &&
+      docker tag $LOCAL_IMAGE_NAME $DOCKER_REGISTRY/$CI_PROJECT_PATH:latest'
+    - '[ "$CI_BUILD_REF_NAME" = "master" ] &&
+      docker push $DOCKER_REGISTRY/$CI_PROJECT_PATH:latest'
 
-tag_image_master:
-  stage: deploy
-  script:
-    - docker tag $LOCAL_IMAGE_NAME $DOCKER_REGISTRY/$CI_PROJECT_PATH:latest
-    - docker push $DOCKER_REGISTRY/$CI_PROJECT_PATH:latest
-  only:
-    - master
+    # Cleanup
+    - rm -f Dockerfile.tmp
+    - docker rmi -f $LOCAL_IMAGE_NAME
 
 trigger_cl:
   stage: dependents
@@ -47,8 +41,3 @@ trigger_cl:
   only:
     - master
 
-clean:
-  stage: cleanup
-  script:
-    - docker rmi $LOCAL_IMAGE_NAME
-  when: always

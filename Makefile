@@ -222,8 +222,8 @@ desc/%: check/%
 	@test/$* -d
 
 check: $(addprefix check/, $(TESTS))
-testbot-check: $(addprefix testbot-check/, $(TESTS))
-desc-check: $(addprefix desc/, $(TESTS))
+check-testbot: $(addprefix testbot-check/, $(TESTS))
+check-desc: $(addprefix desc/, $(TESTS))
 
 # Makefile target to support automated testing.
 tests.md: clang-mutate
