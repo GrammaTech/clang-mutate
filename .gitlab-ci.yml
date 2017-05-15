@@ -16,19 +16,16 @@ build-test-tag:
     - cat Dockerfile|sed "s/CI_COMMIT_SHA/$CI_COMMIT_SHA/" > Dockerfile.tmp
     - docker build -f Dockerfile.tmp -t $LOCAL_IMAGE_NAME .
 
-    # If on master branch, push test results to DataManager; otherwise, run locally.
+    # If on master branch, push test results to DataManager and push
+    # up a new "latest" image, otherwise, run locally.
     - if [ "$CI_BUILD_REF_NAME" = "master" ];
       then
-          docker run $LOCAL_IMAGE_NAME /bin/bash -c "cd /gt/clang-mutate && make check-testbot";
+          docker run -e LOCAL_USER=root $LOCAL_IMAGE_NAME /bin/bash -c "cd /gt/clang-mutate && make check-testbot";
+          docker tag $LOCAL_IMAGE_NAME $DOCKER_REGISTRY/$CI_PROJECT_PATH:latest;
+          docker push $DOCKER_REGISTRY/$CI_PROJECT_PATH:latest;
       else
-          docker run $LOCAL_IMAGE_NAME /bin/bash -c "cd /gt/clang-mutate && make check";
+          docker run -e LOCAL_USER=root $LOCAL_IMAGE_NAME /bin/bash -c "cd /gt/clang-mutate && make check";
       fi
-
-    # If on master branch, push up a new "latest" image.
-    - '[ "$CI_BUILD_REF_NAME" = "master" ] &&
-      docker tag $LOCAL_IMAGE_NAME $DOCKER_REGISTRY/$CI_PROJECT_PATH:latest'
-    - '[ "$CI_BUILD_REF_NAME" = "master" ] &&
-      docker push $DOCKER_REGISTRY/$CI_PROJECT_PATH:latest'
 
     # Cleanup
     - rm -f Dockerfile.tmp
