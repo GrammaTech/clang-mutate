@@ -1,5 +1,4 @@
-
-FROM docker.grammatech.com:14850/synthesis/clang:latest
+FROM docker.grammatech.com:14850/synthesis/clang
 
 RUN apt-get -y update && \
     apt-get -y install wdiff libtinfo-dev libz-dev libxcb1-dev

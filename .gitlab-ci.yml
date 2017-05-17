@@ -1,6 +1,6 @@
 variables:
   DOCKER_REGISTRY: "docker.grammatech.com:14850"
-  LOCAL_IMAGE_NAME: '$CI_BUILD_REF_NAME-$CI_PIPELINE_ID'
+  LOCAL_IMAGE_NAME: '$CI_PROJECT_PATH-$CI_PIPELINE_ID'
 
 before_script:
   - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $DOCKER_REGISTRY
