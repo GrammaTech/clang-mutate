@@ -37,4 +37,3 @@ trigger_cl:
     - "curl -X POST -F token=e89405aa157de24364bb6e4ba0f3c3 -F ref=master https://git.grammatech.com/api/v4/projects/194/trigger/pipeline"
   only:
     - master
-

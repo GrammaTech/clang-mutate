@@ -1,7 +1,7 @@
 FROM docker.grammatech.com:14850/synthesis/clang
 
 RUN apt-get -y update && \
-    apt-get -y install wdiff libtinfo-dev libz-dev libxcb1-dev
+    apt-get -y install wdiff libtinfo-dev libz-dev libxcb1-dev pandoc
 
 ENV GT_DOCKER_CHOWN_PATHS=""
 
