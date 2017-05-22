@@ -69,6 +69,9 @@ man:
 doc:
 	make -C man
 
+man/clang-mutate.1.gz: man/clang-mutate.template.md
+	make -C man clang-mutate.1.gz
+
 .PHONY: clean
 clean:
 	-rm -f $(EXES) $(OBJECTS) a.out etc/hello etc/hello.ll etc/loop *~
@@ -79,8 +82,9 @@ real-clean: clean
 	-$(MAKE) -C $(JANSSON_DIR) clean
 	-$(MAKE) -C $(JSHON_DIR) clean
 
-install: clang-mutate
-	cp $< $$(dirname $$(which clang$(LLVM_POSTFIX)))
+install: clang-mutate man/clang-mutate.1.gz
+	install -Dm755 clang-mutate $$(dirname $$(which clang$(LLVM_POSTFIX)))
+	install -Dm644 man/clang-mutate.1.gz $$(dirname $$(dirname $$(which clang$(LLVM_POSTFIX))))/share/man/man1/
 
 
 # Test prerequisite binaries
