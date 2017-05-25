@@ -22,3 +22,6 @@ local.mk
 GPATH
 GRTAGS
 GTAGS
+
+clang-mutate_pkg/
+src/clang-mutate_pkg/

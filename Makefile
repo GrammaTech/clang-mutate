@@ -57,7 +57,7 @@ JANSSON_LIB = $(JANSSON_DIR)/lib/libjansson.a
 GTR_DIR = third-party/gtr
 
 all: $(EXES)
-.PHONY: clean install tests.md auto-check
+.PHONY: clean install tests.md auto-check man doc
 
 %: %.o
 	$(CXX) -o $@ $<
@@ -65,8 +65,7 @@ all: $(EXES)
 clang-mutate: $(OBJECTS)
 	$(CXX) -o $@ $^ $(CLANGLIBS) $(LLVMLDFLAGS) $(SYSLIBS)
 
-man:
-doc:
+man doc:
 	make -C man
 
 man/clang-mutate.1.gz: man/clang-mutate.template.md
