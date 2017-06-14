@@ -1,0 +1,9 @@
+int a;
+char *b;
+char *c[10];
+int d;
+struct {
+    int x;
+    int y;
+    char z;
+} e;

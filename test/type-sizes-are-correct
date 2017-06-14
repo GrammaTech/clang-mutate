@@ -1,0 +1,27 @@
+#!/bin/bash
+. $(dirname $0)/common
+
+out=$(run_types -json)
+
+# Regular char
+size=$(echo $out | json_filter 'type' '"char"' | grep '"pointer":false' \
+              | jshon -e "size")
+equals $size 1
+
+# Pointer to char
+size=$(echo $out | json_filter 'type' '"char"' | grep '"pointer":true' \
+              | grep '"array":""' | jshon -e "size")
+equals $size 8
+
+# Integer
+size=$(echo $out | json_filter 'type' '"int"' | jshon -e "size")
+equals $size 4
+
+# Fixed-size array of char*
+size=$(echo $out | json_filter 'type' '"char"' | grep '"pointer":true' \
+              | grep -F '"array":"[10]"' | jshon -e "size")
+equals $size 80
+
+# Struct
+size=$(echo $out | json_filter 'type' '""' | jshon -e "size")
+equals $size 12

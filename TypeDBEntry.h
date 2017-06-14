@@ -24,7 +24,8 @@ public:
                               const std::string & _file,
                               const unsigned int & _line,
                               const unsigned int & _col,
-                              const std::set<Hash> & _reqs);
+                              const std::set<Hash> & _reqs,
+                              const uint64_t & _size);
 
     static TypeDBEntry mkFwdDecl(const std::string & _name,
                                  const bool & _pointer,
@@ -43,8 +44,9 @@ public:
                                  const unsigned int & _col,
                                  const std::vector<std::string> & _ifile,
                                  const std::vector<unsigned int> & _iline,
-                                 const std::vector<unsigned int> & _icol);
-    
+                                 const std::vector<unsigned int> & _icol,
+                                 const uint64_t & _size);
+
     static TypeDBEntry find_type(Hash hash);
 
     std::string name() const { return m_name; }
@@ -78,10 +80,12 @@ private:
     Hash        m_hash;
     bool        m_is_include;
     std::set<Hash> m_reqs;
+    uint64_t m_size;
 };
 
 Hash hash_type(const clang::Type * t,
-               clang::CompilerInstance * ci);
+               clang::CompilerInstance * ci,
+               clang::ASTContext *context);
 
 } // end namespace clang_mutate
 

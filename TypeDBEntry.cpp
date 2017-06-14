@@ -17,7 +17,8 @@ TypeDBEntry TypeDBEntry::mkType(const std::string & _name,
                                 const std::string & _file,
                                 const unsigned int & _line,
                                 const unsigned int & _col,
-                                const std::set<Hash> & _reqs)
+                                const std::set<Hash> & _reqs,
+                                const uint64_t & _size)
 {
     TypeDBEntry ti;
     ti.m_name = _name;
@@ -29,6 +30,7 @@ TypeDBEntry TypeDBEntry::mkType(const std::string & _name,
     ti.m_col = _col;
     ti.m_reqs = _reqs;
     ti.m_is_include = false;
+    ti.m_size = _size;
     ti.compute_hash();
     return ti;
 }
@@ -53,6 +55,7 @@ TypeDBEntry TypeDBEntry::mkFwdDecl(const std::string & _name,
     ti.m_line = _line;
     ti.m_col = _col;
     ti.m_is_include = false;
+    ti.m_size = 0;
     ti.compute_hash();
     return ti;
 }
@@ -66,8 +69,9 @@ TypeDBEntry TypeDBEntry::mkInclude(const std::string & _name,
                                    const unsigned int & _col,
                                    const std::vector<std::string> & _ifile,
                                    const std::vector<unsigned int> & _iline,
-                                   const std::vector<unsigned int> & _icol)
-    
+                                   const std::vector<unsigned int> & _icol,
+                                   const uint64_t & _size)
+
 {
     TypeDBEntry ti;
     ti.m_is_include = true;
@@ -81,6 +85,7 @@ TypeDBEntry TypeDBEntry::mkInclude(const std::string & _name,
     ti.m_ifile = _ifile;
     ti.m_iline = _iline;
     ti.m_icol = _icol;
+    ti.m_size = _size;
     ti.compute_hash();
     return ti;
 }
@@ -140,7 +145,9 @@ picojson::value TypeDBEntry::toJSON() const
         jsonObj["decl"] = to_json(m_text);
     }
     jsonObj["reqs"] = to_json(j_reqs);
-    
+    if (m_size != 0)
+        jsonObj["size"] = to_json(m_size / 8);
+
     return to_json(jsonObj);
 }
 
@@ -164,10 +171,27 @@ static std::string safe_get_filename(PresumedLoc loc)
         return "";
 }
 
+uint64_t get_type_size(ASTContext * context, const Type * t)
+{
+    // Can't get size of these kinds of types
+    if (t->isIncompleteType() || t->isDependentType()
+        || t->isUndeducedType())
+        return 0;
+    // Some builtin types will crash in getTypeSize().
+    // For example '<bound member function type>', which can occur in C++
+    // code. I have not found a better way to detect these, so instead
+    // whitelist builtin types which we know are safe.
+    const BuiltinType *bt = t->getAs<BuiltinType>();
+    if (bt && !(bt->isInteger() || bt->isFloatingPoint()))
+        return 0;
+    return context->getTypeSize(t);
+}
+
 static Hash define_type(
     const Type * t,
     std::map<const Type*, Hash> & seen,
-    CompilerInstance * ci)
+    CompilerInstance * ci,
+    ASTContext *context)
 {
     if (t == NULL)
         return 0;
@@ -176,6 +200,8 @@ static Hash define_type(
     // name later.
     bool pointer = false;
     std::string size_mod = "";
+
+    uint64_t size = get_type_size(context, t);
 
     while (t->isArrayType() || t->isPointerType()) {
         if (t->isArrayType()) {
@@ -204,7 +230,7 @@ static Hash define_type(
 
             // Pointer to pointer
             if (t->isPointerType()) {
-                Hash pointee_hash = define_type(t, seen, ci);
+                Hash pointee_hash = define_type(t, seen, ci, context);
                 std::set<Hash> reqs;
                 reqs.insert(pointee_hash);
 
@@ -220,7 +246,8 @@ static Hash define_type(
                         "",
                         0,
                         0,
-                        reqs).hash();
+                        reqs,
+                        size).hash();
                 seen[t] = hash;
                 return hash;
             }
@@ -263,7 +290,8 @@ static Hash define_type(
                 beginLoc.getColumn(),
                 ifiles,
                 ilines,
-                icols).hash();
+                icols,
+                size).hash();
             seen[t] = hash;
             return hash;
         }
@@ -273,7 +301,7 @@ static Hash define_type(
 
             // Emit underlying type
             std::set<Hash> reqs;
-            reqs.insert(define_type(u_tt, seen, ci));
+            reqs.insert(define_type(u_tt, seen, ci, context));
 
             // Emit the typedef itself
             // Exception: in the case of an underlying composite type,
@@ -325,7 +353,8 @@ static Hash define_type(
                     safe_get_filename(beginLoc),
                     beginLoc.getLine(),
                     beginLoc.getColumn(),
-                    reqs).hash();
+                    reqs,
+                    size).hash();
                 seen[t] = hash;
                 return hash;
             }
@@ -351,9 +380,10 @@ static Hash define_type(
                                                      safe_get_filename(beginLoc),
                                                      beginLoc.getLine(),
                                                      beginLoc.getColumn(),
-                                                     reqs);
+                                                     reqs,
+                                                     size);
                 seen[t] = ti.hash();
-                return ti.hash();     
+                return ti.hash();
             }
         }
     }
@@ -374,7 +404,8 @@ static Hash define_type(
             0,
             ifiles,
             ilines,
-            icols).hash();
+            icols,
+            size).hash();
         seen[t] = hash;
         return hash;
     }
@@ -419,7 +450,7 @@ static Hash define_type(
              it != rd->field_end();
              ++it)
         {
-            Hash h = define_type(it->getType().getTypePtr(), seen, ci);
+            Hash h = define_type(it->getType().getTypePtr(), seen, ci, context);
             reqs.insert(h);
         }
 
@@ -447,7 +478,8 @@ static Hash define_type(
                                              safe_get_filename(beginLoc),
                                              beginLoc.getLine(),
                                              beginLoc.getColumn(),
-                                             reqs);
+                                             reqs,
+                                             size);
         seen[t] = ti.hash();
         return ti.hash();
     }
@@ -455,8 +487,9 @@ static Hash define_type(
     return 0;
 }
 
-Hash clang_mutate::hash_type(const Type * t, CompilerInstance * ci)
+Hash clang_mutate::hash_type(const Type * t, CompilerInstance * ci,
+                             ASTContext *context)
 {
     std::map<const Type*, Hash> seen;
-    return define_type(t, seen, ci);
+    return define_type(t, seen, ci, context);
 }

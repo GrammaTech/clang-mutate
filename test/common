@@ -73,6 +73,8 @@ ARRAY_INITIALIZER=etc/array-initializer.c
 
 ARROW_OPERATOR=etc/arrow-operator.cpp
 
+TYPES=etc/types.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -162,6 +164,9 @@ run_array_initializer(){
 
 run_arrow_operator(){
     clang-mutate "$@" $ARROW_OPERATOR --; }
+
+run_types(){
+    clang-mutate "$@" $TYPES --; }
 
 json_filter(){
     cat -|$JSHON -a -j|grep "\"${1}\":${2}\(,\|}\)"; }

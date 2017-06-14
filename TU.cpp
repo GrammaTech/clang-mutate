@@ -1,6 +1,5 @@
 #include "TU.h"
 
-#include "Bindings.h"
 #include "Cfg.h"
 #include "Macros.h"
 #include "Renaming.h"
@@ -219,7 +218,7 @@ class BuildTU
                                                          .getTypePtrOrNull() :
                                  NULL;
             if (tdecl) {
-                types.insert(hash_type(tdecl, ci));
+                types.insert(hash_type(tdecl, ci, Context));
             }
 
             AuxDBEntry decl;
@@ -283,12 +282,13 @@ class BuildTU
                     args.push_back(
                             std::make_pair(
                                     id ? id->getName().str() : "",
-                                    hash_type(p->getType().getTypePtr(), ci)));
+                                    hash_type(p->getType().getTypePtr(), ci,
+                                              Context)));
                 }
 
                 AuxDBEntry &proto = ast->aux();
                 proto.set("name", F->getNameAsString());
-                proto.set("ret", hash_type(ret.getTypePtr(), ci));
+                proto.set("ret", hash_type(ret.getTypePtr(), ci, Context));
                 proto.set("void_ret", ret.getTypePtr()->isVoidType());
                 proto.set("args", args);
                 proto.set("varargs", F->isVariadic());

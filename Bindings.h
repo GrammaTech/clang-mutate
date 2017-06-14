@@ -57,12 +57,17 @@ class GetBindingCtx
 
 public:
 
-  GetBindingCtx(clang::CompilerInstance * _ci) : ctx(), ci(_ci) {}
+  GetBindingCtx(clang::CompilerInstance * _ci,
+                clang::ASTContext * _context) : ctx(), ci(_ci),
+                                                context(_context) {}
 
   GetBindingCtx(const BindingCtx & _ctx,
-                clang::CompilerInstance * _ci) : ctx(_ctx), ci(_ci) {}
+                clang::CompilerInstance * _ci,
+                clang::ASTContext * _context) : ctx(_ctx), ci(_ci),
+                                                context(_context) {}
 
-  GetBindingCtx(const GetBindingCtx & b) : ctx(b.ctx), ci(b.ci) {}
+  GetBindingCtx(const GetBindingCtx & b) : ctx(b.ctx), ci(b.ci),
+                                           context(b.context) {}
 
   bool TraverseVarDecl(clang::VarDecl * decl);
 
@@ -88,8 +93,9 @@ private:
   std::set<Hash> addl_types;
   std::set<std::string> includes;
   clang::CompilerInstance * ci;
+  clang::ASTContext * context;
 };
- 
+
 } // end namespace clang_mutate
 
 #endif

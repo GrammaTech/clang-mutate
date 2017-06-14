@@ -172,7 +172,8 @@ TESTS =	help-text-appears				\
 	do-loop-body-is-full-statement			\
 	if-body-is-full-statement                       \
 	array-initializer-has-correct-children 		\
-	operator-call-expr-ranges
+    operator-call-expr-ranges                       \
+    type-sizes-are-correct
 
 etc/hello: etc/hello.c
 	$(CXX) -g -O0 $< -o $@
