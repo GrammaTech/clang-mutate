@@ -123,7 +123,7 @@ picojson::value TypeDBEntry::toJSON() const
 
     std::set<Hash> j_reqs = m_reqs;
     j_reqs.erase(Hash(0));
-    
+
     jsonObj["hash"] = to_json(m_hash);
     jsonObj["type"] = to_json(m_name);
     jsonObj["pointer"] = to_json(m_pointer);
@@ -179,16 +179,22 @@ static Hash define_type(
 
     while (t->isArrayType() || t->isPointerType()) {
         if (t->isArrayType()) {
-            switch(t->getAsArrayTypeUnsafe()->getSizeModifier()){
+            std::string len_str = "";
+            if (isa<ConstantArrayType>(t)) {
+                uint64_t len = static_cast<const ConstantArrayType *>(t)->getSize().getLimitedValue();
+                len_str = std::to_string(len);
+            }
+
+            switch(t->getAsArrayTypeUnsafe()->getSizeModifier()) {
             case ArrayType::Normal:
-                size_mod += "[]";
-                break;
+              size_mod += "[" + len_str + "]";
+              break;
             case ArrayType::Static:
-                size_mod += "[static]";
-                break;
+              size_mod += "[static " + len_str + "]";
+              break;
             case ArrayType::Star:
-                size_mod += "[*]";
-                break;
+              size_mod += "[*]";
+              break;
             }
             t = t->getAsArrayTypeUnsafe()->getElementType().getTypePtr();
         }
@@ -228,7 +234,7 @@ static Hash define_type(
     // Now handle the normal type.
     if (t->getAs<TypedefType>()) {
         TypedefNameDecl * td = t->getAs<TypedefType>()->getDecl();
-        
+
         std::string header;
         SourceManager & sm = ci->getSourceManager();
         SourceLocation loc = sm.getSpellingLoc(td->getSourceRange().getBegin());
@@ -337,7 +343,7 @@ static Hash define_type(
                     it = it.getLocWithOffset(1);
                 }
                 text += ";";
-        
+
                 TypeDBEntry ti = TypeDBEntry::mkType(td->getNameAsString(),
                                                      pointer,
                                                      size_mod,
@@ -372,9 +378,9 @@ static Hash define_type(
         seen[t] = hash;
         return hash;
     }
-    
+
     else if (t->isStructureType() || t->isUnionType()) {
-        const RecordType * rt = t->isStructureType() ? 
+        const RecordType * rt = t->isStructureType() ?
                                 t->getAsStructureType() :
                                 t->getAsUnionType();
         RecordDecl * decl = rt->getDecl();
@@ -388,7 +394,7 @@ static Hash define_type(
         std::set<Hash> reqs;
 
         // Forward-declare the struct/class if it is not anonymous
-        
+
         if (rd->getNameAsString() != "") {
             SourceManager & sm = ci->getSourceManager();
             PresumedLoc beginLoc =
@@ -407,7 +413,7 @@ static Hash define_type(
             seen[t] = fdecl.hash();
             reqs.insert(fdecl.hash());
         }
-        
+
         // Define the member types
         for (RecordDecl::field_iterator it = rd->field_begin();
              it != rd->field_end();
@@ -433,7 +439,7 @@ static Hash define_type(
             text.push_back(*sm.getCharacterData(it));
         }
         text += ";";
-        
+
         TypeDBEntry ti = TypeDBEntry::mkType(rd->getNameAsString(),
                                              pointer,
                                              size_mod,
