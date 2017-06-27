@@ -85,6 +85,14 @@ install: clang-mutate man/clang-mutate.1.gz
 	install -Dm755 clang-mutate $$(dirname $$(which clang$(LLVM_POSTFIX)))
 	install -Dm644 man/clang-mutate.1.gz $$(dirname $$(dirname $$(which clang$(LLVM_POSTFIX))))/share/man/man1/
 
+# This target builds an Arch package from the current state of the
+# repository by first rsync'ing it into the makepkg source directory
+# then running makepkg to build a package.
+local-makepkg:
+	rsync --exclude .git -aruv ./ src/clang-mutate_pkg
+	make -C src/clang-mutate_pkg clean
+	makepkg -ef
+
 
 # Test prerequisite binaries
 $(JANSSON_LIB):
