@@ -13,6 +13,7 @@ compile_commands.json
 *-del.c
 *-ins.c
 *-swp.c
+*.tar.xz
 tests.md
 tests.html
 *~
@@ -25,3 +26,4 @@ GTAGS
 
 clang-mutate_pkg/
 src/clang-mutate_pkg/
+pkg/
