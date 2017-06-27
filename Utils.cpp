@@ -343,31 +343,58 @@ bool in_header(
     SourceManager & sm = ci->getSourceManager();
     if (sm.isWrittenInMainFile(loc))
         return false;
-    // We should have already checked that loc does not belong
-    // to a system header at this point, and it wasn't spelled
-    // out in the main file; it must belong to some locally
-    // included header.
+
     SourceLocation last_hdr = loc;
-    while (!sm.isWrittenInMainFile(loc) && last_hdr.isValid()) {
-        last_hdr = loc;
-        loc = sm.getIncludeLoc(sm.getFileID(loc));
+    if (sm.isInSystemHeader(loc) || sm.isInExternCSystemHeader(loc)) {
+        // loc is in a system header
+        while (sm.isInSystemHeader(loc) || sm.isInExternCSystemHeader(loc)) {
+            last_hdr = loc;
+            loc = sm.getIncludeLoc(sm.getFileID(loc));
+        }
+
+        last_hdr = sm.getSpellingLoc(last_hdr);
+        PresumedLoc pl = sm.getPresumedLoc(last_hdr);
+        std::string filename = Utils::safe_realpath(pl.getFilename());
+        header = "";
+
+        for (auto it = ci->getHeaderSearchOpts().UserEntries.begin();
+             it != ci->getHeaderSearchOpts().UserEntries.end() &&
+               header.empty();
+             it++) {
+            std::string path = Utils::safe_realpath(it->Path);
+            if (!path.empty() && filename.find(path) != std::string::npos) {
+                header = "<" + filename.substr(path.length() + 1) + ">";
+            }
+        }
+
+        if (header.empty())
+            return false;
     }
+    else {
+        if (!loc.isValid())
+            return false;
 
-    if (last_hdr.isInvalid())
-        return false;
-    loc = last_hdr;
+        PresumedLoc pl = sm.getPresumedLoc(sm.getSpellingLoc(loc));
+        std::string filename = Utils::safe_realpath(pl.getFilename());
+        header = "";
 
-    SourceLocation spell =
-        sm.getSpellingLoc(sm.getIncludeLoc(sm.getFileID(loc)));
-    char target = sm.getCharacterData(spell)[0] == '<' ? '>' : '\"';
-    header.clear();
-    char c = sm.getCharacterData(spell)[0];
-    do {
-        header.push_back(c);
-        spell = spell.getLocWithOffset(1);
-        c = sm.getCharacterData(spell)[0];
-    } while (c != '\n' && c != target);
-    header.push_back(target);
+        for (auto it = ci->getHeaderSearchOpts().UserEntries.begin();
+             it != ci->getHeaderSearchOpts().UserEntries.end() &&
+               header.empty();
+             it++) {
+            std::string path = Utils::safe_realpath(it->Path);
+            if (!path.empty() && filename.find(path) != std::string::npos) {
+                header = "" + filename.substr(path.length() + 1) + "";
+            }
+        }
+
+        if (header.empty()) {
+            if (filename.find_last_of("/") != std::string::npos)
+                header = filename.substr(filename.find_last_of("/") + 1);
+            else
+                return false;
+        }
+    }
 
     return true;
 }
