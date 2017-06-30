@@ -34,7 +34,7 @@ bool FAF::runInvocation(std::shared_ptr<clang::CompilerInvocation> Invocation,
     static clang_mutate::TURef next_tuid = 0;
     clang::CompilerInstance * Compiler = new clang::CompilerInstance;
     clang_mutate::TURef tuid = next_tuid++;
-    clang_mutate::TUs[tuid] = new clang_mutate::TU(tuid);
+    clang_mutate::TUs[tuid] = new clang_mutate::TU(tuid, Compiler);
 
     clang_mutate::tu_in_progress = clang_mutate::TUs[tuid];
 
@@ -55,7 +55,6 @@ bool FAF::runInvocation(std::shared_ptr<clang::CompilerInvocation> Invocation,
         = sm.getBufferData(sm.getMainFileID()).str();
 
     Files->clearStatCaches();
-    delete Compiler;
     return Success;
 }
 

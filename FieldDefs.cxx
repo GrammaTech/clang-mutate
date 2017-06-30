@@ -78,9 +78,8 @@ AST_FIELD_P( opcode, std::string,
   { return ast.opcode(); }
   )
 
-AST_FIELD( macros, std::set<Macro>,
-  "The macros used by this statement.\n"
-  "The first element of a macro is the name; the second is the definition.",
+AST_FIELD( macros, std::set<Hash>,
+  "The macros used by this statement.\n",
   { return ast.macros(); }
   )
 

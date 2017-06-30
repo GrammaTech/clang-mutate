@@ -97,7 +97,7 @@ public:
     void setExprType(Hash type)
     { m_expr_type = type; }
 
-    void setMacros(const std::set<Macro> & macros)
+    void setMacros(const std::set<Hash> & macros)
     { m_macros = macros; }
 
     std::set<std::string> includes() const
@@ -109,7 +109,7 @@ public:
     Hash expr_type() const
     { return m_expr_type; }
 
-    std::set<Macro> macros() const
+    std::set<Hash> macros() const
     { return m_macros; }
 
     PTNode scopePosition() const
@@ -327,7 +327,7 @@ private:
     Hash m_expr_type;
     std::set<std::string> m_includes;
     PTNode m_scope_pos;
-    std::set<Macro> m_macros;
+    std::set<Hash> m_macros;
     std::set<VariableInfo> m_free_vars;
     std::set<FunctionInfo> m_free_funs;
     std::string m_opcode;

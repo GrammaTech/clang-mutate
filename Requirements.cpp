@@ -67,7 +67,10 @@ bool Requirements::VisitDeclRefExpr(DeclRefExpr * expr)
     ValueDecl * vdecl     = declref->getDecl();
     std::string name      = vdecl->getQualifiedNameAsString();
     IdentifierInfo * id   = vdecl->getIdentifier();
-    if (id != NULL && !ctx.is_bound(name)) {
+    bool isMacro = Utils::contains_macro(expr, ci->getSourceManager()) &&
+                   vdecl->getLocStart().isMacroID();
+
+    if (id != NULL && !ctx.is_bound(name) && !isMacro) {
         std::string header;
         if (Utils::in_header(vdecl->getLocation(), ci, header)) {
             m_includes.insert(header);
@@ -107,24 +110,8 @@ bool Requirements::VisitExplicitCastExpr(
 void Requirements::gatherMacro(Stmt * stmt)
 {
     SourceManager & sm = ci->getSourceManager();
-    LangOptions & langOpts = ci->getLangOpts();
-    
-    SourceRange R = stmt->getSourceRange();
 
-    SourceLocation sb = sm.getSpellingLoc(R.getBegin());
-    SourceLocation se = sm.getSpellingLoc(R.getEnd())
-                                          .getLocWithOffset(1);
-    SourceRange sr(sb, se);
-
-    SourceLocation xb = sm.getExpansionRange(R.getBegin()).first;
-    SourceLocation xe = sm.getExpansionRange(R.getEnd()).second;
-    SourceRange xr(xb, xe);
-
-    std::pair<SourceLocation,SourceLocation> ixbe =
-        sm.getImmediateExpansionRange(R.getBegin());
-    SourceRange ixr(ixbe.first, ixbe.second);
-    
-    if (xr == ixr) {
+    if (Utils::contains_macro(stmt, sm)) {
         if (is_first == true)
             toplev_is_macro = true;
         Preprocessor & pp = ci->getPreprocessor();
@@ -132,28 +119,24 @@ void Requirements::gatherMacro(Stmt * stmt)
         MacroInfo * mi = pp.getMacroInfo(pp.getIdentifierInfo(name));
 
         if ( mi != NULL ){
-            SourceRange def(mi->getDefinitionLoc(), mi->getDefinitionEndLoc());
-            
-            std::string body;
-            SourceLocation end =
-                Lexer::getLocForEndOfToken(def.getEnd(), 0, sm, langOpts)
-                .getLocWithOffset(1);
-
-            for (SourceLocation it = def.getBegin();
-                 it != end;
-                 it = it.getLocWithOffset(1))
-            {
-                body.push_back(sm.getCharacterData(it)[0]);
-            }
-            while (body.back() == '\n' || body.back() == '\r')
-                body.pop_back();
-
+            SourceLocation ib = sm.getImmediateExpansionRange(
+                                    stmt->getSourceRange().getBegin()).first;
+            SourceLocation sb = sm.getSpellingLoc(ib);
+            SourceLocation mb = mi->getDefinitionLoc();
             std::string header;
-            if (Utils::in_header(mi->getDefinitionLoc(), ci, header)) {
+
+            if (Utils::in_header(ib, ci, header)) {
                 m_includes.insert(header);
             }
-            else {
-                m_macros.insert(Macro(name.str(), body));
+            else if (MacroDB::getInstance(ci).find(sm.getPresumedLoc(sb))) {
+                const Macro* m = MacroDB::getInstance(ci).find(
+                                     sm.getPresumedLoc(sb));
+                m_macros.insert(m->hash());
+            }
+            else if (MacroDB::getInstance(ci).find(sm.getPresumedLoc(mb))) {
+                const Macro* m = MacroDB::getInstance(ci).find(
+                                     sm.getPresumedLoc(mb));
+                m_macros.insert(m->hash());
             }
         }
     }
@@ -179,7 +162,7 @@ std::set<FunctionInfo> Requirements::functions() const
 std::set<std::string> Requirements::includes() const
 { return m_includes; }
 
-std::set<Macro> Requirements::macros() const
+std::set<Hash> Requirements::macros() const
 { return m_macros; }
 
 std::set<Hash> Requirements::types() const

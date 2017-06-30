@@ -94,7 +94,10 @@ bool GetBindingCtx::VisitStmt(Stmt * expr)
     ValueDecl * vdecl     = declref->getDecl();
     std::string name      = vdecl->getQualifiedNameAsString();
     IdentifierInfo * id   = vdecl->getIdentifier();
-    if (id != NULL && !ctx.is_bound(name)) {
+    bool isMacro = Utils::contains_macro(expr, ci->getSourceManager()) &&
+                   vdecl->getLocStart().isMacroID();
+
+    if (id != NULL && !ctx.is_bound(name) && !isMacro) {
         std::string header;
         if (Utils::in_header(vdecl->getLocation(), ci, header)) {
             includes.insert(header);

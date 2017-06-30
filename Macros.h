@@ -1,6 +1,7 @@
 #ifndef GET_MACROS_H
 #define GET_MACROS_H
 
+#include "Hash.h"
 #include "Json.h"
 
 #include "clang/Basic/LLVM.h"
@@ -23,9 +24,13 @@ class Macro
 {
 public:
     Macro(const std::string & n,
-          const std::string & b)
+          const std::string & b,
+          const clang::PresumedLoc & start,
+          const clang::PresumedLoc & end)
         : m_name(n)
         , m_body(b)
+        , m_start(start)
+        , m_end(end)
     {}
 
     bool operator<(const Macro & other) const
@@ -35,68 +40,53 @@ public:
         return m_body < other.m_body;
     }
 
-    std::string name() const { return m_name; }
-    std::string body() const { return m_body; }
+    Hash hash() const;
 
+    const std::string name() const { return m_name; }
+    const std::string body() const { return m_body; }
+    const clang::PresumedLoc start() const { return m_start; }
+    const clang::PresumedLoc end() const { return m_end; }
 private:
     std::string m_name;
     std::string m_body;
+    clang::PresumedLoc m_start;
+    clang::PresumedLoc m_end;
 };
 
-typedef std::set<Macro> Macros;
-
-class GetMacros
-    : public clang::ASTConsumer
-    , public clang::RecursiveASTVisitor<GetMacros>
+class MacroDB
 {
-  typedef RecursiveASTVisitor<GetMacros> Base;
-
 public:
+    static MacroDB & getInstance(clang::CompilerInstance * _CI);
 
-  GetMacros(clang::SourceManager & _sm,
-            const clang::LangOptions & _langOpts,
-            clang::CompilerInstance * _CI)
-      : sm(_sm)
-      , macros()
-      , langOpts(_langOpts)
-      , CI(_CI)
-      , toplev_is_macro(false)
-      , is_first(true)
-  {}
+    MacroDB(const MacroDB &) = delete;
+    MacroDB& operator=(const MacroDB &) = delete;
 
-  GetMacros(const GetMacros & m)
-      : sm(m.sm)
-      , macros(m.macros)
-      , langOpts(m.langOpts)
-      , CI(m.CI)
-      , toplev_is_macro(m.toplev_is_macro)
-      , is_first(m.is_first)
-  {}
+    const Macro* find(const clang::PresumedLoc & loc ) const;
+    const Macro* find(const std::string & name) const;
+    const Macro* find(const Macro & macro) const;
+    const Macro* find(const Hash & hash) const;
 
-  bool VisitStmt(clang::Stmt * stmt);
-
-  Macros result() const { return macros; }
-
-  std::set<std::string> required_includes() const { return includes; }
-
-  bool toplevel_is_macro() const { return toplev_is_macro; }  
-
+    picojson::array databaseToJSON();
 private:
-  clang::SourceManager & sm;
-  Macros macros;
-  std::set<std::string> includes;
-  const clang::LangOptions & langOpts;
-  clang::CompilerInstance * CI;
-  bool toplev_is_macro, is_first;
+    MacroDB() {}
+
+    MacroDB(clang::CompilerInstance *CI);
+
+    std::map<Hash, Macro> m_macros;
 };
 
 } // end namespace clang_mutate
 
 template <> inline
 picojson::value to_json(const clang_mutate::Macro & m)
-{ return to_json(std::make_pair(m.name(), m.body())); }
+{
+    picojson::object jsonObj;
 
-template <> struct describe_json<clang_mutate::Macro>
-{ static std::string str() {  return "[name, definition]"; } };
+    jsonObj["hash"] = to_json(m.hash());
+    jsonObj["name"] = to_json(m.name());
+    jsonObj["body"] = to_json(m.body());
+
+    return to_json(jsonObj);
+}
 
 #endif

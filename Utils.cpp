@@ -345,9 +345,11 @@ bool in_header(
         return false;
 
     SourceLocation last_hdr = loc;
-    if (sm.isInSystemHeader(loc) || sm.isInExternCSystemHeader(loc)) {
+    if (sm.isInSystemHeader(sm.getSpellingLoc(loc)) ||
+        sm.isInExternCSystemHeader(sm.getSpellingLoc(loc))) {
         // loc is in a system header
-        while (sm.isInSystemHeader(loc) || sm.isInExternCSystemHeader(loc)) {
+        while (sm.isInSystemHeader(sm.getSpellingLoc(loc)) ||
+               sm.isInExternCSystemHeader(sm.getSpellingLoc(loc))) {
             last_hdr = loc;
             loc = sm.getIncludeLoc(sm.getFileID(loc));
         }

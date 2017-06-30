@@ -49,7 +49,7 @@ public:
     std::set<FunctionInfo> functions()   const;
     std::set<std::string>  includes()    const;
     std::set<Hash>         types()       const;
-    std::set<Macro>        macros()      const;
+    std::set<Hash>         macros()      const;
     std::string            text()        const;
     AstRef                 parent()      const;
     PTNode                 scopePos()    const;
@@ -111,7 +111,7 @@ private:
     std::set<FunctionInfo> m_funs;
     std::set<std::string> m_includes;
     std::set<Hash> addl_types;
-    std::set<Macro> m_macros;
+    std::set<Hash> m_macros;
     AstRef m_parent;
     PTNode m_scope_pos;
     clang::PresumedLoc m_begin_ploc;

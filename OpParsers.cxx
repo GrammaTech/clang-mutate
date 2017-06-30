@@ -224,6 +224,24 @@ struct types_op
     { return { "Print a JSON representation of the type database." }; }
 };
 
+extern const char macros_[] = "macros";
+struct macros_op
+{
+    typedef str_<macros_> command;
+    typedef tokens< command, p_tu > parser;
+
+    static RewritingOpPtr make(TURef const& tuid)
+    {
+        TU & tu = *TUs[tuid];
+        std::ostringstream oss;
+        oss << to_json(MacroDB::getInstance(tu.ci).databaseToJSON());
+        return echo(oss.str());
+    }
+
+    static std::vector<std::string> purpose()
+    { return { "Print a JSON representation of the macros database." }; }
+};
+
 extern const char echo_[] = "echo";
 struct echo_op
 {
@@ -723,13 +741,20 @@ struct json_op
 
         bool include_aux = false;
         std::set<std::string> aux_keys;
-        std::vector<std::string> auxf = { "types", "decls", "asts" };
+        std::vector<std::string> auxf = { "types", "macros", "decls", "asts" };
         (void) aux_fields.get(auxf);
         for (auto & a : auxf)
             aux_keys.insert(a);
         for (auto & aux_key : aux_keys) {
             if (aux_key == "types") {
                 for (auto & entry : TypeDBEntry::databaseToJSON()) {
+                    oss << sep << to_json(entry);
+                    sep = ",";
+                }
+            }
+            else if (aux_key == "macros") {
+                for (auto & entry : MacroDB::getInstance(tu.ci)
+                                            .databaseToJSON()) {
                     oss << sep << to_json(entry);
                     sep = ",";
                 }
@@ -783,13 +808,21 @@ struct sexp_op
 
         bool include_aux = false;
         std::set<std::string> aux_keys;
-        std::vector<std::string> auxf = { "types", "decls", "asts" };
+        std::vector<std::string> auxf = { "types", "macros", "decls", "asts" };
         (void) aux_fields.get(auxf);
         for (auto & a : auxf)
             aux_keys.insert(a);
         for (auto & aux_key : aux_keys) {
             if (aux_key == "types") {
                 for (auto & entry : TypeDBEntry::databaseToJSON()) {
+                    oss << sep;
+                    serialize_as_sexpr(entry, oss);
+                    sep = "\n";
+                }
+            }
+            else if (aux_key == "macros") {
+                for (auto & entry : MacroDB::getInstance(tu.ci)
+                                            .databaseToJSON()) {
                     oss << sep;
                     serialize_as_sexpr(entry, oss);
                     sep = "\n";

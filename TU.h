@@ -17,18 +17,20 @@ namespace clang_mutate {
     
 struct TU
 {
-    TU(TURef _tuid)
+    TU(TURef _tuid, clang::CompilerInstance* ci)
       : tuid(_tuid)
+      , ci(ci)
       , asts()
       , addrMap()
       , llvmInstrMap()
     {}
     ~TU();
     TURef tuid;
-    bool allowDeclAsts;
+    clang::CompilerInstance * ci;
     std::vector<Ast*> asts;
     BinaryAddressMap addrMap;
     LLVMInstructionMap llvmInstrMap;
+    bool allowDeclAsts;
     std::string source;
     Scope scopes;
     std::map<std::string, std::vector<picojson::value> > aux;

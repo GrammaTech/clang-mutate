@@ -10,6 +10,7 @@
 #include "clang/Basic/FileManager.h"
 #include "clang/Basic/SourceManager.h"
 #include "clang/Lex/Lexer.h"
+#include "clang/Lex/MacroInfo.h"
 #include "clang/Frontend/CompilerInstance.h"
 
 namespace Utils {
@@ -113,6 +114,34 @@ bool is_full_stmt(clang::Stmt * stmt, clang_mutate::AstRef parent,
                   clang::CompilerInstance const&);
 bool is_full_stmt(clang::Decl * decl, clang_mutate::AstRef parent,
                   clang::CompilerInstance const&);
+
+template <typename T>
+bool contains_macro(T * clang_obj, clang::SourceManager & sm) {
+    clang::SourceRange R = clang_obj->getSourceRange();
+
+    clang::PresumedLoc xb = sm.getPresumedLoc(
+                                sm.getExpansionRange(R.getBegin()).first);
+    clang::PresumedLoc xe = sm.getPresumedLoc(
+                                sm.getExpansionRange(R.getEnd()).second);
+
+    clang::PresumedLoc ixb = sm.getPresumedLoc(
+                                 sm.getImmediateExpansionRange(
+                                     R.getBegin()).first);
+    clang::PresumedLoc ixe = sm.getPresumedLoc(
+                                 sm.getImmediateExpansionRange(
+                                     R.getEnd()).second);
+
+    return (xb.isValid() && xe.isValid() &&
+            ixb.isValid() && ixe.isValid() &&
+            strcmp(xb.getFilename() != NULL ? xb.getFilename() : "",
+                   ixb.getFilename() != NULL ? ixb.getFilename() : "") == 0 &&
+            strcmp(xe.getFilename() != NULL ? xe.getFilename() : "",
+                   ixe.getFilename() != NULL ? ixe.getFilename() : "") == 0 &&
+            xb.getLine() == ixb.getLine() &&
+            xe.getLine() == xe.getLine() &&
+            xb.getColumn() == ixb.getColumn() &&
+            xe.getColumn() == ixe.getColumn());
+}
 
 } // end namespace Utils
 
