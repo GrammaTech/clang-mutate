@@ -38,13 +38,10 @@ public:
     static TypeDBEntry mkInclude(const std::string & _name,
                                  const bool & _pointer,
                                  const std::string & _array_size,
-                                 const std::string & _header,
                                  const std::string & _file,
                                  const unsigned int & _line,
                                  const unsigned int & _col,
-                                 const std::vector<std::string> & _ifile,
-                                 const std::vector<unsigned int> & _iline,
-                                 const std::vector<unsigned int> & _icol,
+                                 const std::string & _ifile,
                                  const uint64_t & _size);
 
     static TypeDBEntry find_type(Hash hash);
@@ -54,7 +51,7 @@ public:
     std::string file() const { return m_file; }
     unsigned int line() const { return m_line; }
     unsigned int col() const { return m_col; }
-    bool in_include_file() const { return m_is_include; }
+    bool in_include_file() const { return !m_ifile.empty(); }
     Hash hash() const { return m_hash; }
     std::string hash_as_str() const;
 
@@ -74,11 +71,8 @@ private:
     std::string m_file;
     unsigned int m_line;
     unsigned int m_col;
-    std::vector<std::string> m_ifile;
-    std::vector<unsigned int> m_iline;
-    std::vector<unsigned int> m_icol;
+    std::string m_ifile;
     Hash        m_hash;
-    bool        m_is_include;
     std::set<Hash> m_reqs;
     uint64_t m_size;
 };

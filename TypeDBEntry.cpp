@@ -29,7 +29,6 @@ TypeDBEntry TypeDBEntry::mkType(const std::string & _name,
     ti.m_line = _line;
     ti.m_col = _col;
     ti.m_reqs = _reqs;
-    ti.m_is_include = false;
     ti.m_size = _size;
     ti.compute_hash();
     return ti;
@@ -54,7 +53,6 @@ TypeDBEntry TypeDBEntry::mkFwdDecl(const std::string & _name,
     ti.m_file = _file;
     ti.m_line = _line;
     ti.m_col = _col;
-    ti.m_is_include = false;
     ti.m_size = 0;
     ti.compute_hash();
     return ti;
@@ -63,28 +61,21 @@ TypeDBEntry TypeDBEntry::mkFwdDecl(const std::string & _name,
 TypeDBEntry TypeDBEntry::mkInclude(const std::string & _name,
                                    const bool & _pointer,
                                    const std::string & _array_size,
-                                   const std::string & _header,
                                    const std::string & _file,
                                    const unsigned int & _line,
                                    const unsigned int & _col,
-                                   const std::vector<std::string> & _ifile,
-                                   const std::vector<unsigned int> & _iline,
-                                   const std::vector<unsigned int> & _icol,
+                                   const std::string & _ifile,
                                    const uint64_t & _size)
 
 {
     TypeDBEntry ti;
-    ti.m_is_include = true;
     ti.m_name = _name;
     ti.m_pointer = _pointer;
     ti.m_array_size = _array_size;
-    ti.m_text = _header;
     ti.m_file = _file;
     ti.m_line = _line;
     ti.m_col = _col;
     ti.m_ifile = _ifile;
-    ti.m_iline = _iline;
-    ti.m_icol = _icol;
     ti.m_size = _size;
     ti.compute_hash();
     return ti;
@@ -136,10 +127,8 @@ picojson::value TypeDBEntry::toJSON() const
     jsonObj["file"] = to_json(m_file);
     jsonObj["line"] = to_json(m_line);
     jsonObj["col"] = to_json(m_col);
-    if (m_is_include) {
-        jsonObj["i_file"] = to_json(m_ifile);
-        jsonObj["i_line"] = to_json(m_iline);
-        jsonObj["i_col"] = to_json(m_icol);
+    if (!m_ifile.empty()) {
+        jsonObj["i-file"] = to_json(m_ifile);
     }
     else {
         jsonObj["decl"] = to_json(m_text);
@@ -264,33 +253,20 @@ static Hash define_type(
 
         std::string header;
         SourceManager & sm = ci->getSourceManager();
-        SourceLocation loc = sm.getSpellingLoc(td->getSourceRange().getBegin());
-        PresumedLoc beginLoc = sm.getPresumedLoc(loc);
-        if (Utils::in_header(loc, ci, header)) {
-            SourceLocation inc_loc = beginLoc.getIncludeLoc();
-            PresumedLoc incLoc = sm.getPresumedLoc(inc_loc);
-            // Build up lists.
-            std::vector<std::string> ifiles;
-            std::vector<unsigned int> ilines;
-            std::vector<unsigned int> icols;
-            while(incLoc.isValid()){
-                ifiles.push_back(incLoc.getFilename());
-                ilines.push_back(incLoc.getLine());
-                icols.push_back(incLoc.getColumn());
-                inc_loc = incLoc.getIncludeLoc();
-                incLoc = sm.getPresumedLoc(inc_loc);
-            }
+        SourceLocation loc = td->getSourceRange().getBegin();
+        if (Utils::in_header(td->getSourceRange().getBegin(), ci, header) &&
+            (sm.isInSystemHeader(loc) || sm.isInExternCSystemHeader(loc))) {
+            loc = sm.getSpellingLoc(loc);
+            PresumedLoc beginLoc = sm.getPresumedLoc(loc);
+
             Hash hash = TypeDBEntry::mkInclude(
                 td->getNameAsString(),
                 pointer,
                 size_mod,
-                header,
                 safe_get_filename(beginLoc),
                 beginLoc.getLine(),
                 beginLoc.getColumn(),
-                ifiles,
-                ilines,
-                icols,
+                header,
                 size).hash();
             seen[t] = hash;
             return hash;
@@ -389,9 +365,6 @@ static Hash define_type(
     }
 
     else if (t->getAs<BuiltinType>()) {
-        std::vector<std::string> ifiles;
-        std::vector<unsigned int> ilines;
-        std::vector<unsigned int> icols;
         std::string name =
             t->getAs<BuiltinType>()->getName(PrintingPolicy(ci->getLangOpts()));
         Hash hash = TypeDBEntry::mkInclude(
@@ -399,12 +372,9 @@ static Hash define_type(
             pointer,
             size_mod,
             "",
+            0,
+            0,
             "",
-            0,
-            0,
-            ifiles,
-            ilines,
-            icols,
             size).hash();
         seen[t] = hash;
         return hash;
@@ -422,66 +392,88 @@ static Hash define_type(
         if (rd == NULL)
             rd = decl;
 
-        std::set<Hash> reqs;
+        std::string header;
+        SourceManager & sm = ci->getSourceManager();
+        SourceLocation loc = rd->getSourceRange().getBegin();
+        if (Utils::in_header(rd->getSourceRange().getBegin(), ci, header) &&
+            (sm.isInSystemHeader(loc) || sm.isInExternCSystemHeader(loc))) {
+            loc = sm.getSpellingLoc(loc);
+            PresumedLoc beginLoc = sm.getPresumedLoc(loc);
 
-        // Forward-declare the struct/class if it is not anonymous
-
-        if (rd->getNameAsString() != "") {
-            SourceManager & sm = ci->getSourceManager();
-            PresumedLoc beginLoc =
-                sm.getPresumedLoc(rd->getSourceRange().getBegin());
-
-            TypeDBEntry fdecl = TypeDBEntry::mkFwdDecl(
+            Hash hash = TypeDBEntry::mkInclude(
                 rd->getNameAsString(),
                 pointer,
                 size_mod,
-                (t->isStructureType() ? "struct" : "union"),
                 safe_get_filename(beginLoc),
                 beginLoc.getLine(),
-                beginLoc.getColumn());
-            // Temporarily make this Type* reference the hash of the
-            // forward declaration.
-            seen[t] = fdecl.hash();
-            reqs.insert(fdecl.hash());
+                beginLoc.getColumn(),
+                header,
+                size).hash();
+            seen[t] = hash;
+            return hash;
         }
+        else {
+            std::set<Hash> reqs;
 
-        // Define the member types
-        for (RecordDecl::field_iterator it = rd->field_begin();
-             it != rd->field_end();
-             ++it)
-        {
-            Hash h = define_type(it->getType().getTypePtr(), seen, ci, context);
-            reqs.insert(h);
+            // Forward-declare the struct/class if it is not anonymous
+
+            if (rd->getNameAsString() != "") {
+                SourceManager & sm = ci->getSourceManager();
+                PresumedLoc beginLoc =
+                    sm.getPresumedLoc(rd->getSourceRange().getBegin());
+
+                TypeDBEntry fdecl = TypeDBEntry::mkFwdDecl(
+                    rd->getNameAsString(),
+                    pointer,
+                    size_mod,
+                    (t->isStructureType() ? "struct" : "union"),
+                    safe_get_filename(beginLoc),
+                    beginLoc.getLine(),
+                    beginLoc.getColumn());
+                // Temporarily make this Type* reference the hash of the
+                // forward declaration.
+                seen[t] = fdecl.hash();
+                reqs.insert(fdecl.hash());
+            }
+
+            // Define the member types
+            for (RecordDecl::field_iterator it = rd->field_begin();
+                 it != rd->field_end();
+                 ++it)
+            {
+                Hash h = define_type(it->getType().getTypePtr(), seen, ci, context);
+                reqs.insert(h);
+            }
+
+            // Emit the struct/class/union definition
+            SourceRange r = rd->getSourceRange();
+            SourceManager & sm = ci->getSourceManager();
+            SourceLocation end = r.getEnd();
+            PresumedLoc beginLoc = sm.getPresumedLoc(r.getBegin());
+            end = end.getLocWithOffset(
+                Lexer::MeasureTokenLength(end, sm, ci->getLangOpts()));
+
+            std::string text;
+            for (SourceLocation it = r.getBegin();
+                 it != end;
+                 it = it.getLocWithOffset(1))
+            {
+                text.push_back(*sm.getCharacterData(it));
+            }
+            text += ";";
+
+            TypeDBEntry ti = TypeDBEntry::mkType(rd->getNameAsString(),
+                                                 pointer,
+                                                 size_mod,
+                                                 text,
+                                                 safe_get_filename(beginLoc),
+                                                 beginLoc.getLine(),
+                                                 beginLoc.getColumn(),
+                                                 reqs,
+                                                 size);
+            seen[t] = ti.hash();
+            return ti.hash();
         }
-
-        // Emit the struct/class/union definition
-        SourceRange r = rd->getSourceRange();
-        SourceManager & sm = ci->getSourceManager();
-        SourceLocation end = r.getEnd();
-        PresumedLoc beginLoc = sm.getPresumedLoc(r.getBegin());
-        end = end.getLocWithOffset(
-            Lexer::MeasureTokenLength(end, sm, ci->getLangOpts()));
-
-        std::string text;
-        for (SourceLocation it = r.getBegin();
-             it != end;
-             it = it.getLocWithOffset(1))
-        {
-            text.push_back(*sm.getCharacterData(it));
-        }
-        text += ";";
-
-        TypeDBEntry ti = TypeDBEntry::mkType(rd->getNameAsString(),
-                                             pointer,
-                                             size_mod,
-                                             text,
-                                             safe_get_filename(beginLoc),
-                                             beginLoc.getLine(),
-                                             beginLoc.getColumn(),
-                                             reqs,
-                                             size);
-        seen[t] = ti.hash();
-        return ti.hash();
     }
 
     return 0;
