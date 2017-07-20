@@ -347,7 +347,8 @@ static Hash define_type(
                     text.push_back(*sm.getCharacterData(it));
                     it = it.getLocWithOffset(1);
                 }
-                text += ";";
+                if (!text.empty())
+                    text += ";";
 
                 TypeDBEntry ti = TypeDBEntry::mkType(td->getNameAsString(),
                                                      pointer,
@@ -460,7 +461,8 @@ static Hash define_type(
             {
                 text.push_back(*sm.getCharacterData(it));
             }
-            text += ";";
+            if (!text.empty())
+                text += ";";
 
             TypeDBEntry ti = TypeDBEntry::mkType(rd->getNameAsString(),
                                                  pointer,
