@@ -230,8 +230,7 @@ static Hash define_type(
                         pointee.name() + "*",
                         true,
                         size_mod,
-                        // Full name of the type, I think (hence the extra *)
-                        pointee.name() + "**",
+                        "",
                         "",
                         0,
                         0,
