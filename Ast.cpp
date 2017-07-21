@@ -318,11 +318,11 @@ void Ast::update_range_offsets(CompilerInstance * ci)
     if (className() == "Var") {
         TU & tu = counter().tu();
         AstRef prev = NoAst;
-        if (parent() == NoAst && tu.asts.size() >= 2) {
-            prev = tu.asts[tu.asts.size() - 2]->counter();
+        if (parent() == NoAst && counter().counter() >= 2) {
+            prev = tu.asts[counter().counter() - 2]->counter();
             while (prev->parent() != NoAst)
                 prev = prev->parent();
-            if (prev->className() != "Var")
+            if (prev->className() != "Var" || prev->isFullStmt())
                 prev = NoAst;
         }
         else if (parent() != NoAst &&
