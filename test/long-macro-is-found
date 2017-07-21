@@ -4,5 +4,8 @@
 #
 . $(dirname $0)/common
 
-contains "$(run_macros -json)" \
-         "[\"LONG_MACRO\",\"LONG_MACRO  123456789\"]"
+long_macro="$(run_macros -json |
+              json_filter hash -2769171426394948104 |
+              json -e name)"
+
+equals $long_macro "\"LONG_MACRO\""

@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# Test to ensure global variables have a 'TopLevel' syntax context
+. $(dirname $0)/common
+
+syn_ctx=$(run_global_vars_syn_ctx -json |
+          json_filter ast_class "\"Var\"" |
+          json_wrap |
+          json -a -e syn_ctx)
+
+equals $syn_ctx "\"TopLevel\" \"TopLevel\""

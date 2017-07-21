@@ -75,6 +75,14 @@ ARROW_OPERATOR=etc/arrow-operator.cpp
 
 TYPES=etc/types.c
 
+GLOBAL_VARS_SYN_CTX=etc/global-vars-syn-ctx.c
+
+POINTERS_TO_POINTERS=etc/pointers-to-pointers.c
+
+STRUCT_IN_SYS_HEADER=etc/struct-in-sys-header.c
+
+FUNCTION_IN_SYS_HEADER=etc/function-in-sys-header.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -153,9 +161,6 @@ run_if_non_compound_body() {
 run_global_var(){
     clang-mutate "$@" $GLOBAL_VAR --; }
 
-json() {
-    cat -|jshon "$@"; }
-
 run_typedef(){
     clang-mutate "$@" $TYPEDEF --; }
 
@@ -167,6 +172,21 @@ run_arrow_operator(){
 
 run_types(){
     clang-mutate "$@" $TYPES --; }
+
+run_global_vars_syn_ctx(){
+    clang-mutate "$@" $GLOBAL_VARS_SYN_CTX --; }
+
+run_pointers_to_pointers(){
+    clang-mutate "$@" $POINTERS_TO_POINTERS --; }
+
+run_struct_in_sys_header(){
+    clang-mutate "$@" $STRUCT_IN_SYS_HEADER --; }
+
+run_function_in_sys_header(){
+    clang-mutate "$@" $FUNCTION_IN_SYS_HEADER --; }
+
+json() {
+    cat -|jshon "$@"; }
 
 json_filter(){
     cat -|jshon -a -j|grep "\"${1}\":${2}\(,\|}\)"; }

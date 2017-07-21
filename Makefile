@@ -181,7 +181,11 @@ TESTS =	help-text-appears				\
 	if-body-is-full-statement                       \
 	array-initializer-has-correct-children 		\
     operator-call-expr-ranges                       \
-    type-sizes-are-correct
+    type-sizes-are-correct \
+    global-vars-syn-ctx \
+    pointer-to-pointer-no-decl \
+    struct-in-sys-header \
+    function-in-sys-header
 
 etc/hello: etc/hello.c
 	$(CXX) -g -O0 $< -o $@

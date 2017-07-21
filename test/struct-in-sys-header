@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# Test to ensure a struct in a system header has a type db entry
+# with the i-file field defined
+. $(dirname $0)/common
+
+ifile=$(run_struct_in_sys_header -json |
+        json_filter type "\"FILE\"" |
+        jshon -e i-file)
+
+equals $ifile "\"<stdio.h>\""

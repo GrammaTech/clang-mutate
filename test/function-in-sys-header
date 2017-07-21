@@ -1,0 +1,12 @@
+#!/bin/bash
+#
+# Test to ensure the system header is preferred when calling
+# a function in a system library.
+. $(dirname $0)/common
+
+includes=$(run_function_in_sys_header -json |
+           json_filter ast_class "\"CallExpr\"" |
+           jshon -e includes |
+           json -e 0)
+
+equals $includes "\"<stdio.h>\""

@@ -1,0 +1,10 @@
+#!/bin/bash
+#
+# Test to ensure a type decl is not printed for pointers-to-pointers
+. $(dirname $0)/common
+
+decl=$(run_pointers_to_pointers -json |
+       json_filter type "\"int\\*\"" |
+       json -e decl)
+
+equals $decl "\"\""

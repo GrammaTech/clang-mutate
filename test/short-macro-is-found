@@ -4,5 +4,8 @@
 #
 . $(dirname $0)/common
 
-contains "$(run_macros -json)" \
-         "[\"SHORT_MACRO\",\"SHORT_MACRO 0\"]"
+short_macro="$(run_macros -json |
+               json_filter hash -1038532117783754115 |
+               json -e name)"
+
+equals $short_macro "\"SHORT_MACRO\""
