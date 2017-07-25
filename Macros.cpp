@@ -72,29 +72,29 @@ MacroDB & MacroDB::getInstance(CompilerInstance * _CI) {
 }
 
 const Macro* MacroDB::find(const PresumedLoc & loc) const {
-    for (auto const pair : m_macros) {
-        const Macro m = pair.second;
+    for (auto const & pair : m_macros) {
+        const Macro * m = &pair.second;
 
-        if (m.start().getFilename() != NULL &&
-            m.end().getFilename() != NULL &&
+        if (m->start().getFilename() != NULL &&
+            m->end().getFilename() != NULL &&
             loc.getFilename() != NULL &&
-            strcmp(m.start().getFilename(), loc.getFilename()) == 0 &&
-            strcmp(m.end().getFilename(), loc.getFilename()) == 0 &&
-            m.start().getLine() <= loc.getLine() &&
-            m.start().getColumn() <= loc.getColumn() &&
-            loc.getLine() <= m.end().getLine() &&
-            loc.getColumn() <= m.end().getColumn()) {
-            return MacroDB::find(m.hash());
+            strcmp(m->start().getFilename(), loc.getFilename()) == 0 &&
+            strcmp(m->end().getFilename(), loc.getFilename()) == 0 &&
+            m->start().getLine() <= loc.getLine() &&
+            m->start().getColumn() <= loc.getColumn() &&
+            loc.getLine() <= m->end().getLine() &&
+            loc.getColumn() <= m->end().getColumn()) {
+            return m;
         }
     }
 
     return NULL;
 }
 const Macro* MacroDB::find(const std::string & name) const {
-    for (auto const pair : m_macros) {
-        const Macro m = pair.second;
-        if (m.name() == name) {
-            return MacroDB::find(m.hash());
+    for (auto const & pair : m_macros) {
+        const Macro * m = &pair.second;
+        if (m->name() == name) {
+            return m;
         }
     }
 
