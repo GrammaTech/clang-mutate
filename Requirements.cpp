@@ -119,23 +119,22 @@ void Requirements::gatherMacro(Stmt * stmt)
         MacroInfo * mi = pp.getMacroInfo(pp.getIdentifierInfo(name));
 
         if ( mi != NULL ){
-            SourceLocation ib = sm.getImmediateExpansionRange(
-                                    stmt->getSourceRange().getBegin()).first;
-            SourceLocation sb = sm.getSpellingLoc(ib);
+            SourceLocation sb = sm.getSpellingLoc(
+                                  sm.getImmediateExpansionRange(
+                                    stmt->getSourceRange().getBegin()).first);
             SourceLocation mb = mi->getDefinitionLoc();
             std::string header;
 
-            if (Utils::in_header(ib, ci, header)) {
+            if (Utils::in_header(mb, ci, header) ||
+                Utils::in_header(sb, ci, header)) {
                 m_includes.insert(header);
             }
-            else if (MacroDB::getInstance(ci).find(sm.getPresumedLoc(sb))) {
-                const Macro* m = MacroDB::getInstance(ci).find(
-                                     sm.getPresumedLoc(sb));
-                m_macros.insert(m->hash());
-            }
-            else if (MacroDB::getInstance(ci).find(sm.getPresumedLoc(mb))) {
-                const Macro* m = MacroDB::getInstance(ci).find(
-                                     sm.getPresumedLoc(mb));
+            else if (MacroDB::getInstance(ci).find(sm.getPresumedLoc(mb)) ||
+                     MacroDB::getInstance(ci).find(sm.getPresumedLoc(sb))) {
+                const Macro* m =
+                    MacroDB::getInstance(ci).find(sm.getPresumedLoc(mb)) ?
+                    MacroDB::getInstance(ci).find(sm.getPresumedLoc(mb)) :
+                    MacroDB::getInstance(ci).find(sm.getPresumedLoc(sb));
                 m_macros.insert(m->hash());
             }
         }

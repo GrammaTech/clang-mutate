@@ -345,11 +345,11 @@ bool in_header(
         return false;
 
     SourceLocation last_hdr = loc;
-    if (sm.isInSystemHeader(sm.getSpellingLoc(loc)) ||
-        sm.isInExternCSystemHeader(sm.getSpellingLoc(loc))) {
+    if (sm.isInSystemHeader(loc) ||
+        sm.isInExternCSystemHeader(loc)) {
         // loc is in a system header
-        while (sm.isInSystemHeader(sm.getSpellingLoc(loc)) ||
-               sm.isInExternCSystemHeader(sm.getSpellingLoc(loc))) {
+        while (sm.isInSystemHeader(loc) ||
+               sm.isInExternCSystemHeader(loc)) {
             last_hdr = loc;
             loc = sm.getIncludeLoc(sm.getFileID(loc));
         }
@@ -373,8 +373,14 @@ bool in_header(
             return false;
     }
     else {
-        if (!loc.isValid())
+        while (!sm.isWrittenInMainFile(loc) && last_hdr.isValid()) {
+            last_hdr = loc;
+            loc = sm.getIncludeLoc(sm.getFileID(loc));
+        }
+
+        if (last_hdr.isInvalid())
             return false;
+        loc = last_hdr;
 
         PresumedLoc pl = sm.getPresumedLoc(sm.getSpellingLoc(loc));
         std::string filename = Utils::safe_realpath(pl.getFilename());
@@ -386,15 +392,14 @@ bool in_header(
              it++) {
             std::string path = Utils::safe_realpath(it->Path);
             if (!path.empty() && filename.find(path) != std::string::npos) {
-                header = "" + filename.substr(path.length() + 1) + "";
+                header = "\"" + filename.substr(path.length() + 1) + "\"";
             }
         }
 
         if (header.empty()) {
-            if (filename.find_last_of("/") != std::string::npos)
-                header = filename.substr(filename.find_last_of("/") + 1);
-            else
-                return false;
+            header = "\"" +
+                     filename.substr(filename.find_last_of("/") + 1) +
+                     "\"";
         }
     }
 
