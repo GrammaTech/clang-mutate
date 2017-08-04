@@ -348,6 +348,8 @@ bool in_header(
     if (sm.isInSystemHeader(loc) ||
         sm.isInExternCSystemHeader(loc)) {
         // loc is in a system header
+        loc = sm.getSpellingLoc(loc);
+
         while (sm.isInSystemHeader(loc) ||
                sm.isInExternCSystemHeader(loc)) {
             last_hdr = loc;

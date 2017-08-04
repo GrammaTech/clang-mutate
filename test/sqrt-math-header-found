@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# Test to ensure <math.h> is found for the sqrt function call
+. $(dirname $0)/common
+
+includes=$(run_sqrt -json |
+           json_filter ast_class "\"CallExpr\"" |
+           jshon -e includes |
+           jshon -e 0)
+
+equals $includes "\"<math.h>\""

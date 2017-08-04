@@ -185,7 +185,9 @@ TESTS =	help-text-appears				\
     global-vars-syn-ctx \
     pointer-to-pointer-no-decl \
     struct-in-sys-header \
-    function-in-sys-header
+    function-in-sys-header \
+    sqrt-math-header-found \
+    open-stat-header-found
 
 etc/hello: etc/hello.c
 	$(CXX) -g -O0 $< -o $@

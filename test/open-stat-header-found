@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# Test to ensure <sys/stat.h> is found for the S_IREAD macro
+. $(dirname $0)/common
+
+includes=$(run_open -json |
+           json_filter src_text "\"S_IREAD\"" |
+           jshon -e includes |
+           jshon -e 0)
+
+equals $includes "\"<sys\/stat.h>\""

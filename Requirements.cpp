@@ -125,17 +125,17 @@ void Requirements::gatherMacro(Stmt * stmt)
             SourceLocation mb = mi->getDefinitionLoc();
             std::string header;
 
-            if (Utils::in_header(mb, ci, header) ||
-                Utils::in_header(sb, ci, header)) {
-                m_includes.insert(header);
-            }
-            else if (MacroDB::getInstance(ci).find(sm.getPresumedLoc(mb)) ||
-                     MacroDB::getInstance(ci).find(sm.getPresumedLoc(sb))) {
+            if (MacroDB::getInstance(ci).find(sm.getPresumedLoc(sb)) ||
+                MacroDB::getInstance(ci).find(sm.getPresumedLoc(mb))) {
                 const Macro* m =
-                    MacroDB::getInstance(ci).find(sm.getPresumedLoc(mb)) ?
-                    MacroDB::getInstance(ci).find(sm.getPresumedLoc(mb)) :
-                    MacroDB::getInstance(ci).find(sm.getPresumedLoc(sb));
+                    MacroDB::getInstance(ci).find(sm.getPresumedLoc(sb)) ?
+                    MacroDB::getInstance(ci).find(sm.getPresumedLoc(sb)) :
+                    MacroDB::getInstance(ci).find(sm.getPresumedLoc(mb));
                 m_macros.insert(m->hash());
+            }
+            else if (Utils::in_header(sb, ci, header) ||
+                     Utils::in_header(mb, ci, header)) {
+                m_includes.insert(header);
             }
         }
     }
