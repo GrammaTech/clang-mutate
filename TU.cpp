@@ -362,8 +362,10 @@ class BuildTU
             
             // If we created a new node, remove it from the spine
             // now that the traversal of this Decl is complete.
-            while (spine.size() > original_spine_size)
+            while (spine.size() > original_spine_size) {
+                spine.back()->expand_to_child_ranges();
                 spine.pop_back();
+            }
 
             if (begins_pseudoscope(d)) {
                 decl_scopes.exit_scope();
