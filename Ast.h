@@ -68,7 +68,7 @@ public:
         // Adjustment to compensate for the fact that clang's
         // source ranges include trailing semicolons for DeclStmts,
         // but (seemingly?) not for other statements?
-        if (m_declares.empty() || !isFullStmt())
+        if (m_declares.empty() || !isFullStmt() || inMacroExpansion())
             return m_end_off;
         return m_end_off - 1;
     }

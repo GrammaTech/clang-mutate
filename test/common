@@ -87,6 +87,8 @@ SQRT=etc/sqrt.c
 
 OPEN=etc/open.c
 
+STRCMP_MACRO=etc/strcmp_macro.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -194,6 +196,9 @@ run_sqrt() {
 
 run_open() {
     clang-mutate "$@" $OPEN --; }
+
+run_strcmp_macro() {
+    clang-mutate "$@" $STRCMP_MACRO -- -c -g -O2; }
 
 json() {
     cat -|jshon "$@"; }

@@ -187,7 +187,8 @@ TESTS =	help-text-appears				\
     struct-in-sys-header \
     function-in-sys-header \
     sqrt-math-header-found \
-    open-stat-header-found
+    open-stat-header-found \
+    strcmp-macro
 
 etc/hello: etc/hello.c
 	$(CXX) -g -O0 $< -o $@
