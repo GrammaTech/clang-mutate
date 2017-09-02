@@ -188,7 +188,10 @@ TESTS =	help-text-appears				\
     function-in-sys-header \
     sqrt-math-header-found \
     open-stat-header-found \
-    strcmp-macro
+    strcmp-macro \
+    const-var \
+    volatile-var \
+    restrict-var
 
 etc/hello: etc/hello.c
 	$(CXX) -g -O0 $< -o $@

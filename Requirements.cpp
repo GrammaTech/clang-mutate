@@ -47,7 +47,7 @@ bool Requirements::VisitVarDecl(VarDecl * decl)
   std::string name = decl->getQualifiedNameAsString();
   IdentifierInfo * ident = decl->getIdentifier();
 
-  const Type * tdecl = decl->getTypeSourceInfo()->getType().getTypePtrOrNull();
+  const QualType tdecl = decl->getTypeSourceInfo()->getType();
   Hash type_hash = hash_type(tdecl, ci, astContext());
 
   ctx.push(name, ident, type_hash);
@@ -145,7 +145,7 @@ void Requirements::gatherMacro(Stmt * stmt)
 
 void Requirements::addAddlType(const QualType & qt)
 {
-    Hash type_hash = hash_type(qt.getTypePtrOrNull(), ci, astContext());
+    Hash type_hash = hash_type(qt, ci, astContext());
     if (type_hash != 0)
         addl_types.insert(type_hash);
 }

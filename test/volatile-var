@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+# Ensure a volatile type is found.
+. $(dirname $0)/common
+
+type=$(run_volatile_var -json |
+       json_filter volatile "true")
+
+[ $type != "" ]

@@ -8,28 +8,45 @@
 using namespace clang_mutate;
 using namespace clang;
 
+struct QualTypeComparator{
+    bool operator()(const QualType &lhs, const QualType &rhs) {
+        uintptr_t lx = (uintptr_t) lhs.getAsOpaquePtr();
+        unsigned  ly = lhs.getLocalFastQualifiers();
+        uintptr_t rx = (uintptr_t) rhs.getAsOpaquePtr();
+        unsigned  ry = rhs.getLocalFastQualifiers();
+
+        return ((((lx + ly) * (lx + ly + 1)) / 2) + ly) <
+               ((((rx + ry) * (rx + ry + 1)) / 2) + ry);
+    }
+};
 std::map<Hash, TypeDBEntry> TypeDBEntry::type_db;
 
 TypeDBEntry TypeDBEntry::mkType(const std::string & _name,
+                                const uint64_t & _size,
                                 const bool & _pointer,
+                                const bool & _const,
+                                const bool & _volatile,
+                                const bool & _restrict,
                                 const std::string & _array_size,
                                 const std::string & _text,
                                 const std::string & _file,
                                 const unsigned int & _line,
                                 const unsigned int & _col,
-                                const std::set<Hash> & _reqs,
-                                const uint64_t & _size)
+                                const std::set<Hash> & _reqs)
 {
     TypeDBEntry ti;
     ti.m_name = _name;
+    ti.m_size = _size;
     ti.m_pointer = _pointer;
+    ti.m_const = _const;
+    ti.m_volatile = _volatile;
+    ti.m_restrict = _restrict;
     ti.m_array_size = _array_size;
     ti.m_text = _text;
     ti.m_file = _file;
     ti.m_line = _line;
     ti.m_col = _col;
     ti.m_reqs = _reqs;
-    ti.m_size = _size;
     ti.compute_hash();
     return ti;
 }
@@ -45,6 +62,9 @@ TypeDBEntry TypeDBEntry::mkFwdDecl(const std::string & _name,
     TypeDBEntry ti;
     ti.m_name = _name;
     ti.m_pointer = _pointer;
+    ti.m_const = false;
+    ti.m_volatile = false;
+    ti.m_restrict = false;
     ti.m_array_size = _array_size;
     ti.m_text = _kind;
     ti.m_text += " ";
@@ -59,24 +79,30 @@ TypeDBEntry TypeDBEntry::mkFwdDecl(const std::string & _name,
 }
 
 TypeDBEntry TypeDBEntry::mkInclude(const std::string & _name,
+                                   const uint64_t & _size,
                                    const bool & _pointer,
+                                   const bool & _const,
+                                   const bool & _volatile,
+                                   const bool & _restrict,
                                    const std::string & _array_size,
                                    const std::string & _file,
                                    const unsigned int & _line,
                                    const unsigned int & _col,
-                                   const std::string & _ifile,
-                                   const uint64_t & _size)
+                                   const std::string & _ifile)
 
 {
     TypeDBEntry ti;
     ti.m_name = _name;
+    ti.m_size = _size;
     ti.m_pointer = _pointer;
+    ti.m_const = _const;
+    ti.m_volatile = _volatile;
+    ti.m_restrict = _restrict;
     ti.m_array_size = _array_size;
     ti.m_file = _file;
     ti.m_line = _line;
     ti.m_col = _col;
     ti.m_ifile = _ifile;
-    ti.m_size = _size;
     ti.compute_hash();
     return ti;
 }
@@ -89,8 +115,14 @@ TypeDBEntry TypeDBEntry::find_type(Hash hash)
 void TypeDBEntry::compute_hash()
 {
     std::hash<std::string> hasher;
-    size_t h = hasher(m_name + m_text + m_array_size);
-    if (m_pointer) h += 1;
+    size_t h = hasher(m_name +
+                      m_text +
+                      m_array_size +
+                      (m_pointer ? "pointer" : "") +
+                      (m_const ? "const" : "") +
+                      (m_volatile ? "volatile" : "") +
+                      (m_restrict ? "restrict" : ""));
+
     for (std::set<Hash>::iterator it = m_reqs.begin();
          it != m_reqs.end();
          ++it)
@@ -123,6 +155,9 @@ picojson::value TypeDBEntry::toJSON() const
     jsonObj["hash"] = to_json(m_hash);
     jsonObj["type"] = to_json(m_name);
     jsonObj["pointer"] = to_json(m_pointer);
+    jsonObj["const"] = to_json(m_const);
+    jsonObj["volatile"] = to_json(m_volatile);
+    jsonObj["restrict"] = to_json(m_restrict);
     jsonObj["array"] = to_json(m_array_size);
     jsonObj["file"] = to_json(m_file);
     jsonObj["line"] = to_json(m_line);
@@ -177,30 +212,36 @@ uint64_t get_type_size(ASTContext * context, const Type * t)
 }
 
 static Hash define_type(
-    const Type * t,
-    std::map<const Type*, Hash> & seen,
+    QualType t,
     CompilerInstance * ci,
     ASTContext *context)
 {
-    if (t == NULL)
+    static std::map<QualType, Hash, QualTypeComparator> seen;
+
+    if (t.getTypePtrOrNull() == NULL)
         return 0;
+
+    bool is_pointer = false;
+    bool is_const = t.isConstQualified();
+    bool is_volatile = t.isVolatileQualified();
+    bool is_restrict = t.isRestrictQualified();
+    std::string size_mod = "";
+    uint64_t size = get_type_size(context, t.getTypePtr());
 
     // Check for pointer or array types, and if so we'll update the
     // name later.
-    bool pointer = false;
-    std::string size_mod = "";
-
-    uint64_t size = get_type_size(context, t);
-
-    while (t->isArrayType() || t->isPointerType()) {
-        if (t->isArrayType()) {
+    while (t.getTypePtr()->isArrayType() || t.getTypePtr()->isPointerType()) {
+        if (t.getTypePtr()->isArrayType()) {
             std::string len_str = "";
-            if (isa<ConstantArrayType>(t)) {
-                uint64_t len = static_cast<const ConstantArrayType *>(t)->getSize().getLimitedValue();
+            if (isa<ConstantArrayType>(t.getTypePtr())) {
+                uint64_t len =
+                    static_cast<const ConstantArrayType *>(t.getTypePtr())
+                                                          ->getSize()
+                                                          .getLimitedValue();
                 len_str = std::to_string(len);
             }
 
-            switch(t->getAsArrayTypeUnsafe()->getSizeModifier()) {
+            switch(t.getTypePtr()->getAsArrayTypeUnsafe()->getSizeModifier()) {
             case ArrayType::Normal:
               size_mod += "[" + len_str + "]";
               break;
@@ -211,15 +252,23 @@ static Hash define_type(
               size_mod += "[*]";
               break;
             }
-            t = t->getAsArrayTypeUnsafe()->getElementType().getTypePtr();
+            t = t.getTypePtr()->getAsArrayTypeUnsafe()->getElementType();
+
+            is_const = t.isConstQualified() || is_const;
+            is_volatile = t.isVolatileQualified() || is_volatile;
+            is_restrict = t.isRestrictQualified() || is_restrict;
         }
-        if (t->isPointerType()) {
-            pointer = true;
-            t = t->getPointeeType().getTypePtr();
+        if (t.getTypePtr()->isPointerType()) {
+            t = t.getTypePtr()->getPointeeType();
+
+            is_pointer = true;
+            is_const = t.isConstQualified() || is_const;
+            is_volatile = t.isVolatileQualified() || is_volatile;
+            is_restrict = t.isRestrictQualified() || is_restrict;
 
             // Pointer to pointer
-            if (t->isPointerType()) {
-                Hash pointee_hash = define_type(t, seen, ci, context);
+            if (t.getTypePtr()->isPointerType()) {
+                Hash pointee_hash = define_type(t, ci, context);
                 std::set<Hash> reqs;
                 reqs.insert(pointee_hash);
 
@@ -228,27 +277,62 @@ static Hash define_type(
                 Hash hash = TypeDBEntry::mkType(
                         // name of the pointee type
                         pointee.name() + "*",
+                        size,
                         true,
+                        pointee.is_const() || is_const,
+                        pointee.is_volatile() || is_volatile,
+                        pointee.is_restrict() || is_restrict,
                         size_mod,
                         "",
                         "",
                         0,
                         0,
-                        reqs,
-                        size).hash();
+                        reqs).hash();
                 seen[t] = hash;
                 return hash;
             }
         }
     }
 
-    std::map<const Type*, Hash>::iterator search = seen.find(t);
-    if (search != seen.end())
-        return search->second;
+
+    // Attempt to find the base type in the cache
+    std::map<QualType, Hash, QualTypeComparator>::iterator search;
+    search = seen.find(t);
+    if (search != seen.end()) {
+        TypeDBEntry base = TypeDBEntry::find_type(search->second);
+
+        if (base.in_include_file())
+            return TypeDBEntry::mkInclude(
+                       base.name(),
+                       size,
+                       is_pointer,
+                       is_const,
+                       is_volatile,
+                       is_restrict,
+                       size_mod,
+                       base.file(),
+                       base.line(),
+                       base.col(),
+                       base.include_file()).hash();
+        else
+            return TypeDBEntry::mkType(
+                       base.name(),
+                       size,
+                       is_pointer,
+                       is_const,
+                       is_volatile,
+                       is_restrict,
+                       size_mod,
+                       base.text(),
+                       base.file(),
+                       base.line(),
+                       base.col(),
+                       base.reqs()).hash();
+    }
 
     // Now handle the normal type.
-    if (t->getAs<TypedefType>()) {
-        TypedefNameDecl * td = t->getAs<TypedefType>()->getDecl();
+    if (t.getTypePtr()->getAs<TypedefType>()) {
+        TypedefNameDecl * td = t.getTypePtr()->getAs<TypedefType>()->getDecl();
 
         std::string header;
         SourceManager & sm = ci->getSourceManager();
@@ -260,23 +344,26 @@ static Hash define_type(
 
             Hash hash = TypeDBEntry::mkInclude(
                 td->getNameAsString(),
-                pointer,
+                size,
+                is_pointer,
+                is_const,
+                is_volatile,
+                is_restrict,
                 size_mod,
                 safe_get_filename(beginLoc),
                 beginLoc.getLine(),
                 beginLoc.getColumn(),
-                header,
-                size).hash();
+                header).hash();
             seen[t] = hash;
             return hash;
         }
         else {
             // User-defined typedef
-            const Type * u_tt = td->getUnderlyingType().getTypePtr();
+            const QualType u_tt = td->getUnderlyingType();
 
             // Emit underlying type
             std::set<Hash> reqs;
-            reqs.insert(define_type(u_tt, seen, ci, context));
+            reqs.insert(define_type(u_tt, ci, context));
 
             // Emit the typedef itself
             // Exception: in the case of an underlying composite type,
@@ -286,17 +373,19 @@ static Hash define_type(
             //   is anonymous, we must emit the type here after all!
             bool one_line = false;
             std::string one_line_name, name;
-            if (u_tt->isRecordType()) {
+            if (u_tt.getTypePtr()->isRecordType()) {
                 one_line = true;
                 const RecordDecl * rd = NULL;
-                if (u_tt->isStructureType()) {
-                    rd = u_tt->getAsStructureType()
-                             ->getDecl()->getDefinition();
+                if (u_tt.getTypePtr()->isStructureType()) {
+                    rd = u_tt.getTypePtr()->getAsStructureType()
+                                          ->getDecl()
+                                          ->getDefinition();
                     one_line_name = "typedef struct ";
                 }
-                else if (u_tt->isUnionType()) {
-                    rd = u_tt->getAsUnionType()
-                             ->getDecl()->getDefinition();
+                else if (u_tt.getTypePtr()->isUnionType()) {
+                    rd = u_tt.getTypePtr()->getAsUnionType()
+                                          ->getDecl()
+                                          ->getDefinition();
                     one_line_name = "typedef union ";
                 }
 
@@ -322,14 +411,17 @@ static Hash define_type(
                 PresumedLoc beginLoc = sm.getPresumedLoc(sm.getSpellingLoc(it));
                 Hash hash = TypeDBEntry::mkType(
                     name,
-                    pointer,
+                    size,
+                    is_pointer,
+                    is_const,
+                    is_volatile,
+                    is_restrict,
                     size_mod,
                     one_line_name,
                     safe_get_filename(beginLoc),
                     beginLoc.getLine(),
                     beginLoc.getColumn(),
-                    reqs,
-                    size).hash();
+                    reqs).hash();
                 seen[t] = hash;
                 return hash;
             }
@@ -350,40 +442,47 @@ static Hash define_type(
                     text += ";";
 
                 TypeDBEntry ti = TypeDBEntry::mkType(td->getNameAsString(),
-                                                     pointer,
+                                                     size,
+                                                     is_pointer,
+                                                     is_const,
+                                                     is_volatile,
+                                                     is_restrict,
                                                      size_mod,
                                                      text,
                                                      safe_get_filename(beginLoc),
                                                      beginLoc.getLine(),
                                                      beginLoc.getColumn(),
-                                                     reqs,
-                                                     size);
+                                                     reqs);
                 seen[t] = ti.hash();
                 return ti.hash();
             }
         }
     }
 
-    else if (t->getAs<BuiltinType>()) {
+    else if (t.getTypePtr()->getAs<BuiltinType>()) {
         std::string name =
-            t->getAs<BuiltinType>()->getName(PrintingPolicy(ci->getLangOpts()));
+            t.getTypePtr()->getAs<BuiltinType>()
+                          ->getName(PrintingPolicy(ci->getLangOpts()));
         Hash hash = TypeDBEntry::mkInclude(
             name,
-            pointer,
+            size,
+            is_pointer,
+            is_const,
+            is_volatile,
+            is_restrict,
             size_mod,
             "",
             0,
             0,
-            "",
-            size).hash();
+            "").hash();
         seen[t] = hash;
         return hash;
     }
 
-    else if (t->isStructureType() || t->isUnionType()) {
-        const RecordType * rt = t->isStructureType() ?
-                                t->getAsStructureType() :
-                                t->getAsUnionType();
+    else if (t.getTypePtr()->isStructureType() || t.getTypePtr()->isUnionType()) {
+        const RecordType * rt = t.getTypePtr()->isStructureType() ?
+                                t.getTypePtr()->getAsStructureType() :
+                                t.getTypePtr()->getAsUnionType();
         RecordDecl * decl = rt->getDecl();
         RecordDecl * rd = decl->getDefinition();
 
@@ -402,13 +501,16 @@ static Hash define_type(
 
             Hash hash = TypeDBEntry::mkInclude(
                 rd->getNameAsString(),
-                pointer,
+                size,
+                is_pointer,
+                is_const,
+                is_volatile,
+                is_restrict,
                 size_mod,
                 safe_get_filename(beginLoc),
                 beginLoc.getLine(),
                 beginLoc.getColumn(),
-                header,
-                size).hash();
+                header).hash();
             seen[t] = hash;
             return hash;
         }
@@ -424,7 +526,7 @@ static Hash define_type(
 
                 TypeDBEntry fdecl = TypeDBEntry::mkFwdDecl(
                     rd->getNameAsString(),
-                    pointer,
+                    is_pointer,
                     size_mod,
                     (t->isStructureType() ? "struct" : "union"),
                     safe_get_filename(beginLoc),
@@ -441,7 +543,7 @@ static Hash define_type(
                  it != rd->field_end();
                  ++it)
             {
-                Hash h = define_type(it->getType().getTypePtr(), seen, ci, context);
+                Hash h = define_type(it->getType(), ci, context);
                 reqs.insert(h);
             }
 
@@ -464,14 +566,17 @@ static Hash define_type(
                 text += ";";
 
             TypeDBEntry ti = TypeDBEntry::mkType(rd->getNameAsString(),
-                                                 pointer,
+                                                 size,
+                                                 is_pointer,
+                                                 is_const,
+                                                 is_volatile,
+                                                 is_restrict,
                                                  size_mod,
                                                  text,
                                                  safe_get_filename(beginLoc),
                                                  beginLoc.getLine(),
                                                  beginLoc.getColumn(),
-                                                 reqs,
-                                                 size);
+                                                 reqs);
             seen[t] = ti.hash();
             return ti.hash();
         }
@@ -480,9 +585,8 @@ static Hash define_type(
     return 0;
 }
 
-Hash clang_mutate::hash_type(const Type * t, CompilerInstance * ci,
+Hash clang_mutate::hash_type(const QualType & t, CompilerInstance * ci,
                              ASTContext *context)
 {
-    std::map<const Type*, Hash> seen;
-    return define_type(t, seen, ci, context);
+    return define_type(t, ci, context);
 }

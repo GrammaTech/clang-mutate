@@ -73,7 +73,7 @@ AstRef Ast::impl_create(T * clang_obj, Requirements & required)
         if (isa<Expr>(stmt)) {
             Expr *expr = static_cast<Expr *>(stmt);
             QualType qt = expr->getType();
-            ref->setExprType(hash_type(qt.getTypePtrOrNull(), required.CI(),
+            ref->setExprType(hash_type(qt, required.CI(),
                                        required.astContext()));
         }
     }

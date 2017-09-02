@@ -212,12 +212,11 @@ class BuildTU
             std::string decl_name = d->getIdentifier()->getName().str();
 
             std::set<Hash> types;
-            const Type * tdecl = (isa<VarDecl>(d)) ?
-                                 static_cast<VarDecl*>(d)->getTypeSourceInfo()
-                                                         ->getType()
-                                                         .getTypePtrOrNull() :
-                                 NULL;
-            if (tdecl) {
+            const QualType tdecl = (isa<VarDecl>(d)) ?
+                                   static_cast<VarDecl*>(d)->getTypeSourceInfo()
+                                                           ->getType() :
+                                   QualType();
+            if (!tdecl.isNull()) {
                 types.insert(hash_type(tdecl, ci, Context));
             }
 
@@ -282,13 +281,14 @@ class BuildTU
                     args.push_back(
                             std::make_pair(
                                     id ? id->getName().str() : "",
-                                    hash_type(p->getType().getTypePtr(), ci,
+                                    hash_type(p->getType(),
+                                              ci,
                                               Context)));
                 }
 
                 AuxDBEntry &proto = ast->aux();
                 proto.set("name", F->getNameAsString());
-                proto.set("ret", hash_type(ret.getTypePtr(), ci, Context));
+                proto.set("ret", hash_type(ret, ci, Context));
                 proto.set("void_ret", ret.getTypePtr()->isVoidType());
                 proto.set("args", args);
                 proto.set("varargs", F->isVariadic());

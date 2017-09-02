@@ -89,6 +89,12 @@ OPEN=etc/open.c
 
 STRCMP_MACRO=etc/strcmp_macro.c
 
+CONST_VAR=etc/const_var.c
+
+VOLATILE_VAR=etc/volatile_var.c
+
+RESTRICT_VAR=etc/restrict_var.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -199,6 +205,15 @@ run_open() {
 
 run_strcmp_macro() {
     clang-mutate "$@" $STRCMP_MACRO -- -c -g -O2; }
+
+run_const_var() {
+    clang-mutate "$@" $CONST_VAR -- -c; }
+
+run_volatile_var() {
+    clang-mutate "$@" $VOLATILE_VAR -- -c; }
+
+run_restrict_var() {
+    clang-mutate "$@" $RESTRICT_VAR -- -c; }
 
 json() {
     cat -|jshon "$@"; }

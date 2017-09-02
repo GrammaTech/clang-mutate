@@ -48,7 +48,7 @@ bool GetBindingCtx::TraverseVarDecl(VarDecl * decl)
   std::string name = decl->getQualifiedNameAsString();
   IdentifierInfo * ident = decl->getIdentifier();
 
-  const Type * tdecl = decl->getTypeSourceInfo()->getType().getTypePtrOrNull();
+  const QualType tdecl = decl->getTypeSourceInfo()->getType();
   Hash type_hash = hash_type(tdecl, ci, context);
 
   ctx.push(name, ident, type_hash);
@@ -116,7 +116,7 @@ bool GetBindingCtx::VisitStmt(Stmt * expr)
 
 void GetBindingCtx::addAddlType(const QualType & qt)
 {
-    Hash type_hash = hash_type(qt.getTypePtrOrNull(), ci, context);
+    Hash type_hash = hash_type(qt, ci, context);
     if (type_hash != 0)
         addl_types.insert(type_hash);
 }
