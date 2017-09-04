@@ -55,6 +55,18 @@ bool Requirements::VisitVarDecl(VarDecl * decl)
   return base::VisitVarDecl(decl);
 }
 
+bool Requirements::VisitTypedefDecl(TypedefDecl * decl)
+{
+  std::string name = decl->getQualifiedNameAsString();
+  IdentifierInfo * ident = decl->getIdentifier();
+
+  const QualType tdecl = decl->getTypeSourceInfo()->getType();
+  Hash type_hash = hash_type(tdecl, ci, astContext());
+
+  ctx.push(name, ident, type_hash);
+  return base::VisitTypedefDecl(decl);
+}
+
 bool Requirements::VisitStmt(Stmt * stmt)
 {
     gatherMacro(stmt);

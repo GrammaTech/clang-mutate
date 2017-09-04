@@ -191,7 +191,9 @@ TESTS =	help-text-appears				\
     strcmp-macro \
     const-var \
     volatile-var \
-    restrict-var
+    restrict-var \
+    function-pointer \
+    function-pointer-no-proto
 
 etc/hello: etc/hello.c
 	$(CXX) -g -O0 $< -o $@

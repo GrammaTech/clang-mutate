@@ -95,6 +95,10 @@ VOLATILE_VAR=etc/volatile_var.c
 
 RESTRICT_VAR=etc/restrict_var.c
 
+FUNCTION_POINTER=etc/function_pointer.c
+
+FUNCTION_POINTER_NO_PROTO=etc/function_pointer_no_proto.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -214,6 +218,12 @@ run_volatile_var() {
 
 run_restrict_var() {
     clang-mutate "$@" $RESTRICT_VAR -- -c; }
+
+run_function_pointer() {
+    clang-mutate "$@" $FUNCTION_POINTER --; }
+
+run_function_pointer_no_proto() {
+    clang-mutate "$@" $FUNCTION_POINTER_NO_PROTO --; }
 
 json() {
     cat -|jshon "$@"; }

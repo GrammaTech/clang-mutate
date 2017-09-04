@@ -1,0 +1,11 @@
+#!/bin/bash
+#
+# Ensure a function pointer with no prototype is found
+. $(dirname $0)/common
+
+type=$(run_function_pointer_no_proto -json |
+       json_filter type "\"char \*()\"" |
+       jshon -e hash)
+
+echo $type
+[ $type != "" ]

@@ -68,6 +68,7 @@ public:
         clang::UnaryExprOrTypeTraitExpr * expr);
 
     bool VisitVarDecl(clang::VarDecl * decl);
+    bool VisitTypedefDecl(clang::TypedefDecl * decl);
     bool VisitDeclRefExpr(clang::DeclRefExpr * decl);
     
     bool toplevel_is_macro() const { return toplev_is_macro; }

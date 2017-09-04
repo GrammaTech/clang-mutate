@@ -3,4 +3,4 @@
 . $(dirname $0)/common
 
 contains "$(run_hello -json | json -l)" \
-         "18"
+         "20"

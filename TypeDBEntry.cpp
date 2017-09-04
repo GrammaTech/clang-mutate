@@ -294,7 +294,6 @@ static Hash define_type(
         }
     }
 
-
     // Attempt to find the base type in the cache
     std::map<QualType, Hash, QualTypeComparator>::iterator search;
     search = seen.find(t);
@@ -475,6 +474,66 @@ static Hash define_type(
             0,
             0,
             "").hash();
+        seen[t] = hash;
+        return hash;
+    }
+
+    else if (t.getTypePtr()->getAs<ParenType>()) {
+        return define_type(t.getTypePtr()->getAs<ParenType>()->getInnerType(),
+                           ci, context);
+    }
+
+    else if (t.getTypePtr()->getAs<FunctionProtoType>()) {
+        const FunctionProtoType * ft = t->getAs<FunctionProtoType>();
+        std::set<Hash> reqs;
+
+        reqs.insert(define_type(ft->getReturnType(), ci, context));
+        for (FunctionProtoType::param_type_iterator it = ft->param_type_begin();
+             it != ft->param_type_end();
+             ++it)
+        {
+            reqs.insert(define_type(*it, ci, context));
+        }
+
+        Hash hash = TypeDBEntry::mkType(
+            t.getAsString(),
+            size,
+            is_pointer,
+            is_const,
+            is_volatile,
+            is_restrict,
+            size_mod,
+            "",
+            "",
+            0,
+            0,
+            reqs).hash();
+        seen[t] = hash;
+        return hash;
+    }
+
+    else if (t.getTypePtr()->getAs<FunctionNoProtoType>()) {
+        const FunctionNoProtoType * ft = t->getAs<FunctionNoProtoType>();
+        std::set<Hash> reqs;
+
+        reqs.insert(define_type(ft->getReturnType(),
+                                StorageClass::SC_None,
+                                ci,
+                                context));
+        Hash hash = TypeDBEntry::mkType(
+            t.getAsString(),
+            size,
+            is_pointer,
+            is_const,
+            is_volatile,
+            is_restrict,
+            get_storage_class_string(sc),
+            size_mod,
+            "",
+            "",
+            0,
+            0,
+            reqs).hash();
         seen[t] = hash;
         return hash;
     }
