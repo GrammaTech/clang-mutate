@@ -1,0 +1,12 @@
+#!/bin/bash
+#
+# Ensure <alloca.h> and "alloca_macro.h" are included for
+# the ALLOCA macro
+. $(dirname $0)/common
+
+includes=$(run_alloca_macro -json | \
+           json_filter ast_class "\"DeclStmt\"" | \
+           jshon -e includes)
+
+equals $(echo $includes | jshon -e 1) "\"<alloca.h>\""
+equals $(echo $includes | jshon -e 0) "\"\\\"alloca_macro.h\\\"\""

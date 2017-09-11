@@ -101,6 +101,8 @@ FUNCTION_POINTER_NO_PROTO=etc/function_pointer_no_proto.c
 
 INT64_T=etc/int64_t.c
 
+ALLOCA_MACRO=etc/alloca_macro.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -229,6 +231,9 @@ run_function_pointer_no_proto() {
 
 run_int64_t() {
     clang-mutate "$@" $INT64_T --; }
+
+run_alloca_macro() {
+    clang-mutate "$@" $ALLOCA_MACRO --; }
 
 json() {
     cat -|jshon "$@"; }

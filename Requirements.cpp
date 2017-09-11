@@ -147,7 +147,14 @@ void Requirements::gatherMacro(Stmt * stmt)
             }
             else if (Utils::in_header(sb, ci, header) ||
                      Utils::in_header(mb, ci, header)) {
-                m_includes.insert(header);
+                if (Utils::in_header(sb, ci, header)) {
+                    m_includes.insert(header);
+                }
+                if (Utils::in_header(mb, ci, header) &&
+                    !sm.isInSystemHeader(sb) &&
+                    !sm.isInExternCSystemHeader(sb)) {
+                    m_includes.insert(header);
+                }
             }
         }
     }
