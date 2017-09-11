@@ -1,0 +1,5 @@
+#!/bin/bash
+. $(dirname $0)/common
+
+equals $(run_int64_t -json | json_key_filter i-file | json -e i-file) \
+       "\"<sys\/types.h>\""

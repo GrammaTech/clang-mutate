@@ -140,7 +140,7 @@ TESTS =	help-text-appears				\
 	no-aux-gives-all-entries                        \
 	aux-includes-expected-entries                   \
 	aux-excludes-expected-entries                   \
-	null-finds-stdlib                               \
+	null-finds-stddef                               \
 	null-has-no-macros				\
 	scopes-block-starts-scope			\
 	scopes-function-args-are-local			\
@@ -193,7 +193,8 @@ TESTS =	help-text-appears				\
     volatile-var \
     restrict-var \
     function-pointer \
-    function-pointer-no-proto
+    function-pointer-no-proto \
+    int64_t-finds-header
 
 etc/hello: etc/hello.c
 	$(CXX) -g -O0 $< -o $@

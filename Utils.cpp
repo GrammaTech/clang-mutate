@@ -1,4 +1,4 @@
-#include "Utils.h"
+# include "Utils.h"
 #include "Ast.h"
 
 #include <algorithm>
@@ -335,74 +335,72 @@ std::string intercalate(const std::vector<std::string> & input,
     return oss.str();
 }
 
+std::string get_include_path(SourceLocation loc,
+                             CompilerInstance *ci)
+{
+    // Return the path to loc which may be #include'd
+    // into a source file
+    SourceManager & sm = ci->getSourceManager();
+    PresumedLoc pl = sm.getPresumedLoc(loc);
+    std::string filename = Utils::safe_realpath(pl.getFilename());
+    std::string header;
+
+    for (auto it = ci->getHeaderSearchOpts().UserEntries.begin();
+         it != ci->getHeaderSearchOpts().UserEntries.end() &&
+           header.empty();
+         it++) {
+        std::string path = Utils::safe_realpath(it->Path);
+        if (!path.empty() && filename.find(path) != std::string::npos) {
+            header = filename.substr(path.length() + 1);
+        }
+    }
+
+    return header.empty() ?
+           filename.substr(filename.find_last_of("/") + 1) :
+           header;
+}
+
+bool is_valid_system_include(SourceLocation loc,
+                             CompilerInstance *ci)
+{
+    // Return true if loc in a system header which may be
+    // #include'd into a source file
+    SourceManager & sm = ci->getSourceManager();
+    std::string header = get_include_path(loc, ci);
+
+    return ((sm.isInSystemHeader(loc) ||
+             sm.isInExternCSystemHeader(loc)) &&
+            (header.find("bits") == std::string::npos ||
+             header == "bits/stdc++.h"));
+}
+
 bool in_header(
     SourceLocation loc,
     CompilerInstance * ci,
     std::string & header)
 {
     SourceManager & sm = ci->getSourceManager();
-    if (sm.isWrittenInMainFile(loc))
+    if (sm.isWrittenInMainFile(loc) || loc.isInvalid())
         return false;
 
-    SourceLocation last_hdr = loc;
     if (sm.isInSystemHeader(loc) ||
         sm.isInExternCSystemHeader(loc)) {
         // loc is in a system header
         loc = sm.getSpellingLoc(loc);
 
-        while (sm.isInSystemHeader(loc) ||
-               sm.isInExternCSystemHeader(loc)) {
-            last_hdr = loc;
+        while (!loc.isInvalid() && !is_valid_system_include(loc, ci)) {
             loc = sm.getIncludeLoc(sm.getFileID(loc));
         }
 
-        last_hdr = sm.getSpellingLoc(last_hdr);
-        PresumedLoc pl = sm.getPresumedLoc(last_hdr);
-        std::string filename = Utils::safe_realpath(pl.getFilename());
-        header = "";
-
-        for (auto it = ci->getHeaderSearchOpts().UserEntries.begin();
-             it != ci->getHeaderSearchOpts().UserEntries.end() &&
-               header.empty();
-             it++) {
-            std::string path = Utils::safe_realpath(it->Path);
-            if (!path.empty() && filename.find(path) != std::string::npos) {
-                header = "<" + filename.substr(path.length() + 1) + ">";
-            }
-        }
-
-        if (header.empty())
+        if (loc.isInvalid() || (!sm.isInSystemHeader(loc) &&
+                                !sm.isInExternCSystemHeader(loc)))
             return false;
+
+        loc = sm.getSpellingLoc(loc);
+        header = "<" + get_include_path(loc, ci) + ">";
     }
     else {
-        while (!sm.isWrittenInMainFile(loc) && last_hdr.isValid()) {
-            last_hdr = loc;
-            loc = sm.getIncludeLoc(sm.getFileID(loc));
-        }
-
-        if (last_hdr.isInvalid())
-            return false;
-        loc = last_hdr;
-
-        PresumedLoc pl = sm.getPresumedLoc(sm.getSpellingLoc(loc));
-        std::string filename = Utils::safe_realpath(pl.getFilename());
-        header = "";
-
-        for (auto it = ci->getHeaderSearchOpts().UserEntries.begin();
-             it != ci->getHeaderSearchOpts().UserEntries.end() &&
-               header.empty();
-             it++) {
-            std::string path = Utils::safe_realpath(it->Path);
-            if (!path.empty() && filename.find(path) != std::string::npos) {
-                header = "\"" + filename.substr(path.length() + 1) + "\"";
-            }
-        }
-
-        if (header.empty()) {
-            header = "\"" +
-                     filename.substr(filename.find_last_of("/") + 1) +
-                     "\"";
-        }
+        header = "\"" + get_include_path(loc, ci) + "\"";
     }
 
     return true;

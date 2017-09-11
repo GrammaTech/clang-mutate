@@ -99,6 +99,8 @@ FUNCTION_POINTER=etc/function_pointer.c
 
 FUNCTION_POINTER_NO_PROTO=etc/function_pointer_no_proto.c
 
+INT64_T=etc/int64_t.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -224,6 +226,9 @@ run_function_pointer() {
 
 run_function_pointer_no_proto() {
     clang-mutate "$@" $FUNCTION_POINTER_NO_PROTO --; }
+
+run_int64_t() {
+    clang-mutate "$@" $INT64_T --; }
 
 json() {
     cat -|jshon "$@"; }
