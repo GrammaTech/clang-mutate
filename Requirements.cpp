@@ -46,9 +46,7 @@ bool Requirements::VisitVarDecl(VarDecl * decl)
 {
   std::string name = decl->getQualifiedNameAsString();
   IdentifierInfo * ident = decl->getIdentifier();
-
-  const QualType tdecl = decl->getTypeSourceInfo()->getType();
-  Hash type_hash = hash_type(tdecl, ci, astContext());
+  Hash type_hash = hash_type(decl, ci, astContext());
 
   ctx.push(name, ident, type_hash);
 
@@ -59,7 +57,6 @@ bool Requirements::VisitTypedefDecl(TypedefDecl * decl)
 {
   std::string name = decl->getQualifiedNameAsString();
   IdentifierInfo * ident = decl->getIdentifier();
-
   const QualType tdecl = decl->getTypeSourceInfo()->getType();
   Hash type_hash = hash_type(tdecl, ci, astContext());
 

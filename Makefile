@@ -195,7 +195,8 @@ TESTS =	help-text-appears				\
     function-pointer \
     function-pointer-no-proto \
     int64_t-finds-header \
-    alloca-macro
+    alloca-macro \
+    storage-classes
 
 etc/hello: etc/hello.c
 	$(CXX) -g -O0 $< -o $@

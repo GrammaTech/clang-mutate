@@ -1,0 +1,20 @@
+#!/bin/bash
+#
+# Ensure storage class specifiers on types are correct
+. $(dirname $0)/common
+
+JSON=$(run_storage_classes -json)
+
+FLOAT_TYPE=$(echo $JSON | json_filter type "\"float\"")
+SHORT_TYPE=$(echo $JSON | json_filter type "\"short\"")
+CHAR_TYPE=$(echo $JSON | json_filter type "\"char\"")
+INT_TYPE=$(echo $JSON | json_filter type "\"int\"")
+DOUBLE_TYPE=$(echo $JSON | json_filter type "\"double\"")
+LONG_TYPE=$(echo $JSON | json_filter type "\"long\"")
+
+equals $(echo $FLOAT_TYPE | jshon -e "storage_class")  "\"extern\""
+equals $(echo $SHORT_TYPE | jshon -e "storage_class")  "\"__private_extern__\""
+equals $(echo $CHAR_TYPE | jshon -e "storage_class")   "\"register\""
+equals $(echo $INT_TYPE | jshon -e "storage_class")    "\"none\""
+equals $(echo $DOUBLE_TYPE | jshon -e "storage_class") "\"static\""
+equals $(echo $LONG_TYPE | jshon -e "storage_class")   "\"auto\""

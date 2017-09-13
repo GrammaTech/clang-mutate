@@ -212,12 +212,9 @@ class BuildTU
             std::string decl_name = d->getIdentifier()->getName().str();
 
             std::set<Hash> types;
-            const QualType tdecl = (isa<VarDecl>(d)) ?
-                                   static_cast<VarDecl*>(d)->getTypeSourceInfo()
-                                                           ->getType() :
-                                   QualType();
-            if (!tdecl.isNull()) {
-                types.insert(hash_type(tdecl, ci, Context));
+            VarDecl * vdecl = (isa<VarDecl>(d)) ? static_cast<VarDecl*>(d) : NULL;
+            if (vdecl != NULL) {
+                types.insert(hash_type(vdecl, ci, Context));
             }
 
             AuxDBEntry decl;

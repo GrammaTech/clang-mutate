@@ -103,6 +103,8 @@ INT64_T=etc/int64_t.c
 
 ALLOCA_MACRO=etc/alloca_macro.c
 
+STORAGE_CLASSES=etc/storage_classes.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -234,6 +236,9 @@ run_int64_t() {
 
 run_alloca_macro() {
     clang-mutate "$@" $ALLOCA_MACRO --; }
+
+run_storage_classes() {
+    clang-mutate "$@" $STORAGE_CLASSES --; }
 
 json() {
     cat -|jshon "$@"; }

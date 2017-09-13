@@ -47,9 +47,7 @@ bool GetBindingCtx::TraverseVarDecl(VarDecl * decl)
 {
   std::string name = decl->getQualifiedNameAsString();
   IdentifierInfo * ident = decl->getIdentifier();
-
-  const QualType tdecl = decl->getTypeSourceInfo()->getType();
-  Hash type_hash = hash_type(tdecl, ci, context);
+  Hash type_hash = hash_type(decl, ci, context);
 
   ctx.push(name, ident, type_hash);
 

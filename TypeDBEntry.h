@@ -23,6 +23,7 @@ public:
                               const bool & _const,
                               const bool & _volatile,
                               const bool & _restrict,
+                              const std::string & _storage_class,
                               const std::string & _array_size,
                               const std::string & _text,
                               const std::string & _file,
@@ -44,6 +45,7 @@ public:
                                  const bool & _const,
                                  const bool & _volatile,
                                  const bool & _restrict,
+                                 const std::string & _storage_class,
                                  const std::string & _array_size,
                                  const std::string & _file,
                                  const unsigned int & _line,
@@ -58,6 +60,7 @@ public:
     bool is_const() const { return m_const; }
     bool is_volatile() const { return m_volatile; }
     bool is_restrict() const { return m_restrict; }
+    std::string storage_class() const { return m_storage_class; }
     std::string array_size() const { return m_array_size; }
     std::string text() const { return m_text; }
     std::string file() const { return m_file; }
@@ -86,6 +89,7 @@ private:
     bool m_const;
     bool m_volatile;
     bool m_restrict;
+    std::string m_storage_class;
     std::string m_array_size;
     std::string m_text;
     std::string m_file;
@@ -95,6 +99,10 @@ private:
     std::set<Hash> m_reqs;
     Hash        m_hash;
 };
+
+Hash hash_type(const clang::VarDecl * decl,
+               clang::CompilerInstance * ci,
+               clang::ASTContext *context);
 
 Hash hash_type(const clang::QualType & t,
                clang::CompilerInstance * ci,

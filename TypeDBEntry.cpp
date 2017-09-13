@@ -19,174 +19,27 @@ struct QualTypeComparator{
                ((((rx + ry) * (rx + ry + 1)) / 2) + ry);
     }
 };
-std::map<Hash, TypeDBEntry> TypeDBEntry::type_db;
 
-TypeDBEntry TypeDBEntry::mkType(const std::string & _name,
-                                const uint64_t & _size,
-                                const bool & _pointer,
-                                const bool & _const,
-                                const bool & _volatile,
-                                const bool & _restrict,
-                                const std::string & _array_size,
-                                const std::string & _text,
-                                const std::string & _file,
-                                const unsigned int & _line,
-                                const unsigned int & _col,
-                                const std::set<Hash> & _reqs)
+static std::string get_storage_class_string(StorageClass sc)
 {
-    TypeDBEntry ti;
-    ti.m_name = _name;
-    ti.m_size = _size;
-    ti.m_pointer = _pointer;
-    ti.m_const = _const;
-    ti.m_volatile = _volatile;
-    ti.m_restrict = _restrict;
-    ti.m_array_size = _array_size;
-    ti.m_text = _text;
-    ti.m_file = _file;
-    ti.m_line = _line;
-    ti.m_col = _col;
-    ti.m_reqs = _reqs;
-    ti.compute_hash();
-    return ti;
-}
-
-TypeDBEntry TypeDBEntry::mkFwdDecl(const std::string & _name,
-                                   const bool & _pointer,
-                                   const std::string & _array_size,
-                                   const std::string & _kind,
-                                   const std::string & _file,
-                                   const unsigned int & _line,
-                                   const unsigned int & _col)
-{
-    TypeDBEntry ti;
-    ti.m_name = _name;
-    ti.m_pointer = _pointer;
-    ti.m_const = false;
-    ti.m_volatile = false;
-    ti.m_restrict = false;
-    ti.m_array_size = _array_size;
-    ti.m_text = _kind;
-    ti.m_text += " ";
-    ti.m_text += _name;
-    ti.m_text += ";";
-    ti.m_file = _file;
-    ti.m_line = _line;
-    ti.m_col = _col;
-    ti.m_size = 0;
-    ti.compute_hash();
-    return ti;
-}
-
-TypeDBEntry TypeDBEntry::mkInclude(const std::string & _name,
-                                   const uint64_t & _size,
-                                   const bool & _pointer,
-                                   const bool & _const,
-                                   const bool & _volatile,
-                                   const bool & _restrict,
-                                   const std::string & _array_size,
-                                   const std::string & _file,
-                                   const unsigned int & _line,
-                                   const unsigned int & _col,
-                                   const std::string & _ifile)
-
-{
-    TypeDBEntry ti;
-    ti.m_name = _name;
-    ti.m_size = _size;
-    ti.m_pointer = _pointer;
-    ti.m_const = _const;
-    ti.m_volatile = _volatile;
-    ti.m_restrict = _restrict;
-    ti.m_array_size = _array_size;
-    ti.m_file = _file;
-    ti.m_line = _line;
-    ti.m_col = _col;
-    ti.m_ifile = _ifile;
-    ti.compute_hash();
-    return ti;
-}
-
-TypeDBEntry TypeDBEntry::find_type(Hash hash)
-{
-    return type_db[hash];
-}
-
-void TypeDBEntry::compute_hash()
-{
-    std::hash<std::string> hasher;
-    size_t h = hasher(m_name +
-                      m_text +
-                      m_array_size +
-                      (m_pointer ? "pointer" : "") +
-                      (m_const ? "const" : "") +
-                      (m_volatile ? "volatile" : "") +
-                      (m_restrict ? "restrict" : ""));
-
-    for (std::set<Hash>::iterator it = m_reqs.begin();
-         it != m_reqs.end();
-         ++it)
+    switch (sc)
     {
-        // C++11 decided to add a std::hash, but not a
-        // std::hash_combine?! This is the 64-bit combiner
-        // from Google's CityHash, as in
-        // http://stackoverflow.com/questions/8513911/how-to-create-a-good-hash-combine-with-64-bit-output-inspired-by-boosthash-co
-        const size_t kMul = 0x9ddfea08eb382d69ULL;
-        size_t a = (it->hash() ^ h) * kMul;
-        a ^= (a >> 47);
-        size_t b = (h ^ a) * kMul;
-        b ^= (b >> 47);
-        h = b * kMul;
+    case StorageClass::SC_None:
+        return "none";
+    case StorageClass::SC_Extern:
+        return "extern";
+    case StorageClass::SC_Static:
+        return "static";
+    case StorageClass::SC_PrivateExtern:
+        return "__private_extern__";
+    case StorageClass::SC_Auto:
+        return "auto";
+    case StorageClass::SC_Register:
+        return "register";
+    default:
+        return "none";
     }
-
-    m_hash = h;
-    if (type_db.find(m_hash) != type_db.end())
-        return;
-    type_db[m_hash] = *this;
 }
-
-picojson::value TypeDBEntry::toJSON() const
-{
-    picojson::object jsonObj;
-
-    std::set<Hash> j_reqs = m_reqs;
-    j_reqs.erase(Hash(0));
-
-    jsonObj["hash"] = to_json(m_hash);
-    jsonObj["type"] = to_json(m_name);
-    jsonObj["pointer"] = to_json(m_pointer);
-    jsonObj["const"] = to_json(m_const);
-    jsonObj["volatile"] = to_json(m_volatile);
-    jsonObj["restrict"] = to_json(m_restrict);
-    jsonObj["array"] = to_json(m_array_size);
-    jsonObj["file"] = to_json(m_file);
-    jsonObj["line"] = to_json(m_line);
-    jsonObj["col"] = to_json(m_col);
-    if (!m_ifile.empty()) {
-        jsonObj["i-file"] = to_json(m_ifile);
-    }
-    else {
-        jsonObj["decl"] = to_json(m_text);
-    }
-    jsonObj["reqs"] = to_json(j_reqs);
-    if (m_size != 0)
-        jsonObj["size"] = to_json(m_size / 8);
-
-    return to_json(jsonObj);
-}
-
-picojson::array TypeDBEntry::databaseToJSON()
-{
-    picojson::array array;
-    for (std::map<Hash, TypeDBEntry>::iterator it = type_db.begin();
-         it != type_db.end();
-         ++it)
-    {
-        array.push_back(to_json(it->second));
-    }
-    return array;
-}
-
 static std::string safe_get_filename(PresumedLoc loc)
 {
     if (loc.isValid())
@@ -213,6 +66,7 @@ uint64_t get_type_size(ASTContext * context, const Type * t)
 
 static Hash define_type(
     QualType t,
+    StorageClass sc,
     CompilerInstance * ci,
     ASTContext *context)
 {
@@ -268,7 +122,7 @@ static Hash define_type(
 
             // Pointer to pointer
             if (t.getTypePtr()->isPointerType()) {
-                Hash pointee_hash = define_type(t, ci, context);
+                Hash pointee_hash = define_type(t, sc, ci, context);
                 std::set<Hash> reqs;
                 reqs.insert(pointee_hash);
 
@@ -282,6 +136,7 @@ static Hash define_type(
                         pointee.is_const() || is_const,
                         pointee.is_volatile() || is_volatile,
                         pointee.is_restrict() || is_restrict,
+                        get_storage_class_string(sc),
                         size_mod,
                         "",
                         "",
@@ -308,6 +163,7 @@ static Hash define_type(
                        is_const,
                        is_volatile,
                        is_restrict,
+                       get_storage_class_string(sc),
                        size_mod,
                        base.file(),
                        base.line(),
@@ -321,6 +177,7 @@ static Hash define_type(
                        is_const,
                        is_volatile,
                        is_restrict,
+                       get_storage_class_string(sc),
                        size_mod,
                        base.text(),
                        base.file(),
@@ -348,6 +205,7 @@ static Hash define_type(
                 is_const,
                 is_volatile,
                 is_restrict,
+                get_storage_class_string(sc),
                 size_mod,
                 safe_get_filename(beginLoc),
                 beginLoc.getLine(),
@@ -362,7 +220,7 @@ static Hash define_type(
 
             // Emit underlying type
             std::set<Hash> reqs;
-            reqs.insert(define_type(u_tt, ci, context));
+            reqs.insert(define_type(u_tt, StorageClass::SC_None, ci, context));
 
             // Emit the typedef itself
             // Exception: in the case of an underlying composite type,
@@ -415,6 +273,7 @@ static Hash define_type(
                     is_const,
                     is_volatile,
                     is_restrict,
+                    get_storage_class_string(sc),
                     size_mod,
                     one_line_name,
                     safe_get_filename(beginLoc),
@@ -446,6 +305,7 @@ static Hash define_type(
                                                      is_const,
                                                      is_volatile,
                                                      is_restrict,
+                                                     get_storage_class_string(sc),
                                                      size_mod,
                                                      text,
                                                      safe_get_filename(beginLoc),
@@ -469,6 +329,7 @@ static Hash define_type(
             is_const,
             is_volatile,
             is_restrict,
+            get_storage_class_string(sc),
             size_mod,
             "",
             0,
@@ -480,19 +341,24 @@ static Hash define_type(
 
     else if (t.getTypePtr()->getAs<ParenType>()) {
         return define_type(t.getTypePtr()->getAs<ParenType>()->getInnerType(),
-                           ci, context);
+                           StorageClass::SC_None,
+                           ci,
+                           context);
     }
 
     else if (t.getTypePtr()->getAs<FunctionProtoType>()) {
         const FunctionProtoType * ft = t->getAs<FunctionProtoType>();
         std::set<Hash> reqs;
 
-        reqs.insert(define_type(ft->getReturnType(), ci, context));
+        reqs.insert(define_type(ft->getReturnType(),
+                                StorageClass::SC_None,
+                                ci,
+                                context));
         for (FunctionProtoType::param_type_iterator it = ft->param_type_begin();
              it != ft->param_type_end();
              ++it)
         {
-            reqs.insert(define_type(*it, ci, context));
+            reqs.insert(define_type(*it, StorageClass::SC_None, ci, context));
         }
 
         Hash hash = TypeDBEntry::mkType(
@@ -502,6 +368,7 @@ static Hash define_type(
             is_const,
             is_volatile,
             is_restrict,
+            get_storage_class_string(sc),
             size_mod,
             "",
             "",
@@ -565,6 +432,7 @@ static Hash define_type(
                 is_const,
                 is_volatile,
                 is_restrict,
+                get_storage_class_string(sc),
                 size_mod,
                 safe_get_filename(beginLoc),
                 beginLoc.getLine(),
@@ -602,7 +470,10 @@ static Hash define_type(
                  it != rd->field_end();
                  ++it)
             {
-                Hash h = define_type(it->getType(), ci, context);
+                Hash h = define_type(it->getType(),
+                                     StorageClass::SC_None,
+                                     ci,
+                                     context);
                 reqs.insert(h);
             }
 
@@ -630,6 +501,7 @@ static Hash define_type(
                                                  is_const,
                                                  is_volatile,
                                                  is_restrict,
+                                                 get_storage_class_string(sc),
                                                  size_mod,
                                                  text,
                                                  safe_get_filename(beginLoc),
@@ -644,8 +516,193 @@ static Hash define_type(
     return 0;
 }
 
+Hash clang_mutate::hash_type(const clang::VarDecl * decl,
+                             clang::CompilerInstance *ci,
+                             clang::ASTContext *context)
+{
+    const QualType t = decl->getTypeSourceInfo()->getType();
+    const StorageClass sc = decl->getStorageClass();
+    return define_type(t, sc, ci, context);
+}
+
 Hash clang_mutate::hash_type(const QualType & t, CompilerInstance * ci,
                              ASTContext *context)
 {
-    return define_type(t, ci, context);
+    return define_type(t, StorageClass::SC_None, ci, context);
 }
+
+std::map<Hash, TypeDBEntry> TypeDBEntry::type_db;
+
+TypeDBEntry TypeDBEntry::mkType(const std::string & _name,
+                                const uint64_t & _size,
+                                const bool & _pointer,
+                                const bool & _const,
+                                const bool & _volatile,
+                                const bool & _restrict,
+                                const std::string & _storage_class,
+                                const std::string & _array_size,
+                                const std::string & _text,
+                                const std::string & _file,
+                                const unsigned int & _line,
+                                const unsigned int & _col,
+                                const std::set<Hash> & _reqs)
+{
+    TypeDBEntry ti;
+    ti.m_name = _name;
+    ti.m_size = _size;
+    ti.m_pointer = _pointer;
+    ti.m_const = _const;
+    ti.m_volatile = _volatile;
+    ti.m_restrict = _restrict;
+    ti.m_storage_class = _storage_class;
+    ti.m_array_size = _array_size;
+    ti.m_text = _text;
+    ti.m_file = _file;
+    ti.m_line = _line;
+    ti.m_col = _col;
+    ti.m_reqs = _reqs;
+    ti.compute_hash();
+    return ti;
+}
+
+TypeDBEntry TypeDBEntry::mkFwdDecl(const std::string & _name,
+                                   const bool & _pointer,
+                                   const std::string & _array_size,
+                                   const std::string & _kind,
+                                   const std::string & _file,
+                                   const unsigned int & _line,
+                                   const unsigned int & _col)
+{
+    TypeDBEntry ti;
+    ti.m_name = _name;
+    ti.m_pointer = _pointer;
+    ti.m_const = false;
+    ti.m_volatile = false;
+    ti.m_restrict = false;
+    ti.m_storage_class = get_storage_class_string(StorageClass::SC_None);
+    ti.m_array_size = _array_size;
+    ti.m_text = _kind;
+    ti.m_text += " ";
+    ti.m_text += _name;
+    ti.m_text += ";";
+    ti.m_file = _file;
+    ti.m_line = _line;
+    ti.m_col = _col;
+    ti.m_size = 0;
+    ti.compute_hash();
+    return ti;
+}
+
+TypeDBEntry TypeDBEntry::mkInclude(const std::string & _name,
+                                   const uint64_t & _size,
+                                   const bool & _pointer,
+                                   const bool & _const,
+                                   const bool & _volatile,
+                                   const bool & _restrict,
+                                   const std::string & _storage_class,
+                                   const std::string & _array_size,
+                                   const std::string & _file,
+                                   const unsigned int & _line,
+                                   const unsigned int & _col,
+                                   const std::string & _ifile)
+
+{
+    TypeDBEntry ti;
+    ti.m_name = _name;
+    ti.m_size = _size;
+    ti.m_pointer = _pointer;
+    ti.m_const = _const;
+    ti.m_volatile = _volatile;
+    ti.m_restrict = _restrict;
+    ti.m_storage_class = _storage_class;
+    ti.m_array_size = _array_size;
+    ti.m_file = _file;
+    ti.m_line = _line;
+    ti.m_col = _col;
+    ti.m_ifile = _ifile;
+    ti.compute_hash();
+    return ti;
+}
+
+TypeDBEntry TypeDBEntry::find_type(Hash hash)
+{
+    return type_db[hash];
+}
+
+void TypeDBEntry::compute_hash()
+{
+    std::hash<std::string> hasher;
+    size_t h = hasher(m_name +
+                      m_text +
+                      m_array_size +
+                      m_storage_class +
+                      (m_pointer ? "pointer" : "") +
+                      (m_const ? "const" : "") +
+                      (m_volatile ? "volatile" : "") +
+                      (m_restrict ? "restrict" : ""));
+
+    for (std::set<Hash>::iterator it = m_reqs.begin();
+         it != m_reqs.end();
+         ++it)
+    {
+        // C++11 decided to add a std::hash, but not a
+        // std::hash_combine?! This is the 64-bit combiner
+        // from Google's CityHash, as in
+        // http://stackoverflow.com/questions/8513911/how-to-create-a-good-hash-combine-with-64-bit-output-inspired-by-boosthash-co
+        const size_t kMul = 0x9ddfea08eb382d69ULL;
+        size_t a = (it->hash() ^ h) * kMul;
+        a ^= (a >> 47);
+        size_t b = (h ^ a) * kMul;
+        b ^= (b >> 47);
+        h = b * kMul;
+    }
+
+    m_hash = h;
+    if (type_db.find(m_hash) != type_db.end())
+        return;
+    type_db[m_hash] = *this;
+}
+
+picojson::value TypeDBEntry::toJSON() const
+{
+    picojson::object jsonObj;
+
+    std::set<Hash> j_reqs = m_reqs;
+    j_reqs.erase(Hash(0));
+
+    jsonObj["hash"] = to_json(m_hash);
+    jsonObj["type"] = to_json(m_name);
+    jsonObj["pointer"] = to_json(m_pointer);
+    jsonObj["const"] = to_json(m_const);
+    jsonObj["volatile"] = to_json(m_volatile);
+    jsonObj["restrict"] = to_json(m_restrict);
+    jsonObj["storage_class"] = to_json(m_storage_class);
+    jsonObj["array"] = to_json(m_array_size);
+    jsonObj["file"] = to_json(m_file);
+    jsonObj["line"] = to_json(m_line);
+    jsonObj["col"] = to_json(m_col);
+    if (!m_ifile.empty()) {
+        jsonObj["i-file"] = to_json(m_ifile);
+    }
+    else {
+        jsonObj["decl"] = to_json(m_text);
+    }
+    jsonObj["reqs"] = to_json(j_reqs);
+    if (m_size != 0)
+        jsonObj["size"] = to_json(m_size / 8);
+
+    return to_json(jsonObj);
+}
+
+picojson::array TypeDBEntry::databaseToJSON()
+{
+    picojson::array array;
+    for (std::map<Hash, TypeDBEntry>::iterator it = type_db.begin();
+         it != type_db.end();
+         ++it)
+    {
+        array.push_back(to_json(it->second));
+    }
+    return array;
+}
+
