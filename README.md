@@ -57,6 +57,8 @@ We're happy to incorporate changes that will enable more general execution.
 
 ## Examples
 
+A running example using the file `etc/hello.c`. Here is the source:
+
     $ cat etc/hello.c
     #include <stdio.h>
     int main(int argc, char *argv[])
@@ -65,8 +67,12 @@ We're happy to incorporate changes that will enable more general execution.
       return 0;
     }
 
+Count the number of statements:
+
     $ clang-mutate -ids etc/hello.c --
     12
+
+Print the source, annotated with statement IDs:
 
     $ clang-mutate -number etc/hello.c --
     #include <stdio.h>
@@ -77,6 +83,8 @@ We're happy to incorporate changes that will enable more general execution.
     }/* ]0.4 */
     /* ]0.1 */
 
+Cut the return statement:
+
     $ clang-mutate -cut -stmt1=11 etc/hello.c --
     #include <stdio.h>
     int main(int argc, char *argv[])
@@ -84,6 +92,8 @@ We're happy to incorporate changes that will enable more general execution.
       puts("hello");
 
     }
+
+Replace the string "hello" with the string "good bye":
 
     $ clang-mutate -set -stmt1=9 -value1='"good bye"' etc/hello.c --
     #include <stdio.h>
@@ -93,7 +103,8 @@ We're happy to incorporate changes that will enable more general execution.
       return 0;
     }
 
-  remove loop executions using the tools/perforate-loops script
+Use the `tools/perforate-loops` script to halve the number of loop iterations by
+replacing `++` or `--` with `+=2` or `-=2`, respectively:
 
     $ make etc/loop
     cc     etc/loop.c   -o etc/loop
@@ -119,7 +130,7 @@ We're happy to incorporate changes that will enable more general execution.
     hello 6 4
     hello 8 2
 
-  replace string literals using tools/strings-to
+Use the `tools/strings-to` script to replace string literals:
 
     $ ./tools/strings-to etc/hello.c foo
     #include <stdio.h>
