@@ -9,7 +9,7 @@ TMP="/tmp/clang_mutate_script_${RANDOM}.c"
 
 for ID in $(clang-mutate -list $1 --|grep StringLiteral|awk '{print $1}');do
     echo "$FILE" > $TMP
-    FILE="$(clang-mutate -set -stmt1=$ID -value="\"$STR\"" $TMP --|tail -n +2)"
+    FILE="$(clang-mutate -set -stmt1=$ID -value1="\"$STR\"" $TMP --)"
 done
 
 rm $TMP

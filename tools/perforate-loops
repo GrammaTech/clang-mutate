@@ -13,7 +13,7 @@
 #     pages={316--333}
 #   }
 # 
-clang_mutate(){ clang-mutate $@ --|tail -n +2; }
+clang_mutate(){ clang-mutate $@ -- ; }
 FILE="$(cat "$1")"
 if [ -z "$2" ];then FACTOR=2;else FACTOR=$2;fi
 TMP="/tmp/clang_mutate_script_${RANDOM}.c"
@@ -29,15 +29,20 @@ for FOR in $(echo "$LIST"|grep ForStmt);do
     ID=$(echo "$LIST"|grep UnaryOperator|grep "$LINE:"|awk '{print $1}')
     if [ ! -z "$ID" ];then
         echo "$FILE" > $TMP
-        # if the STMT is a ++ or --
-        STMT="$(clang_mutate -get -stmt1=$ID $TMP)"
-        if $(echo "$STMT"|grep "\(\+\+\|--\)$">/dev/null);then
-            # perforate that For loop
-            NEW="$(echo "$STMT"|sed 's/..$//')+=$FACTOR"
-            # echo "$STMT -> $NEW"
-            FILE="$(clang_mutate -set -stmt1=$ID -value="$NEW" $TMP)"
-            offset=$(echo "$offset + 1"|bc)
-        fi
+        for ctr in $ID
+        do
+            newctr="$(echo "$ctr + $offset" | bc)"
+            # if the STMT is a ++ or --
+            STMT="$(echo "get 0.$newctr" | clang_mutate -interactive -silent $TMP)"
+            if $(echo "$STMT"|grep "\(\+\+\|--\)$">/dev/null);then
+                # perforate that For loop
+                NEW="$(echo "$STMT"|sed 's/.$//')=$FACTOR"
+                #echo "$STMT -> $NEW"
+                FILE="$(clang_mutate -set -stmt1=$newctr -value1="$NEW" $TMP)"
+                echo "$FILE" > $TMP
+                offset=$(echo "$offset + 1"|bc)
+            fi
+        done
     fi
 done
 
