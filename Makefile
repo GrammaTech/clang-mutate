@@ -188,7 +188,7 @@ TESTS =	help-text-appears				\
     function-in-sys-header \
     sqrt-math-header-found \
     open-stat-header-found \
-    strcmp-macro \
+    macro-with-var-decl \
     const-var \
     volatile-var \
     restrict-var \

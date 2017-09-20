@@ -1,0 +1,14 @@
+#!/bin/bash
+#
+# Ensure all ASTs within the macro expansion have the same ending offset,
+# even if the macro contains a variable declaration.
+. $(dirname $0)/common
+
+end_off=$(run_macro_with_var_decl -json |
+          json_filter in_macro_expansion "true" |
+          json_wrap |
+          json -a -e end_off |
+          tr " " "\n" |
+          sort -u)
+
+equals "210" $end_off

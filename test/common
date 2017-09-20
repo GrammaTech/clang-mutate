@@ -87,7 +87,7 @@ SQRT=etc/sqrt.c
 
 OPEN=etc/open.c
 
-STRCMP_MACRO=etc/strcmp_macro.c
+MACRO_WITH_VAR_DECL=etc/macro_with_var_decl.c
 
 CONST_VAR=etc/const_var.c
 
@@ -213,8 +213,8 @@ run_sqrt() {
 run_open() {
     clang-mutate "$@" $OPEN --; }
 
-run_strcmp_macro() {
-    clang-mutate "$@" $STRCMP_MACRO -- -c -g -O2; }
+run_macro_with_var_decl() {
+    clang-mutate "$@" $MACRO_WITH_VAR_DECL --; }
 
 run_const_var() {
     clang-mutate "$@" $CONST_VAR -- -c; }
