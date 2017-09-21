@@ -1,59 +1,90 @@
 # clang-mutate: Manipulate C-family ASTs with Clang
 
-This tool provides an interface for performing operations on
-C and C++ source files. Using the
+This tool provides an interface for performing operations on C and C++
+source files.  Using the
 [clang LibTooling interface](http://clang.llvm.org/docs/LibTooling.html),
-it obtains an abstract syntax tree (AST) representation of the source and
-provides options to inspect or alter the AST.
+it obtains an abstract syntax tree (AST) representation of the source
+and provides enables the inspection or alteration the source ASTs.
+
 
 ## Inspection operations
-`clang-mutate` will output the ASTs for the source file(s) formatted either
-in JSON or S-expressions. Alternatively, it can be launched in interactive
-mode, and ASTs can be explored in a plain text format more similar to
-source code.
+
+`clang-mutate` can output the ASTs for input source file(s) formatted
+either as JSON or S-expressions.  Output ASTs provide source
+information to enable subsequent source rewriting by external tools.
+Alternatively, it can be launched in interactive mode, and ASTs can be
+explored in a plain text format more similar to source code.
 
 Some of the inspection operations are:
-* *-annotate* Display the source, annotating statements with their IDs and AST
-classes
-* *-ids* Display the number of statements in the source
-* *-list* List every statement's ID, AST class, and range
-* *-number* Display the source, annotating statements with their IDs
-* *-number-full* Display the source, annotating full statements with their IDs
-* *-cfg* Include control-flow information in ASTs
 
-Refer to the [manual](man/clang-mutate.template.md) for complete documentation
-of available commands.
+`-annotate`
+:   Display the source, annotating statements with their IDs
+    and AST classes
+
+`-ids`
+:   Display the number of statements in the source
+
+`-list`
+:   List every statement's ID, AST class, and range
+
+`-number`
+:   Display the source, annotating statements with their IDs
+
+`-number-full`
+:   Display the source, annotating full statements with their IDs
+
+`-cfg`
+:   Include control-flow information in ASTs
+
+Refer to the [manual](man/clang-mutate.template.md) for complete
+documentation of available commands.
+
 
 ## Mutation operands
-In `clang-mutate`, the mutation operands and operators are specified as separate
-flags. The `stmt1` and `stmt2` operands are used to specify a numeric AST ID to
-which an operator will be applied. The `value1` and `value2` operands are
-strings, and the `file1` and `file2` operands may be used to specify a file
-whose contents will be used as the strings for `value1` and `value2`,
-repectively.
+
+In `clang-mutate`, the mutation operands and operators are specified
+as separate flags.  The `stmt1` and `stmt2` operands are used to
+specify a numeric AST ID to which an operator will be applied. The
+`value1` and `value2` operands are strings, and the `file1` and
+`file2` operands may be used to specify a file whose contents will be
+used as the strings for `value1` and `value2`, repectively.
+
 
 ## Mutation operations
-Some of the mutation operations that are available include:
-* *-cut* Cut `stmt1` from the source
-* *-insert* Insert `value1` before `stmt1`
-* *-set* Set the text of `stmt1` to `value1`
-* *-swap* Swap `stmt1` and `stmt2` in the source
 
-Refer to the [manual](man/clang-mutate.template.md) for complete documentation
-of available mutation commands.
+Some of the mutation operations that are available include:
+
+`-cut`
+:   Cut `stmt1` from the source
+
+`-insert`
+:   Insert `value1` before `stmt1`
+
+`-set`
+:   Set the text of `stmt1` to `value1`
+
+`-swap`
+:   Swap `stmt1` and `stmt2` in the source
+
+Refer to the [manual](man/clang-mutate.template.md) for complete
+documentation of available mutation commands.
+
 
 ## Installation
 
-As mentioned above, `clang-mutate` uses the clang LibTooling interface, which
-means that the `clang-mutate` executable works best when run from the same
-directory as clang. Run "make install" to build and install.
+As mentioned above, `clang-mutate` uses the clang LibTooling
+interface, which means that the `clang-mutate` executable works best
+when run from the same directory as clang. Run "make install" to build
+and install.
 
 A PKGBUILD file is provided for installation on Arch Linux systems.
 
-`clang-mutate` has only been tested on Linux, although we don't know of any
-reason it should not work in other OSes. If you encounter issues running in a
-different OS, please let us know by filing an issue report or a merge request.
-We're happy to incorporate changes that will enable more general execution.
+`clang-mutate` has only been tested on Linux, although we don't know
+of any reason it should not work in other OSes.  If you encounter
+issues running in a different OS, please let us know by filing an
+issue report or a merge request.  We're happy to incorporate changes
+that will enable more general execution.
+
 
 ## Examples
 
