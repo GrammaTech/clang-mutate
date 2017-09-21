@@ -40,6 +40,33 @@ Hash Macro::hash() const {
     return Hash(hasher(m_name + m_body));
 }
 
+std::size_t MacroDB::PresumedLocHash::operator()(const PresumedLoc & loc) const
+{
+    std::stringstream ss;
+
+    if (loc.isInvalid()) {
+        ss << "<invalid>";
+    }
+    else {
+        ss << loc.getFilename() << ":"
+           << loc.getLine() << ":"
+           << loc.getColumn();
+    }
+
+    return std::hash<std::string>()(ss.str());
+}
+
+bool MacroDB::PresumedLocEqualTo::operator() (const PresumedLoc & lhs,
+                                              const PresumedLoc & rhs) const
+{
+    return ((lhs.isInvalid() && rhs.isInvalid()) ||
+            (!lhs.isInvalid() && !rhs.isInvalid() &&
+             strcmp(lhs.getFilename() ? lhs.getFilename() : "",
+                    rhs.getFilename() ? rhs.getFilename() : "") == 0 &&
+             lhs.getLine() == rhs.getLine() &&
+             lhs.getColumn() == rhs.getColumn()));
+}
+
 MacroDB::MacroDB(clang::CompilerInstance * _CI) {
     if (_CI) {
         Preprocessor & pp = _CI->getPreprocessor();
@@ -55,11 +82,11 @@ MacroDB::MacroDB(clang::CompilerInstance * _CI) {
                 std::string body = macro_body(_CI, mi);
 
                 if (sm.isWrittenInMainFile(mi->getDefinitionLoc())) {
-                    PresumedLoc start = sm.getPresumedLoc(mi->getDefinitionLoc());
-                    PresumedLoc end = sm.getPresumedLoc(mi->getDefinitionEndLoc());
-                    Macro m(name.str(), body, start, end);
-
-                    m_macros.insert(std::make_pair(m.hash(), m));
+                    Macro m(name.str(), body);
+                    m_macros.insert(
+                        std::make_pair(
+                            sm.getPresumedLoc(mi->getDefinitionLoc()),
+                            m));
                 }
             }
         }
@@ -72,48 +99,14 @@ MacroDB & MacroDB::getInstance(CompilerInstance * _CI) {
 }
 
 const Macro* MacroDB::find(const PresumedLoc & loc) const {
-    for (auto const & pair : m_macros) {
-        const Macro * m = &pair.second;
-
-        if (m->start().getFilename() != NULL &&
-            m->end().getFilename() != NULL &&
-            loc.getFilename() != NULL &&
-            strcmp(m->start().getFilename(), loc.getFilename()) == 0 &&
-            strcmp(m->end().getFilename(), loc.getFilename()) == 0 &&
-            m->start().getLine() <= loc.getLine() &&
-            m->start().getColumn() <= loc.getColumn() &&
-            loc.getLine() <= m->end().getLine() &&
-            loc.getColumn() <= m->end().getColumn()) {
-            return m;
-        }
-    }
-
-    return NULL;
-}
-const Macro* MacroDB::find(const std::string & name) const {
-    for (auto const & pair : m_macros) {
-        const Macro * m = &pair.second;
-        if (m->name() == name) {
-            return m;
-        }
-    }
-
-    return NULL;
-}
-
-const Macro* MacroDB::find(const Macro & macro) const {
-    return find(macro.hash());
-}
-
-const Macro* MacroDB::find(const Hash & hash) const {
-    return m_macros.find(hash) != m_macros.end() ?
-           &m_macros.find(hash)->second :
+    return m_macros.find(loc) != m_macros.end() ?
+           &m_macros.find(loc)->second :
            NULL;
 }
 
 picojson::array MacroDB::databaseToJSON() {
     picojson::array array;
-    for (std::map<Hash, Macro>::iterator it = m_macros.begin();
+    for (MacroMap::iterator it = m_macros.begin();
          it != m_macros.end();
          ++it)
     {

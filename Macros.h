@@ -3,6 +3,7 @@
 
 #include "Hash.h"
 #include "Json.h"
+#include "Utils.h"
 
 #include "clang/Basic/LLVM.h"
 #include "clang/AST/ASTConsumer.h"
@@ -14,9 +15,7 @@
 #include "clang/Frontend/CompilerInstance.h"
 
 #include <string>
-#include <stack>
-#include <map>
-#include <set>
+#include <unordered_map>
 
 namespace clang_mutate {
 
@@ -24,13 +23,9 @@ class Macro
 {
 public:
     Macro(const std::string & n,
-          const std::string & b,
-          const clang::PresumedLoc & start,
-          const clang::PresumedLoc & end)
+          const std::string & b)
         : m_name(n)
         , m_body(b)
-        , m_start(start)
-        , m_end(end)
     {}
 
     bool operator<(const Macro & other) const
@@ -44,14 +39,11 @@ public:
 
     const std::string name() const { return m_name; }
     const std::string body() const { return m_body; }
-    const clang::PresumedLoc start() const { return m_start; }
-    const clang::PresumedLoc end() const { return m_end; }
 private:
     std::string m_name;
     std::string m_body;
-    clang::PresumedLoc m_start;
-    clang::PresumedLoc m_end;
 };
+
 
 class MacroDB
 {
@@ -61,18 +53,31 @@ public:
     MacroDB(const MacroDB &) = delete;
     MacroDB& operator=(const MacroDB &) = delete;
 
-    const Macro* find(const clang::PresumedLoc & loc ) const;
-    const Macro* find(const std::string & name) const;
-    const Macro* find(const Macro & macro) const;
-    const Macro* find(const Hash & hash) const;
+    const Macro* find(const clang::PresumedLoc & loc) const;
 
     picojson::array databaseToJSON();
 private:
-    MacroDB() {}
+    struct PresumedLocHash
+    {
+        std::size_t operator()(const clang::PresumedLoc &loc) const;
+    };
 
+    struct PresumedLocEqualTo
+    {
+        bool operator()(const clang::PresumedLoc &lhs,
+                        const clang::PresumedLoc &rhs) const;
+    };
+
+    typedef std::unordered_map<clang::PresumedLoc,
+                               Macro,
+                               PresumedLocHash,
+                               PresumedLocEqualTo>
+            MacroMap;
+
+    MacroDB() {}
     MacroDB(clang::CompilerInstance *CI);
 
-    std::map<Hash, Macro> m_macros;
+    MacroMap m_macros;
 };
 
 } // end namespace clang_mutate
