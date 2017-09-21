@@ -37,7 +37,7 @@ package() {
 
   # documentation
   install -dm755 $pkgdir/usr/share/doc/$_srcdir
-  install -m644 $_srcdir/README $pkgdir/usr/share/doc/$_srcdir
+  install -m644 $_srcdir/README.md $pkgdir/usr/share/doc/$_srcdir
 }
 
 # vim: ts=2 sw=2 et:
