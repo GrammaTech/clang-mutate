@@ -77,9 +77,6 @@ public:
   bool VisitUnaryExprOrTypeTraitExpr(
       clang::UnaryExprOrTypeTraitExpr * expr);
 
-  std::set<VariableInfo> free_values(
-      const std::vector<std::set<clang::IdentifierInfo*> > & scopes) const;
-  std::set<FunctionInfo> free_functions() const;
   std::set<Hash> required_types() const;
   std::set<std::string> required_includes() const;
   

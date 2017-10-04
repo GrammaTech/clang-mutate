@@ -134,30 +134,4 @@ bool GetBindingCtx::VisitExplicitCastExpr(
     return true;
 }
 
-std::set<VariableInfo> GetBindingCtx::free_values(
-    const std::vector<std::set<IdentifierInfo*> > & scopes) const
-{
-    std::set<VariableInfo> ans;
-    for (std::set<BindingCtx::Binding>::const_iterator it = unbound_v.begin();
-         it != unbound_v.end();
-         ++it)
-    {
-        size_t index = 0;
-        typedef std::set<IdentifierInfo*> Ids;
-        for (std::vector<Ids>::const_reverse_iterator scope = scopes.rbegin();
-             scope != scopes.rend();
-             ++scope)
-        {
-            if (scope->find(it->second) != scope->end())
-                break;
-            ++index;
-        }
-        ans.insert(VariableInfo(it->second, index));
-    }
-    return ans;
-}
-
-std::set<FunctionInfo> GetBindingCtx::free_functions() const
-{ return unbound_f; }
-  
 } // end namespace clang_mutate
