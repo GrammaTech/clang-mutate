@@ -73,10 +73,10 @@ public:
         return m_end_off - 1;
     }
 
-    std::string className() const
+    const std::string & className() const
     { return m_class; }
 
-    std::vector<std::string> declares() const
+    const std::vector<std::string> & declares() const
     { return m_declares; }
 
     void addDeclares(const std::string & decl)
@@ -100,19 +100,19 @@ public:
     void setMacros(const std::set<Hash> & macros)
     { m_macros = macros; }
 
-    std::set<std::string> includes() const
+    const std::set<std::string> & includes() const
     { return m_includes; }
 
-    std::set<Hash> types() const
+    const std::set<Hash> & types() const
     { return m_types; }
 
-    Hash expr_type() const
+    const Hash & expr_type() const
     { return m_expr_type; }
 
-    std::set<Hash> macros() const
+    const std::set<Hash> & macros() const
     { return m_macros; }
 
-    PTNode scopePosition() const
+    const PTNode & scopePosition() const
     { return m_scope_pos; }
 
     void setScopePosition(PTNode pos)
@@ -136,13 +136,13 @@ public:
     void setFreeVariables(const std::set<VariableInfo> & vars)
     { m_free_vars = vars; }
 
-    std::set<VariableInfo> freeVariables() const
+    const std::set<VariableInfo> & freeVariables() const
     { return m_free_vars; }
 
     void setFreeFunctions(const std::set<FunctionInfo> & funs)
     { m_free_funs = funs; }
 
-    std::set<FunctionInfo> freeFunctions() const
+    const std::set<FunctionInfo> & freeFunctions() const
     { return m_free_funs; }
 
     void setCanHaveCompilationData(bool yn)
@@ -185,7 +185,7 @@ public:
     bool is_field_decl() const
     { return m_field_decl; }
 
-    std::string base_type() const
+    const std::string & base_type() const
     { return m_base_type; }
 
     bool is_bit_field() const
@@ -205,10 +205,10 @@ public:
 
     bool is_ancestor_of(AstRef ast) const;
 
-    AstRef counter() const
+    const AstRef & counter() const
     { return m_counter; }
 
-    AstRef parent() const
+    const AstRef & parent() const
     { return m_parent; }
 
     AuxDBEntry &aux()
@@ -227,13 +227,13 @@ public:
     child_iterator end_children() const
     { return m_children.end(); }
 
-    std::vector<AstRef> successors() const
+    const std::vector<AstRef> & successors() const
     { return m_successors; }
 
-    std::vector<std::string> annotations() const
-      { return m_annotations; }
+    const std::vector<std::string> & annotations() const
+    { return m_annotations; }
 
-    std::string label_name() const
+    const std::string & label_name() const
       { return m_label_name; }
 
     bool isMemberExpr() const
