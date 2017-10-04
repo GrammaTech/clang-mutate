@@ -344,16 +344,16 @@ void Ast::update_range_offsets(CompilerInstance * ci)
             //       but there will still be corner cases to handle
             //       (e.g. the , comes from an expanded macro)
             SourceOffset offset = prev->final_normalized_offset() + 1;
-            std::string buf = sm.getBufferData(sm.getMainFileID()).str();
-            while (isspace(buf[offset]) && offset < m_end_off) {
+            StringRef buf = sm.getBufferData(sm.getMainFileID());
+            while (isspace(buf.data()[offset]) && offset < m_end_off) {
                 ++offset;
             }
-            if (buf[offset] == ',') {
+            if (buf.data()[offset] == ',') {
                 // If we do hit a comma, extend the previous Var's
                 // normalized range to include it.
                 prev->m_norm_end_off = offset;
                 ++offset;
-                while (isspace(buf[offset]) &&
+                while (isspace(buf.data()[offset]) &&
                        offset < m_end_off &&
                        offset < (SourceOffset) buf.size())
                 {
@@ -375,8 +375,8 @@ void Ast::update_range_offsets(CompilerInstance * ci)
         prev->setSyntacticContext(SyntacticContext::ListElt());
         setSyntacticContext(SyntacticContext::FinalListElt());
         SourceOffset offset = prev->final_normalized_offset();
-        std::string buf = sm.getBufferData(sm.getMainFileID()).str();
-        while (buf[offset] != ',' && offset < (SourceOffset) buf.size())
+        StringRef buf = sm.getBufferData(sm.getMainFileID());
+        while (buf.data()[offset] != ',' && offset < (SourceOffset) buf.size())
             ++offset;
         prev->m_norm_end_off = offset;
     }
