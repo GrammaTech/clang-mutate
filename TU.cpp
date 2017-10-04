@@ -165,8 +165,7 @@ class BuildTU
             Requirements reqs(tu.tuid,
                               Context,
                               syn_ctx,
-                              ci,
-                              decl_scopes.get_names_in_scope());
+                              ci);
             reqs.TraverseStmt(s);
 
             AstRef ast = makeAst(s, reqs);
@@ -257,8 +256,7 @@ class BuildTU
             Requirements reqs(tu.tuid,
                               Context,
                               syn_ctx,
-                              ci,
-                              decl_scopes.get_names_in_scope());
+                              ci);
 
             reqs.TraverseDecl(d);
             AstRef ast = makeAst(d, reqs);

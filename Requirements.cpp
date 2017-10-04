@@ -14,8 +14,7 @@ Requirements::Requirements(
     TURef _tu,
     clang::ASTContext * astContext,
     SyntacticContext _sctx,
-    clang::CompilerInstance * _ci,
-    const std::vector<std::vector<std::string> > & scopes)
+    clang::CompilerInstance * _ci)
     : m_tu(_tu)
     , ci(_ci)
     , m_ast_context(astContext)
@@ -26,15 +25,6 @@ Requirements::Requirements(
     , is_first(true)
     , ctx()
 {
-    // Initialize the map from variable name to depth ("how many
-    // scopes back was the definition from where we are now?")
-    size_t depth = scopes.size() - 1;
-    for (auto & scope : Utils::reversed(scopes)) {
-        for (auto & var : scope) {
-            decl_depth[var] = depth;
-        }
-        --depth;
-    }
 }
 
 ///////////////////////////////////////////////////////
@@ -192,14 +182,7 @@ std::set<VariableInfo> Requirements::variables() const
 {
     std::set<VariableInfo> ans;
     for (auto var : m_vars) {
-        std::string name = var.second->getName().str();
-        auto search = decl_depth.find(name);
-        
-        ans.insert(VariableInfo(
-                       var.second,
-                       search == decl_depth.end()
-                       ? 0
-                       : search->second));
+        ans.insert(VariableInfo(var.second));
     }
     return ans;
 }

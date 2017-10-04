@@ -42,8 +42,7 @@ public:
         TURef _tu,
         clang::ASTContext * astContext,
         SyntacticContext _sctx,
-        clang::CompilerInstance * _ci,
-        const std::vector<std::vector<std::string> > & scopes);
+        clang::CompilerInstance * _ci);
     
     std::set<VariableInfo> variables()   const;
     std::set<FunctionInfo> functions()   const;

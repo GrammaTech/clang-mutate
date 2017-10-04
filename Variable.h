@@ -9,13 +9,11 @@
 class VariableInfo
 {
 public:
-    VariableInfo(const clang::IdentifierInfo * _ident,
-                 size_t _index);
+    VariableInfo(const clang::IdentifierInfo * _ident);
 
     VariableInfo(const VariableInfo & that)
         : ident(that.ident)
         , name(that.name)
-        , index(that.index)
     {}
 
     const clang::IdentifierInfo * getId() const
@@ -32,7 +30,6 @@ public:
 private:
     const clang::IdentifierInfo * ident;
     std::string name;
-    size_t index;
 };
 
 template <> inline
@@ -43,7 +40,7 @@ template <>
 struct describe_json<VariableInfo>
 {
     static std::string str()
-    { return "[\"replacement_name\", num_scopes_to_decl]"; }
+    { return "\"replacement_name\""; }
 };
 
 #endif
