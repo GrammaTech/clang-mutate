@@ -1,0 +1,14 @@
+#!/bin/bash
+#
+# Ensure all ASTs within the macro expansion have the same begin offset,
+# even if the macro contains a multi-variable declaration statement.
+. $(dirname $0)/common
+
+begin_off=$(run_macro_with_multivar_decl -json |
+            json_filter in_macro_expansion "true" |
+            json_wrap |
+            json -a -e begin_off |
+            tr " " "\n" |
+            sort -u)
+
+equals "101" $begin_off

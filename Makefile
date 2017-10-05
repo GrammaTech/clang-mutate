@@ -189,6 +189,7 @@ TESTS =	help-text-appears				\
     sqrt-math-header-found \
     open-stat-header-found \
     macro-with-var-decl \
+    macro-with-multivar-decl \
     const-var \
     volatile-var \
     restrict-var \

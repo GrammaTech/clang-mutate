@@ -89,6 +89,8 @@ OPEN=etc/open.c
 
 MACRO_WITH_VAR_DECL=etc/macro_with_var_decl.c
 
+MACRO_WITH_MULTIVAR_DECL=etc/macro_with_multivar_decl.c
+
 CONST_VAR=etc/const_var.c
 
 VOLATILE_VAR=etc/volatile_var.c
@@ -215,6 +217,9 @@ run_open() {
 
 run_macro_with_var_decl() {
     clang-mutate "$@" $MACRO_WITH_VAR_DECL --; }
+
+run_macro_with_multivar_decl() {
+    clang-mutate "$@" $MACRO_WITH_MULTIVAR_DECL --; }
 
 run_const_var() {
     clang-mutate "$@" $CONST_VAR -- -c; }

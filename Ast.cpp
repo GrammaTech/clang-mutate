@@ -362,7 +362,9 @@ void Ast::update_range_offsets(CompilerInstance * ci)
             }
             if (offset >= m_end_off)
                 offset = prev->final_normalized_offset() + 1;
-            m_start_off = m_norm_start_off = offset;
+            m_norm_start_off = offset;
+            m_start_off = prev->inMacroExpansion() ?
+                          m_start_off : offset;
         }
     }
     if (className() == "ParmVar" &&
