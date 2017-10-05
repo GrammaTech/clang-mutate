@@ -186,6 +186,7 @@ TESTS =	help-text-appears				\
     pointer-to-pointer-no-decl \
     struct-in-sys-header \
     function-in-sys-header \
+    function-in-user-header \
     sqrt-math-header-found \
     open-stat-header-found \
     macro-with-var-decl \

@@ -382,13 +382,13 @@ bool in_header(
     std::string & header)
 {
     SourceManager & sm = ci->getSourceManager();
+    loc = sm.getSpellingLoc(loc);
+
     if (sm.isWrittenInMainFile(loc) || loc.isInvalid())
         return false;
 
     if (sm.isInSystemHeader(loc) ||
         sm.isInExternCSystemHeader(loc)) {
-        // loc is in a system header
-        loc = sm.getSpellingLoc(loc);
 
         while (!loc.isInvalid() && !is_valid_system_include(loc, ci)) {
             loc = sm.getIncludeLoc(sm.getFileID(loc));

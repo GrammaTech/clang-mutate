@@ -1,0 +1,12 @@
+#!/bin/bash
+#
+# Test to ensure the proper user header is picked up
+# when calling a function with a declaration in a user header.
+. $(dirname $0)/common
+
+includes=$(run_function_in_user_header -json |
+           json_filter ast_class "\"CallExpr\"" |
+           jshon -e includes |
+           json -e 0)
+
+equals $includes "\"\\\"function-in-user-header.h\\\"\""

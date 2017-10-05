@@ -83,6 +83,8 @@ STRUCT_IN_SYS_HEADER=etc/struct-in-sys-header.c
 
 FUNCTION_IN_SYS_HEADER=etc/function-in-sys-header.c
 
+FUNCTION_IN_USER_HEADER=etc/function-in-user-header.c
+
 SQRT=etc/sqrt.c
 
 OPEN=etc/open.c
@@ -208,6 +210,9 @@ run_struct_in_sys_header(){
 
 run_function_in_sys_header(){
     clang-mutate "$@" $FUNCTION_IN_SYS_HEADER --; }
+
+run_function_in_user_header(){
+    clang-mutate "$@" $FUNCTION_IN_USER_HEADER -- -c; }
 
 run_sqrt() {
     clang-mutate "$@" $SQRT --; }
