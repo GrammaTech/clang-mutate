@@ -130,7 +130,8 @@ class BuildTU
 
         AstRef ast = Ast::create(clang_obj, required);
 
-        ast->setInMacroExpansion(clang_obj->getLocStart().isMacroID());
+        ast->setInMacroExpansion(clang_obj->getLocStart().isMacroID() &&
+                                 clang_obj->getLocEnd().isMacroID());
 
         Renames renames(required.variables(),
                         required.functions());

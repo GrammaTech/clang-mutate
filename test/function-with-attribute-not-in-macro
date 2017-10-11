@@ -1,0 +1,10 @@
+#!/bin/bash
+# Ensure a function with a leading compiler attribute macro
+# does not have the `in-macro-expansion` field set.
+. $(dirname $0)/common
+
+in_macro_expansion=$(run_function_with_attribute_macro -json |
+                     json_filter ast_class "\"Function\"" |
+                     jshon -e "in_macro_expansion")
+
+equals $in_macro_expansion "false"
