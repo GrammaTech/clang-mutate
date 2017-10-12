@@ -12,7 +12,6 @@ stages:
 build-test-tag:
   stage: build-test-tag
   script:
-    - docker pull $DOCKER_REGISTRY/synthesis/clang:latest
     - cat Dockerfile|sed "s/CI_COMMIT_SHA/$CI_COMMIT_SHA/" > Dockerfile.tmp
     - docker build -f Dockerfile.tmp -t $LOCAL_IMAGE_NAME .
 
