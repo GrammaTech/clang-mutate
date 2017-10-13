@@ -108,9 +108,9 @@ public:
 private:
   clang::SourceManager & sm;
   const clang::LangOptions & langOpts;
-  const Renames & renames;
   clang::SourceLocation begin;
   clang::SourceLocation end;
+  const Renames & renames;
   Replacements replacements;
   std::set<std::string> includes;
 };

@@ -55,12 +55,10 @@ struct set_op
         char _;
         bool normalizing = !quote.get(_);
         RewritingOps ops;
-        TURef tu;
         for (auto & p : args) {
             ops.push_back(setText(p.first->counter(),
                                   p.second,
                                   normalizing));
-            tu = p.first.tuid();
         }
         return chain(ops);
     }

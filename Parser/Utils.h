@@ -261,7 +261,7 @@ struct Cons
 
 template <>
 struct Cons<void>
-{ typedef void dom; typedef void cod; static cod apply(dom) { } };
+{ typedef void dom; typedef void cod; static void apply(void) { } };
 
 //
 // detupled: simplify a tuple, in these cases:
