@@ -11,24 +11,25 @@ RUN pacman --noconfirm -Syu
 
 RUN pacman --noconfirm -Syu archlinux-keyring
 
-RUN pacman --noconfirm -Syu base-devel openssh git sed wget rsync gzip pandoc
+RUN pacman --noconfirm -Syu base-devel findutils openssh git sed wget rsync gzip pandoc
 
-# Specific version of clang/llvm
-RUN mkdir -p /gt/pkgs && \\
-    cd /gt/pkgs && \\
-    export PKGS=clang-4.0.1-5-x86_64.pkg.tar.xz clang-tools-extra-4.0.1-5-x86_64.pkg.tar.xz llvm-4.0.1-5-x86_64.pkg.tar.xz llvm-libs-4.0.1-5-x86_64.pkg.tar.xz && \\
-    for PKG in $PKGS;do wget http://otsego.grammatech.com/u1/eschulte/share-ro/pkgs/$PKG; done && \\
+# Install specific version (4.0.1) of clang/llvm.
+RUN mkdir -p /gt/pkgs && \
+    cd /gt/pkgs && \
+    export PKGS="clang-4.0.1-5-x86_64.pkg.tar.xz clang-tools-extra-4.0.1-5-x86_64.pkg.tar.xz llvm-4.0.1-5-x86_64.pkg.tar.xz llvm-libs-4.0.1-5-x86_64.pkg.tar.xz" && \
+    echo $PKGS|tr ' ' '\n'|xargs -I{} wget http://otsego.grammatech.com/u1/eschulte/share-ro/pkgs/{} && \
     pacman --noconfirm -U $PKGS
 
-# Enable makepkg as root
+# Enable makepkg as root.
 RUN sed -i "s/^\(OPT_LONG=(\)/\1'asroot' /;s/EUID == 0/1 == 0/" /usr/bin/makepkg
 
-# Install required packages
+# Install libtinfo which is required to build against llvm/clang.
 RUN mkdir -p /gt/libtinfo && \
     git clone https://aur.archlinux.org/libtinfo.git /gt/libtinfo && \
     cd /gt/libtinfo && \
     makepkg --asroot --noconfirm -si
 
+# Build clang-mutate package and install.
 RUN mkdir -p /gt/clang-mutate/ && \
     git clone git@git.grammatech.com:synthesis/clang-mutate.git /gt/clang-mutate/ && \
     cd /gt/clang-mutate/ && \
