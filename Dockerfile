@@ -9,7 +9,14 @@ RUN chmod 600 /root/.ssh/id_rsa && \
 
 RUN pacman --noconfirm -Syu
 
-RUN pacman --noconfirm -S base-devel openssh git sed wget rsync gzip llvm clang pandoc
+RUN pacman --noconfirm -S base-devel openssh git sed wget rsync gzip pandoc
+
+# Specific version of clang/llvm
+RUN mkdir -p /gt/pkgs && \\
+    cd /gt/pkgs && \\
+    export PKGS=clang-4.0.1-5-x86_64.pkg.tar.xz clang-tools-extra-4.0.1-5-x86_64.pkg.tar.xz llvm-4.0.1-5-x86_64.pkg.tar.xz llvm-libs-4.0.1-5-x86_64.pkg.tar.xz && \\
+    for PKG in $PKGS;do wget http://otsego.grammatech.com/u1/eschulte/share-ro/pkgs/$PKG; done && \\
+    pacman --noconfirm -U $PKGS
 
 # Enable makepkg as root
 RUN sed -i "s/^\(OPT_LONG=(\)/\1'asroot' /;s/EUID == 0/1 == 0/" /usr/bin/makepkg
