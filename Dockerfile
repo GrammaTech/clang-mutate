@@ -11,7 +11,11 @@ RUN pacman --noconfirm -Syu
 
 RUN pacman --noconfirm -Syu archlinux-keyring
 
-RUN pacman --noconfirm -Syu base-devel findutils openssh git sed wget rsync gzip pandoc jshon
+# Requirements to build clang-mutate.
+RUN pacman --noconfirm -Syu base-devel findutils openssh git sed wget rsync gzip pandoc
+
+# Requirements to test clang-mutate.
+RUN pacman --noconfirm -Syu jshon dwdiff libxcb
 
 # Install specific version (4.0.1) of clang/llvm.
 RUN mkdir -p /gt/pkgs && \
