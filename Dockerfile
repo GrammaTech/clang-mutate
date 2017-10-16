@@ -9,7 +9,9 @@ RUN chmod 600 /root/.ssh/id_rsa && \
 
 RUN pacman --noconfirm -Syu
 
-RUN pacman --noconfirm -S base-devel openssh git sed wget rsync gzip pandoc
+RUN pacman --noconfirm -Syu archlinux-keyring
+
+RUN pacman --noconfirm -Syu base-devel openssh git sed wget rsync gzip pandoc
 
 # Specific version of clang/llvm
 RUN mkdir -p /gt/pkgs && \\
