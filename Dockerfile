@@ -15,7 +15,7 @@ RUN pacman --noconfirm -Syu archlinux-keyring
 RUN pacman --noconfirm -Syu base-devel findutils openssh git sed wget rsync gzip pandoc
 
 # Requirements to test clang-mutate.
-RUN pacman --noconfirm -Syu jshon dwdiff libxcb
+RUN pacman --noconfirm -Syu jshon libxcb
 
 # Install specific version (4.0.1) of clang/llvm.
 RUN mkdir -p /gt/pkgs && \
@@ -26,6 +26,12 @@ RUN mkdir -p /gt/pkgs && \
 
 # Enable makepkg as root.
 RUN sed -i "s/^\(OPT_LONG=(\)/\1'asroot' /;s/EUID == 0/1 == 0/" /usr/bin/makepkg
+
+# Install wdiff which is required by the clang tests.
+RUN mkdir -p /gt/wdiff && \
+    git clone https://aur.archlinux.org/wdiff.git /gt/wdiff && \
+    cd /gt/wdiff && \
+    makepkg --asroot --noconfirm -si
 
 # Install libtinfo which is required to build against llvm/clang.
 RUN mkdir -p /gt/libtinfo && \
