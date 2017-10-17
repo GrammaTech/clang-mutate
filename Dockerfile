@@ -7,6 +7,12 @@ ADD .ssh/known_hosts    /root/.ssh/known_hosts
 RUN chmod 600 /root/.ssh/id_rsa && \
     chmod 600 /root/.ssh/id_dsa
 
+ENV PATH=$PATH:/gt/bin:/usr/synth/bin/ \
+    GT_ROOT=/gt \
+    LD_LIBRARY_PATH=/usr/synth/lib/ \
+    USER=docker \
+    HOSTNAME=docker
+
 RUN pacman --noconfirm -Syu
 
 RUN pacman --noconfirm -Syu archlinux-keyring
