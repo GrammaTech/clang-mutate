@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+# Test that the end offset on the parent of a nested macro is correct
+. $(dirname $0)/common
+
+end_off=$(run_nested_macro -json |
+          json_filter ast_class "\"Record\"" |
+          jshon -e end_off)
+equals $end_off 95

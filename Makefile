@@ -199,7 +199,8 @@ TESTS =	help-text-appears				\
     int64_t-finds-header \
     alloca-macro \
     storage-classes \
-    function-with-attribute-not-in-macro
+    function-with-attribute-not-in-macro \
+    nested-macro
 
 etc/hello: etc/hello.c
 	$(CXX) -g -O0 $< -o $@

@@ -279,6 +279,8 @@ void Ast::update_range_offsets(CompilerInstance * ci)
 {
     SourceManager & sm = ci->getSourceManager();
     FileID mainFileID = sm.getMainFileID();
+    SourceRange sr = sm.getExpansionRange(m_range);
+    SourceRange nsr = sm.getExpansionRange(m_normalized_range);
 
     std::pair<FileID, unsigned> decomp;
 
@@ -287,25 +289,25 @@ void Ast::update_range_offsets(CompilerInstance * ci)
     // to correct for the difference.
     int endShift = parent() == NoAst ? 0 : 1;
 
-    decomp = sm.getDecomposedExpansionLoc(m_range.getBegin());
+    decomp = sm.getDecomposedExpansionLoc(sr.getBegin());
     m_start_off
         = decomp.first == mainFileID ? decomp.second
         : parent() == NoAst          ? BadOffset
                                      : parent()->initial_offset();
     decomp = sm.getDecomposedExpansionLoc(
-            findEndOfToken(ci, m_range.getEnd(), parent()));
+            findEndOfToken(ci, sr.getEnd(), parent()));
     m_end_off
         = decomp.first == mainFileID ? decomp.second - endShift
         : parent() == NoAst          ? BadOffset
                                      : parent()->final_offset();
 
-    decomp = sm.getDecomposedExpansionLoc(m_normalized_range.getBegin());
+    decomp = sm.getDecomposedExpansionLoc(nsr.getBegin());
     m_norm_start_off
         = decomp.first == mainFileID ? decomp.second
         : parent() == NoAst          ? BadOffset
                                      : parent()->initial_normalized_offset();
     decomp = sm.getDecomposedExpansionLoc(
-            findEndOfToken(ci, m_normalized_range.getEnd(), parent()));
+            findEndOfToken(ci, nsr.getEnd(), parent()));
     m_norm_end_off
         = decomp.first == mainFileID ? decomp.second - endShift
         : parent() == NoAst          ? BadOffset

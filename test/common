@@ -111,6 +111,8 @@ STORAGE_CLASSES=etc/storage_classes.c
 
 FUNCTION_WITH_ATTRIBUTE_MACRO=etc/function-with-attribute-macro.c
 
+NESTED_MACRO=etc/nested_macro.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -254,6 +256,9 @@ run_storage_classes() {
 
 run_function_with_attribute_macro() {
     clang-mutate "$@" $FUNCTION_WITH_ATTRIBUTE_MACRO -- -c; }
+
+run_nested_macro() {
+    clang-mutate "$@" $NESTED_MACRO -- -c; }
 
 json() {
     cat -|jshon "$@"; }
