@@ -23,10 +23,13 @@ build-test-tag:
           docker run -e LOCAL_USER=root $LOCAL_IMAGE_NAME /bin/bash -c "cd /gt/clang-mutate && make check-testbot";
           docker tag $LOCAL_IMAGE_NAME $DOCKER_REGISTRY/$CI_PROJECT_PATH:latest;
           docker push $DOCKER_REGISTRY/$CI_PROJECT_PATH:latest;
-      else
+      elif [ "$CI_BUILD_REF_NAME" = "arch-linux" ];
+      then
           docker run -e LOCAL_USER=root $LOCAL_IMAGE_NAME /bin/bash -c "cd /gt/clang-mutate && make check";
           docker tag $LOCAL_IMAGE_NAME $DOCKER_REGISTRY/$CI_PROJECT_PATH:$CI_BUILD_REF_NAME;
           docker push $DOCKER_REGISTRY/$CI_PROJECT_PATH:$CI_BUILD_REF_NAME;
+      else
+          docker run -e LOCAL_USER=root $LOCAL_IMAGE_NAME /bin/bash -c "cd /gt/clang-mutate && make check";
       fi
 
     # Cleanup
@@ -36,6 +39,7 @@ build-test-tag:
 trigger_cl:
   stage: dependents
   script:
-    - "curl -X POST -F token=e89405aa157de24364bb6e4ba0f3c3 -F ref=master https://git.grammatech.com/api/v4/projects/194/trigger/pipeline"
+    - "curl -X POST -F token=e89405aa157de24364bb6e4ba0f3c3 -F ref=$CI_BUILD_REF_NAME https://git.grammatech.com/api/v4/projects/194/trigger/pipeline"
   only:
     - master
+    - arch-linux
