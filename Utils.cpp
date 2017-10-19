@@ -146,7 +146,7 @@ bool ShouldVisitDecl(SourceManager & SM,
 {
     SourceRange r;
 
-    if (decl == NULL) {
+    if (decl == NULL || decl->getKind() == Decl::Empty) {
         return false;
     }
     else {    
