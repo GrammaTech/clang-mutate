@@ -13,7 +13,8 @@ ENV PATH=$PATH:/gt/bin:/usr/synth/bin/ \
     USER=docker \
     HOSTNAME=docker
 
-RUN pacman --noconfirm -Syu
+# Echo the commit hash to ensure we re-run to grab the latest packages.
+RUN echo 'CI_COMMIT_SHA' && pacman --noconfirm -Syu
 
 RUN pacman --noconfirm -Syu archlinux-keyring
 
