@@ -42,12 +42,6 @@ RUN mkdir -p /gt/wdiff && \
     cd /gt/wdiff && \
     makepkg --asroot --noconfirm -si
 
-# Install libtinfo which is required to build against llvm/clang.
-RUN mkdir -p /gt/libtinfo && \
-    git clone https://aur.archlinux.org/libtinfo.git /gt/libtinfo && \
-    cd /gt/libtinfo && \
-    makepkg --asroot --noconfirm -si
-
 # Build clang-mutate package and install.
 RUN mkdir -p /gt/clang-mutate/ && \
     git clone git@git.grammatech.com:synthesis/clang-mutate.git /gt/clang-mutate/ && \
