@@ -30,6 +30,9 @@ RUN mkdir -p /gt/pkgs && \
     echo $PKGS|tr ' ' '\n'|xargs -I{} wget http://otsego.grammatech.com/u1/eschulte/share-ro/pkgs/{} && \
     pacman --noconfirm -U $PKGS
 
+# Don't upgrade clang/llvm packages.
+RUN sed -i '/^#IgnorePkg/ a IgnorePkg = llvm llvm-libs clang clang-tools-extra' /etc/pacman.conf
+
 # Enable makepkg as root.
 RUN sed -i "s/^\(OPT_LONG=(\)/\1'asroot' /;s/EUID == 0/1 == 0/" /usr/bin/makepkg
 
