@@ -43,12 +43,19 @@ void serialize_as_sexpr(const picojson::value &x, std::ostream &os)
         os << '(';
         const picojson::object object = x.get<picojson::object>();
         for (auto item : object) {
-            std::string key = item.first;
-            std::replace(key.begin(), key.end(), '_', '-');
+            // Don't bother printing (key . value) pairs when the
+            // value is NIL.  NIL may be either false or an empty list.
+            if (not ((item.second.is<bool>() and            // False NIL.
+                      not item.second.get<bool>()) or
+                     (item.second.is<picojson::array>() and // Empty list NIL.
+                      item.second.get<picojson::array>().size() == 0))) {
+                std::string key = item.first;
+                std::replace(key.begin(), key.end(), '_', '-');
 
-            os << "(:" << key << " . ";
-            serialize_as_sexpr(item.second, os);
-            os << ')';
+                os << "(:" << key << " . ";
+                serialize_as_sexpr(item.second, os);
+                os << ')';
+            }
         }
         os << ')';
     }
