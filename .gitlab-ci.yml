@@ -12,11 +12,11 @@ stages:
 .run-template: &run
   stage: build-test-tag
   script:
-    - if [ "$OS" = "arch" ];
+    - if [ "$OS" = "ubuntu" ];
       then
-          docker pull base/archlinux;
-      else
           docker pull $DOCKER_REGISTRY/synthesis/clang:latest;
+      elif [ "$OS" = "arch" ];
+          docker pull base/archlinux;
       fi
 
     - cat Dockerfile.$OS|sed "s/CI_COMMIT_SHA/$CI_COMMIT_SHA/" > Dockerfile
