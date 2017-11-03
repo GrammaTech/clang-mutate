@@ -9,31 +9,54 @@ stages:
   - build-test-tag
   - dependents
 
-build-test-tag:
+.run-template: &run
   stage: build-test-tag
   script:
-    - cat Dockerfile|sed "s/CI_COMMIT_SHA/$CI_COMMIT_SHA/" > Dockerfile.tmp
+    - if [ "$OS" = "arch" ];
+      then
+          docker pull base/archlinux;
+      else
+          docker pull $DOCKER_REGISTRY/synthesis/clang:latest;
+      fi
+
+    - cat Dockerfile.$OS|sed "s/CI_COMMIT_SHA/$CI_COMMIT_SHA/" > Dockerfile.tmp
     - docker build -f Dockerfile.tmp -t $LOCAL_IMAGE_NAME .
 
     # If on master branch, push test results to DataManager and push
     # up a new "latest" image, otherwise, run locally.
     - if [ "$CI_BUILD_REF_NAME" = "master" ];
       then
-          docker run -e LOCAL_USER=root $LOCAL_IMAGE_NAME /bin/bash -c "cd /gt/clang-mutate && make check-testbot";
-          docker tag $LOCAL_IMAGE_NAME $DOCKER_REGISTRY/$CI_PROJECT_PATH:latest;
-          docker push $DOCKER_REGISTRY/$CI_PROJECT_PATH:latest;
-      elif [ "$CI_BUILD_REF_NAME" = "arch-linux" ];
-      then
-          docker run -e LOCAL_USER=root $LOCAL_IMAGE_NAME /bin/bash -c "cd /gt/clang-mutate && make check";
-          docker tag $LOCAL_IMAGE_NAME $DOCKER_REGISTRY/$CI_PROJECT_PATH:$CI_BUILD_REF_NAME;
-          docker push $DOCKER_REGISTRY/$CI_PROJECT_PATH:$CI_BUILD_REF_NAME;
+          if [ "$OS" = "ubuntu" ];
+          then
+              docker run -e LOCAL_USER=root $LOCAL_IMAGE_NAME /bin/bash -c "cd /gt/clang-mutate && make check-testbot";
+              docker tag $LOCAL_IMAGE_NAME $DOCKER_REGISTRY/$CI_PROJECT_PATH:latest;
+              docker push $DOCKER_REGISTRY/$CI_PROJECT_PATH:latest;
+          elif [ "$OS" = "arch" ];
+          then
+              docker run -e LOCAL_USER=root $LOCAL_IMAGE_NAME /bin/bash -c "cd /gt/clang-mutate && make check";
+              docker tag $LOCAL_IMAGE_NAME $DOCKER_REGISTRY/$CI_PROJECT_PATH:$CI_BUILD_REF_NAME;
+              docker push $DOCKER_REGISTRY/$CI_PROJECT_PATH:$CI_BUILD_REF_NAME;
+          else
+              docker run -e LOCAL_USER=root $LOCAL_IMAGE_NAME /bin/bash -c "cd /gt/clang-mutate && make check";
+          fi
       else
           docker run -e LOCAL_USER=root $LOCAL_IMAGE_NAME /bin/bash -c "cd /gt/clang-mutate && make check";
       fi
 
     # Cleanup
-    - rm -f Dockerfile.tmp
     - docker rmi -f $LOCAL_IMAGE_NAME
+
+run:
+  stage: build-test-and-tag
+  variables:
+    OS: 'ubuntu'
+  <<: *run
+
+run-arch:
+  stage: build-test-and-tag
+  variables:
+    OS: 'arch'
+  <<: *run
 
 trigger_cl:
   stage: dependents
@@ -41,4 +64,3 @@ trigger_cl:
     - "curl -X POST -F token=e89405aa157de24364bb6e4ba0f3c3 -F ref=$CI_BUILD_REF_NAME https://git.grammatech.com/api/v4/projects/194/trigger/pipeline"
   only:
     - master
-    - arch-linux

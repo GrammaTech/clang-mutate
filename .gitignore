@@ -24,6 +24,8 @@ GPATH
 GRTAGS
 GTAGS
 
+Dockerfile
+
 clang-mutate_pkg/
 src/clang-mutate_pkg/
 pkg/
