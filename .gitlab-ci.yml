@@ -10,7 +10,6 @@ stages:
   - dependents
 
 .run-template: &run
-  stage: build-test-tag
   script:
     - if [ "$OS" = "ubuntu" ];
       then
