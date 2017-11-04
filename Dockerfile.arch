@@ -43,6 +43,12 @@ RUN mkdir -p /gt/wdiff && \
     cd /gt/wdiff && \
     makepkg --asroot --noconfirm -si
 
+# Install bear which is used to generate clang compilation databases.
+RUN mkdir -p /gt/bear-git && \
+    git clone https://aur.archlinux.org/bear-git.git /gt/bear-git && \
+    cd /gt/bear-git && \
+    makepkg --asroot --noconfirm -si
+
 # Build clang-mutate package and install.
 RUN mkdir -p /gt/clang-mutate/ && \
     git clone git@git.grammatech.com:synthesis/clang-mutate.git /gt/clang-mutate/ && \
