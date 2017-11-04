@@ -15,6 +15,7 @@ stages:
       then
           docker pull $DOCKER_REGISTRY/synthesis/clang:latest;
       elif [ "$OS" = "arch" ];
+      then
           docker pull base/archlinux;
       fi
 
