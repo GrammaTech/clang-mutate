@@ -91,7 +91,7 @@ public:
     void setIncludes(const std::set<std::string> & includes)
     { m_includes = includes; }
 
-    void setTypes(const std::set<Hash> & types)
+    void setTypes(const std::vector<Hash> & types)
     { m_types = types; }
 
     void setExprType(Hash type)
@@ -103,7 +103,7 @@ public:
     const std::set<std::string> & includes() const
     { return m_includes; }
 
-    const std::set<Hash> & types() const
+    const std::vector<Hash> & types() const
     { return m_types; }
 
     const Hash & expr_type() const
@@ -323,7 +323,7 @@ private:
     clang::PresumedLoc m_end_loc;
     std::vector<std::string> m_declares;
     bool m_guard;
-    std::set<Hash> m_types;
+    std::vector<Hash> m_types;
     Hash m_expr_type;
     std::set<std::string> m_includes;
     PTNode m_scope_pos;

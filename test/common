@@ -113,6 +113,8 @@ FUNCTION_WITH_ATTRIBUTE_MACRO=etc/function-with-attribute-macro.c
 
 NESTED_MACRO=etc/nested_macro.c
 
+TYPES_ORDER_CORRECT=etc/types-order-is-correct.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -259,6 +261,9 @@ run_function_with_attribute_macro() {
 
 run_nested_macro() {
     clang-mutate "$@" $NESTED_MACRO -- -c; }
+
+run_types_order_correct() {
+    clang-mutate "$@" $TYPES_ORDER_CORRECT -- c; }
 
 json() {
     cat -|jshon "$@"; }

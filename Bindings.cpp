@@ -7,6 +7,7 @@
 
 #include <iostream>
 
+#include <algorithm>
 #include <functional>
 #include <set>
 #include <map>
@@ -19,16 +20,11 @@ void BindingCtx::push(const std::string & name,
                       Hash type_hash)
 {
   IdStack & bindings = ctx[name];
+
+  types.push_back(type_hash);
   bindings.push(std::make_pair(id, type_hash));
 }
 
-void BindingCtx::pop(const std::string & name)
-{
-  Context::iterator search = ctx.find(name);
-  assert (search != ctx.end() && !search->second.empty());
-  search->second.pop();
-}
-  
 std::pair<BindingCtx::Id, Hash>
 BindingCtx::lookup(const std::string & name) const
 {
@@ -55,33 +51,29 @@ bool GetBindingCtx::TraverseVarDecl(VarDecl * decl)
   return cont;
 }
 
-std::set<Hash> GetBindingCtx::required_types() const
+std::vector<Hash> GetBindingCtx::required_types() const
 {
-    std::set<Hash> ans = ctx.required_types();
-    for (std::set<Hash>::const_iterator it = addl_types.begin();
-         it != addl_types.end();
-         ++it)
-    {
-        ans.insert(*it);
-    }
+    std::vector<Hash> ans;
+    std::vector<Hash> required_types = ctx.required_types();
+
+    std::copy(required_types.begin(),
+              required_types.end(),
+              std::back_inserter(ans));
+    std::copy(addl_types.begin(),
+              addl_types.end(),
+              std::back_inserter(ans));
+    ans.erase(std::unique(ans.begin(), ans.end()), ans.end());
+
     return ans;
 }
 
 std::set<std::string> GetBindingCtx::required_includes() const
 { return includes; }
 
-std::set<Hash> BindingCtx::required_types() const
+std::vector<Hash> BindingCtx::required_types() const
 {
-    std::set<Hash> ans;
-    for (std::map<std::string, IdStack>::const_iterator
-             it = ctx.begin(); it != ctx.end(); ++it)
-    {
-        if (it->second.empty())
-            continue;
-        Hash type_hash = it->second.top().second;
-        if (type_hash != 0)
-            ans.insert(type_hash);
-    }
+    std::vector<Hash> ans(types);
+    ans.erase(std::unique(ans.begin(), ans.end()), ans.end());
     return ans;
 }
 
@@ -116,7 +108,7 @@ void GetBindingCtx::addAddlType(const QualType & qt)
 {
     Hash type_hash = hash_type(qt, ci, context);
     if (type_hash != 0)
-        addl_types.insert(type_hash);
+        addl_types.push_back(type_hash);
 }
 
 bool GetBindingCtx::VisitUnaryExprOrTypeTraitExpr(

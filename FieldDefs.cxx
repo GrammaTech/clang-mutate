@@ -88,7 +88,7 @@ AST_FIELD( includes, std::set<std::string>,
   { return ast.includes(); }
   )
 
-AST_FIELD( types, std::set<Hash>,
+AST_FIELD( types, std::vector<Hash>,
   "Types referenced by this statement.\n"
   "Types are given as hashes that can be looked up\n"
   "in the auxiliary type database. See _Type Database_.\n",

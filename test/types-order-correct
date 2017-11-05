@@ -1,0 +1,18 @@
+#!/bin/bash
+# Test the types field is ordered for `Var` ASTs
+# such that the variable's type is the first hash.
+
+. $(dirname $0)/common
+
+string_type=$(run_types_order_correct -json |
+              json_filter type "\"char\"" |
+              json_wrap |
+              json_filter storage_class "\"static\"" |
+              jshon -e "hash")
+             
+type_hash=$(run_types_order_correct -json |
+            json_filter ast_class "\"Var\"" |
+            jshon -e "types" |
+            jshon -e 0)
+
+equals $string_type $type_hash

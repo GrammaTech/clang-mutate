@@ -39,14 +39,14 @@ public:
   BindingCtx() : ctx() {}
 
   void push(const std::string & name, Id id, Hash type_hash);
-  void pop(const std::string & name);
   std::pair<Id,Hash> lookup(const std::string & name) const;
   bool is_bound(const std::string & name) const;
 
-  std::set<Hash> required_types() const;
+  std::vector<Hash> required_types() const;
   
 private:
   Context ctx;
+  std::vector<Hash> types;
 };
   
 class GetBindingCtx
@@ -77,7 +77,7 @@ public:
   bool VisitUnaryExprOrTypeTraitExpr(
       clang::UnaryExprOrTypeTraitExpr * expr);
 
-  std::set<Hash> required_types() const;
+  std::vector<Hash> required_types() const;
   std::set<std::string> required_includes() const;
   
 private:
@@ -87,7 +87,7 @@ private:
   BindingCtx ctx;
   std::set<BindingCtx::Binding> unbound_v;
   std::set<FunctionInfo> unbound_f;
-  std::set<Hash> addl_types;
+  std::vector<Hash> addl_types;
   std::set<std::string> includes;
   clang::CompilerInstance * ci;
   clang::ASTContext * context;

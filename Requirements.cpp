@@ -7,6 +7,9 @@
 #include "clang/Lex/Lexer.h"
 #include "clang/Lex/Preprocessor.h"
 
+#include <algorithm>
+#include <iterator>
+
 using namespace clang_mutate;
 using namespace clang;
 
@@ -19,7 +22,7 @@ Requirements::Requirements(
     , ci(_ci)
     , m_ast_context(astContext)
     , m_syn_ctx(_sctx)
-    , m_vars(), m_funs(), m_includes(), addl_types(), m_macros()
+    , m_vars(), m_funs(), m_includes(), m_macros(), m_addl_types()
     , m_parent(NoAst), m_scope_pos(NoNode)
     , toplev_is_macro(false)
     , is_first(true)
@@ -153,7 +156,7 @@ void Requirements::addAddlType(const QualType & qt)
 {
     Hash type_hash = hash_type(qt, ci, astContext());
     if (type_hash != 0)
-        addl_types.insert(type_hash);
+        m_addl_types.push_back(type_hash);
 }
 
 ///////////////////////////////////////////////////////
@@ -170,11 +173,19 @@ std::set<std::string> Requirements::includes() const
 std::set<Hash> Requirements::macros() const
 { return m_macros; }
 
-std::set<Hash> Requirements::types() const
+std::vector<Hash> Requirements::types() const
 {
-    std::set<Hash> ans = ctx.required_types();
-    for (auto t : addl_types)
-        ans.insert(t);
+    std::vector<Hash> ans;
+    std::vector<Hash> required_types = ctx.required_types();
+
+    std::copy(required_types.begin(),
+              required_types.end(),
+              std::back_inserter(ans));
+    std::copy(m_addl_types.begin(),
+              m_addl_types.end(),
+              std::back_inserter(ans));
+    ans.erase(std::unique(ans.begin(), ans.end()), ans.end());
+
     return ans;
 }
 

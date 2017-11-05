@@ -200,7 +200,8 @@ TESTS =	help-text-appears				\
     alloca-macro \
     storage-classes \
     function-with-attribute-not-in-macro \
-    nested-macro
+    nested-macro \
+    types-order-correct
 
 etc/hello: etc/hello.c
 	$(CXX) -g -O0 $< -o $@
