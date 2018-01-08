@@ -201,7 +201,8 @@ TESTS =	help-text-appears				\
     storage-classes \
     function-with-attribute-not-in-macro \
     nested-macro \
-    types-order-correct
+    types-order-correct \
+    ignore-null-stmt-at-end-of-macro
 
 etc/hello: etc/hello.c
 	$(CXX) -g -O0 $< -o $@

@@ -1,0 +1,7 @@
+#!/bin/bash
+#
+# Ensure a NullStmt AST is not found after a macro
+
+. $(dirname $0)/common
+
+run_macro_with_compound_stmt_body -json | not_contains "NullStmt"

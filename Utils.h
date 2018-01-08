@@ -59,6 +59,7 @@ bool SelectRange(clang::SourceManager & SM,
 bool ShouldVisitStmt(clang::SourceManager & SM,
                      const clang::LangOptions & LangOpts,
                      clang::FileID MainFileID,
+                     clang_mutate::AstRef parent,
                      clang::Stmt * stmt);
 
 bool ShouldVisitDecl(clang::SourceManager & SM,

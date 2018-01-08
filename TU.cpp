@@ -147,10 +147,11 @@ class BuildTU
 
     bool VisitStmt(Stmt * s)
     {
-        if (Utils::ShouldVisitStmt(sm, ci->getLangOpts(),
-                                   sm.getMainFileID(), s))
+        AstRef parent = spine.back();
+
+        if (Utils::ShouldVisitStmt(sm, ci->getLangOpts(), sm.getMainFileID(),
+                                   parent, s))
         {
-            AstRef parent = spine.back();
             SyntacticContext syn_ctx = Utils::is_full_stmt(s, parent, *ci)
                 ? SyntacticContext::FullStmt()
                 : SyntacticContext::Generic();
@@ -315,8 +316,10 @@ class BuildTU
 
     bool TraverseStmt(Stmt * s)
     {
-        if (Utils::ShouldVisitStmt(sm, ci->getLangOpts(),
-                                   sm.getMainFileID(), s))
+        AstRef parent = spine.back();
+
+        if (Utils::ShouldVisitStmt(sm, ci->getLangOpts(), sm.getMainFileID(),
+                                   parent, s))
         {
             if (begins_scope(s)) {
                 decl_scopes.enter_scope(NoAst);

@@ -115,6 +115,8 @@ NESTED_MACRO=etc/nested_macro.c
 
 TYPES_ORDER_CORRECT=etc/types-order-is-correct.c
 
+MACRO_WITH_COMPOUND_STMT_BODY=etc/macro_with_compound_stmt_body.c
+
 run_hello(){
     clang-mutate "$@" $HELLO --; }
 
@@ -264,6 +266,9 @@ run_nested_macro() {
 
 run_types_order_correct() {
     clang-mutate "$@" $TYPES_ORDER_CORRECT -- c; }
+
+run_macro_with_compound_stmt_body() {
+    clang-mutate "$@" $MACRO_WITH_COMPOUND_STMT_BODY --; }
 
 json() {
     cat -|jshon "$@"; }

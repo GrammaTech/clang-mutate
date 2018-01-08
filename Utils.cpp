@@ -126,11 +126,17 @@ SourceRange normalizeSourceRange(SourceRange r,
 bool ShouldVisitStmt(SourceManager & SM,
                      const LangOptions & LangOpts,
                      FileID mainFileID,
+                     AstRef parent,
                      clang::Stmt * stmt)
 {
     SourceRange r;
+    bool hasLeadingMacro = (parent != NoAst && !parent->children().empty()) ?
+                            parent->children().back()->inMacroExpansion() :
+                            false;
 
-    if (stmt == NULL || stmt->getStmtClass() == Stmt::NoStmtClass) {
+    if (stmt == NULL ||
+        stmt->getStmtClass() == Stmt::NoStmtClass ||
+        (stmt->getStmtClass() == Stmt::NullStmtClass && hasLeadingMacro)) {
         return false;
     }
     else {    
