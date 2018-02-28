@@ -58,9 +58,9 @@ run-arch:
     OS: 'arch'
   <<: *run
 
-trigger_cl:
+trigger_java_mutator:
   stage: dependents
   script:
-    - "curl -X POST -F token=e89405aa157de24364bb6e4ba0f3c3 -F ref=$CI_BUILD_REF_NAME https://git.grammatech.com/api/v4/projects/194/trigger/pipeline"
+    - "curl -X POST -F token=ae9cfaeb981e605a4244c783f30b55 -F ref=$CI_BUILD_REF_NAME https://git.grammatech.com/api/v4/projects/376/trigger/pipeline"
   only:
     - master
