@@ -1,12 +1,5 @@
 FROM base/archlinux
 
-ADD .ssh/id_rsa.testbot /root/.ssh/id_rsa
-ADD .ssh/id_dsa.testbot /root/.ssh/id_dsa
-ADD .ssh/known_hosts    /root/.ssh/known_hosts
-
-RUN chmod 600 /root/.ssh/id_rsa && \
-    chmod 600 /root/.ssh/id_dsa
-
 ENV PATH=$PATH:/gt/bin:/usr/synth/bin/ \
     GT_ROOT=/gt \
     LD_LIBRARY_PATH=/usr/synth/lib/ \
@@ -49,10 +42,12 @@ RUN mkdir -p /gt/bear-git && \
     cd /gt/bear-git && \
     makepkg --asroot --noconfirm -si
 
+# Copy in clang-mutate directory.
+ARG GT
+COPY . /gt/clang-mutate
+
 # Build clang-mutate package and install.
-RUN mkdir -p /gt/clang-mutate/ && \
-    git clone git@git.grammatech.com:synthesis/clang-mutate.git /gt/clang-mutate/ && \
-    cd /gt/clang-mutate/ && \
+RUN cd /gt/clang-mutate/ && \
     git checkout CI_COMMIT_SHA && \
     mkdir -p src/clang-mutate_pkg && \
     rsync --exclude .git --exclude src/clang-mutate_pkg -aruv ./ src/clang-mutate_pkg && \
