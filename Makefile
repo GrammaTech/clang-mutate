@@ -246,8 +246,7 @@ testbot-check/%: test/% etc/hello etc/hello.ll $(JSHON_BIN)
 	fi; \
 	printf "  </key_value>\n" >> $$XML_FILE; \
 	printf "</test_run>\n" >> $$XML_FILE; \
-	python $(BASEDIR)/third-party/gtr/gtnetcat.py datamanager 55555 $$XML_FILE \
-			>/dev/null 2>/dev/null; \
+	gtnetcat.py datamanager 55555 $$XML_FILE >/dev/null 2>/dev/null; \
 	rm $$XML_FILE; \
 	exit $$EXIT_CODE;
 
