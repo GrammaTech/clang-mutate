@@ -5,7 +5,7 @@
 . $(dirname $0)/common
 
 string_type=$(run_types_order_correct -json |
-              json_filter type "\"char\"" |
+              json_filter name "\"char\"" |
               json_wrap |
               json_filter storage_class "\"static\"" |
               jshon -e "hash")

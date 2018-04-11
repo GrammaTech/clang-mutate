@@ -5,12 +5,12 @@
 
 JSON=$(run_storage_classes -json)
 
-FLOAT_TYPE=$(echo $JSON | json_filter type "\"float\"")
-SHORT_TYPE=$(echo $JSON | json_filter type "\"short\"")
-CHAR_TYPE=$(echo $JSON | json_filter type "\"char\"")
-INT_TYPE=$(echo $JSON | json_filter type "\"int\"")
-DOUBLE_TYPE=$(echo $JSON | json_filter type "\"double\"")
-LONG_TYPE=$(echo $JSON | json_filter type "\"long\"")
+FLOAT_TYPE=$(echo $JSON | json_filter name "\"float\"")
+SHORT_TYPE=$(echo $JSON | json_filter name "\"short\"")
+CHAR_TYPE=$(echo $JSON | json_filter name "\"char\"")
+INT_TYPE=$(echo $JSON | json_filter name "\"int\"")
+DOUBLE_TYPE=$(echo $JSON | json_filter name "\"double\"")
+LONG_TYPE=$(echo $JSON | json_filter name "\"long\"")
 
 equals $(echo $FLOAT_TYPE | jshon -e "storage_class")  "\"extern\""
 equals $(echo $SHORT_TYPE | jshon -e "storage_class")  "\"__private_extern__\""

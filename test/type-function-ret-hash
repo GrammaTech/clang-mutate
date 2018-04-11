@@ -3,7 +3,7 @@
 
 . $(dirname $0)/common
 
-type_hash=$(clang-mutate ${MUSE_LIST} -json -- | json_filter type "\"LISTNODE"\" | json -e hash)
+type_hash=$(clang-mutate ${MUSE_LIST} -json -- | json_filter name "\"LISTNODE"\" | json -e hash)
 
 
 ret=$(clang-mutate ${MUSE_LIST} -json -- | json_filter name "\"AddNode"\" | json -e ret)

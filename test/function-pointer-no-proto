@@ -4,7 +4,7 @@
 . $(dirname $0)/common
 
 type=$(run_function_pointer_no_proto -json |
-       json_filter type "\"char \*()\"" |
+       json_filter name "\"char \*()\"" |
        jshon -e hash)
 
 echo $type

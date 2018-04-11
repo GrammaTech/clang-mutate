@@ -4,7 +4,7 @@
 . $(dirname $0)/common
 
 type=$(run_function_pointer -json |
-       json_filter type "\"int (int, char.*)\"" |
+       json_filter name "\"int (int, char.*)\"" |
        json_wrap |
        json_filter pointer "true" |
        jshon -e hash)

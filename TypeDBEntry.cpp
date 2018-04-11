@@ -671,7 +671,7 @@ picojson::value TypeDBEntry::toJSON() const
     j_reqs.erase(Hash(0));
 
     jsonObj["hash"] = to_json(m_hash);
-    jsonObj["type"] = to_json(m_name);
+    jsonObj["name"] = to_json(m_name);
     jsonObj["pointer"] = to_json(m_pointer);
     jsonObj["const"] = to_json(m_const);
     jsonObj["volatile"] = to_json(m_volatile);
