@@ -3,7 +3,7 @@
 # Test that full_stmt is set correctly within a switch.
 . $(dirname $0)/common
 
-full=$(run_switch -json|json_filter ast_class "\"CallExpr\""|
+full=$(run_switch -json|json_filter class "\"CallExpr\""|
               json_wrap|json -e 0 -e full_stmt)
 
 if [ ${full} == false ];then
@@ -11,7 +11,7 @@ if [ ${full} == false ];then
     exit 1
 fi
 
-full=$(run_switch -json|json_filter ast_class "\"IntegerLiteral\""|
+full=$(run_switch -json|json_filter class "\"IntegerLiteral\""|
               json_wrap|json -e 0 -e full_stmt)
 if [ ${full} == true ];then
     echo "Case expression is full."

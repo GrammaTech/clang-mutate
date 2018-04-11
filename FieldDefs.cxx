@@ -19,7 +19,7 @@ AST_FIELD( parent_counter, AstRef,
   { return ast.parent(); }
   )
 
-AST_FIELD( ast_class, std::string,
+AST_FIELD( class, std::string,
   "Class name of AST node.",
   { return ast.className(); }
   )

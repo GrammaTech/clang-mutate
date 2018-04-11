@@ -4,7 +4,7 @@
 . $(dirname $0)/common
 
 syn_ctx=$(run_global_vars_syn_ctx -json |
-          json_filter ast_class "\"Var\"" |
+          json_filter class "\"Var\"" |
           json_wrap |
           json -a -e syn_ctx)
 

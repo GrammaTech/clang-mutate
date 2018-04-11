@@ -4,7 +4,7 @@
 . $(dirname $0)/common
 
 contains "$(run_hello -json -llvm_ir=${HELLO_LLVM_IR}|json -a -k|sort|uniq)" \
-         "ast_class" \
+         "class" \
          "begin_src_col" \
          "begin_src_line" \
          "counter" \

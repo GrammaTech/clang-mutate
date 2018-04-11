@@ -2,6 +2,6 @@
 . $(dirname $0)/common
 
 # This will fail (jshon error) if there's more than one InitListExpr
-children=$(run_array_initializer -json | json_filter ast_class "\"InitListExpr\"" | \
+children=$(run_array_initializer -json | json_filter class "\"InitListExpr\"" | \
                   json -e children)
 equals $(echo $children | json -l) 3

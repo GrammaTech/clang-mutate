@@ -4,7 +4,7 @@
 . $(dirname $0)/common
 
 num_types=$(run_array_of_pointers -json |
-        json_filter ast_class "\"DeclStmt\"" |
+        json_filter class "\"DeclStmt\"" |
         json -e types |
         json -l)
 

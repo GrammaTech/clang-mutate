@@ -3,11 +3,11 @@
 # via -fields.
 . $(dirname $0)/common
 
-contains "$(run_hello -json -stmt1=12 -fields="ast_class,unbound_vals"| json)" \
-         '"ast_class": "IntegerLiteral"' \
+contains "$(run_hello -json -stmt1=12 -fields="class,unbound_vals"| json)" \
+         '"class": "IntegerLiteral"' \
          '"unbound_vals": \[]' 
 
 if [ $? -eq 0 ]; then
-    not_contains "$(run_hello -json -stmt1=12 -fields="ast_class,unbound_vals"| json)" \
+    not_contains "$(run_hello -json -stmt1=12 -fields="class,unbound_vals"| json)" \
                  '"counter"' 
 fi

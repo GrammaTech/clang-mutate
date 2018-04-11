@@ -4,7 +4,7 @@
 . $(dirname $0)/common
 
 in_macro_expansion=$(run_function_with_attribute_macro -json |
-                     json_filter ast_class "\"Function\"" |
+                     json_filter class "\"Function\"" |
                      jshon -e "in_macro_expansion")
 
 equals $in_macro_expansion "false"

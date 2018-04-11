@@ -4,7 +4,7 @@
 . $(dirname $0)/common
 
 # Specifically the type of argv in main should not be 0.
-type=$(run_hello -json|json_filter ast_class "\"Function\""|json -e args|
+type=$(run_hello -json|json_filter class "\"Function\""|json -e args|
               json -a -j|grep "argv"|json -e 1)
 if [ ${type} -eq 0 ];then
     exit 1

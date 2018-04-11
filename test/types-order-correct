@@ -11,7 +11,7 @@ string_type=$(run_types_order_correct -json |
               jshon -e "hash")
              
 type_hash=$(run_types_order_correct -json |
-            json_filter ast_class "\"Var\"" |
+            json_filter class "\"Var\"" |
             jshon -e "types" |
             jshon -e 0)
 

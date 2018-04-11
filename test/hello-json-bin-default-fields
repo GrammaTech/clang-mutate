@@ -4,7 +4,7 @@
 . $(dirname $0)/common
 
 contains "$(run_hello -json -binary=${HELLO_EXE}|json -a -k|sort|uniq)" \
-         "ast_class" \
+         "class" \
          "begin_addr" \
          "begin_src_col" \
          "begin_src_line" \

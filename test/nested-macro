@@ -4,6 +4,6 @@
 . $(dirname $0)/common
 
 end_off=$(run_nested_macro -json |
-          json_filter ast_class "\"Record\"" |
+          json_filter class "\"Record\"" |
           jshon -e end_off)
 equals $end_off 95

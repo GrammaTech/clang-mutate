@@ -42,7 +42,7 @@ I didn't want to cause confusion.)
 : 
 : > sed -i -r 's/-include[[:space:]]+[[:alnum:][:punct:]]+[[:space:]]+//g' /mu0/dkatz/rpms/compile_commands.json
 : 
-: > clang-mutate -json -aux=types -fields=ast_class,src_text,full_stmt,guard_stmt,unbound_funs,unbound_vals,begin_addr,end_addr,binary_contents,types,macros,includes,parent_counter -binary=/mu0/dkatz/rpms/BUILD/dcfldd-1.3.4-1/dcfldd.o -p=/mu0/dkatz/rpms /mu0/dkatz/rpms/BUILD/dcfldd-1.3.4-1/dcfldd.c > clang_mutate.out
+: > clang-mutate -json -aux=types -fields=class,src_text,full_stmt,guard_stmt,unbound_funs,unbound_vals,begin_addr,end_addr,binary_contents,types,macros,includes,parent_counter -binary=/mu0/dkatz/rpms/BUILD/dcfldd-1.3.4-1/dcfldd.o -p=/mu0/dkatz/rpms /mu0/dkatz/rpms/BUILD/dcfldd-1.3.4-1/dcfldd.c > clang_mutate.out
 : 
 : 
 : # The output doesn't work with jsonlint (version 1.6), possibly because of 

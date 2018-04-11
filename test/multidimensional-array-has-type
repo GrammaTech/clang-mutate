@@ -4,7 +4,7 @@
 . $(dirname $0)/common
 
 types=$(run_multidimensional_array -json |
-        json_filter ast_class "\"DeclStmt\"" |
+        json_filter class "\"DeclStmt\"" |
         json_wrap |
         json -a -e types)
 not_contains "$types" "[]"

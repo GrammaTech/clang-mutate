@@ -5,7 +5,7 @@
 
 contains "$(run_hello -json -stmt1=12 | json)" \
          '"src_file_name":.*,' \
-         '"ast_class": "IntegerLiteral"' \
+         '"class": "IntegerLiteral"' \
          '"unbound_vals": \[]' \
          '"begin_src_col": 10' \
          '"begin_src_line": 5' \

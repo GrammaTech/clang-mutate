@@ -16,8 +16,8 @@ implicit_cast=$(echo $json | json_filter counter 11)
 # The solution is most likely to extend the range of the
 # CXXOperatorCallExpr so its text is "i->".
 
-equals '"CXXOperatorCallExpr"' $(echo $operator_call | json -e ast_class)
-equals '"ImplicitCastExpr"' $(echo $implicit_cast | json -e ast_class)
+equals '"CXXOperatorCallExpr"' $(echo $operator_call | json -e class)
+equals '"ImplicitCastExpr"' $(echo $implicit_cast | json -e class)
 
 if [ ! $(echo $operator_call | json -e begin_off) -le \
        $(echo $implicit_cast | json -e begin_off) ]; then

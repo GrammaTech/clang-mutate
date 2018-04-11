@@ -3,7 +3,7 @@
 # Test to ensure that CXXMethod decls have a body field.
 . $(dirname $0)/common
 
-if run_class -json|json_filter ast_class "\"CXXMethod\""|json -e body &> /dev/null; then
+if run_class -json|json_filter class "\"CXXMethod\""|json -e body &> /dev/null; then
     exit 0
 else
     echo "Missing body."
