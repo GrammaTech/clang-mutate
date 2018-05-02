@@ -6,6 +6,15 @@ source files.  Using the
 it obtains an abstract syntax tree (AST) representation of the source
 and provides enables the inspection or alteration the source ASTs.
 
+## Installation
+
+`clang-mutate` is dependent on
+[clang/llvm version 4.0.1](http://releases.llvm.org/download.html).
+Precompiled binaries may be downloaded for the platform of your choice;
+once downloaded, ensure `clang` is on your $PATH.
+
+Beyond clang, we use `pandoc` to generate documentation.  This
+tool may be installed via the package manager of your choice.
 
 ## Inspection operations
 
