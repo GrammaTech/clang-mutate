@@ -13,8 +13,11 @@ and provides enables the inspection or alteration the source ASTs.
 Precompiled binaries may be downloaded for the platform of your choice;
 once downloaded, ensure `clang` is on your $PATH.
 
-Beyond clang, we use `pandoc` to generate documentation.  This
-tool may be installed via the package manager of your choice.
+Beyond clang, we use `zlib` and `tinfo`.  Additionally, we use
+`pandoc` to generate documentation.  These
+tools may be installed via the package manager of your choice.
+On Debian systems, `sudo apt-get install libtinfo-dev zlib1g-dev pandoc`
+will install these dependencies.
 
 ## Inspection operations
 
