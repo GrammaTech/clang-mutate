@@ -1,16 +1,17 @@
-FROM docker.grammatech.com:14850/synthesis/clang
-
+FROM docker.grammatech.com:14850/synthesis/clang as clang
+FROM ubuntu:16.04
 RUN apt-get -y update && \
-    apt-get -y install wdiff libtinfo-dev libz-dev libxcb1-dev pandoc
+    apt-get -y install autogen autoconf build-essential wdiff libtinfo-dev libtool libz-dev libxcb1-dev pandoc
 
+COPY --from=clang /usr/synth /usr/synth
+ENV PATH=$PATH:/gt/bin:/usr/synth/bin/ \
+    LD_LIBRARY_PATH=/usr/synth/lib/
+
+# Copy in clang-mutate directory.
 ARG GT
 COPY . /gt/clang-mutate
 
-RUN cd /gt/clang-mutate/ && \
-    git checkout CI_COMMIT_SHA && \
-    make -j4 clang-mutate && \
-    make install
-
+# Build clang-mutate package and install.
 WORKDIR /gt/clang-mutate
-
-CMD /bin/bash
+RUN make -j4 clang-mutate
+RUN make install

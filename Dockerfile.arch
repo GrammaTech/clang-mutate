@@ -1,14 +1,6 @@
 FROM base/archlinux
 
-ENV PATH=$PATH:/gt/bin:/usr/synth/bin/ \
-    GT_ROOT=/gt \
-    LD_LIBRARY_PATH=/usr/synth/lib/ \
-    USER=docker \
-    HOSTNAME=docker
-
 # Echo the commit hash to ensure we re-run to grab the latest packages.
-RUN echo 'CI_COMMIT_SHA' && pacman --noconfirm -Syu
-
 RUN pacman --noconfirm -Syu archlinux-keyring
 
 # Requirements to build clang-mutate.
@@ -16,6 +8,9 @@ RUN pacman --noconfirm -Syu base-devel findutils openssh git sed wget rsync gzip
 
 # Requirements to test clang-mutate.
 RUN pacman --noconfirm -Syu jshon libxcb
+
+ENV PATH=$PATH:/usr/synth/bin/ \
+    LD_LIBRARY_PATH=/usr/synth/lib/
 
 # Install specific version (4.0.1) of clang/llvm.
 RUN mkdir -p /gt/pkgs && \
@@ -47,13 +42,8 @@ ARG GT
 COPY . /gt/clang-mutate
 
 # Build clang-mutate package and install.
-RUN cd /gt/clang-mutate/ && \
-    git checkout CI_COMMIT_SHA && \
-    mkdir -p src/clang-mutate_pkg && \
-    rsync --exclude .git --exclude src/clang-mutate_pkg -aruv ./ src/clang-mutate_pkg && \
-    make -C src/clang-mutate_pkg clean && \
-    makepkg --asroot --noconfirm -ef -si
-
 WORKDIR /gt/clang-mutate
-
-CMD /bin/bash
+RUN mkdir -p src/clang-mutate_pkg
+RUN rsync --exclude .git --exclude src/clang-mutate_pkg -aruv ./ src/clang-mutate_pkg
+RUN make -C src/clang-mutate_pkg clean
+RUN makepkg --asroot --noconfirm -ef -si

@@ -9,9 +9,9 @@ stages:
 
 .run-template: &run
   script:
-    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $DOCKER_REGISTRY
     - if [ "$OS" = "ubuntu" ];
       then
+          docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $DOCKER_REGISTRY;
           docker pull $DOCKER_REGISTRY/synthesis/clang:latest;
       elif [ "$OS" = "arch" ];
       then
