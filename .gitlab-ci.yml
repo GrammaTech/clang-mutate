@@ -3,8 +3,7 @@ variables:
   LOCAL_IMAGE_NAME: '$CI_PROJECT_PATH-$CI_PIPELINE_ID'
 
 stages:
-  - build-test-and-tag-ubuntu
-  - build-test-and-tag-arch
+  - build-test-and-tag
   - dependents
 
 .run-template: &run
@@ -48,13 +47,13 @@ stages:
     - docker rmi -f $LOCAL_IMAGE_NAME
 
 run-ubuntu:
-  stage: build-test-and-tag-ubuntu
+  stage: build-test-and-tag
   variables:
     OS: 'ubuntu'
   <<: *run
 
 run-arch:
-  stage: build-test-and-tag-arch
+  stage: build-test-and-tag
   variables:
     OS: 'arch'
   <<: *run
