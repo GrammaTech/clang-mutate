@@ -91,11 +91,10 @@ namespace {
 class ActionFactory : public SourceFileCallbacks {
 public:
 
-    virtual bool handleBeginSource(clang::CompilerInstance & CIref,
-                                   StringRef Filename)
+    virtual bool handleBeginSource(clang::CompilerInstance & CIref)
     {
         CI = &CIref;
-        return SourceFileCallbacks::handleBeginSource(CIref, Filename);
+        return SourceFileCallbacks::handleBeginSource(CIref);
     }
 
     std::unique_ptr<clang::ASTConsumer> newASTConsumer() {

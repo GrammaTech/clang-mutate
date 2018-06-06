@@ -86,12 +86,11 @@ template <typename FactoryT>
        }
  
      protected:
-       virtual bool BeginSourceFileAction(clang::CompilerInstance &CI,
-                                          clang::StringRef Filename) override {
-         if (!clang::ASTFrontendAction::BeginSourceFileAction(CI, Filename))
+       virtual bool BeginSourceFileAction(clang::CompilerInstance &CI) override {
+         if (!clang::ASTFrontendAction::BeginSourceFileAction(CI))
            return false;
          if (Callbacks)
-           return Callbacks->handleBeginSource(CI, Filename);
+           return Callbacks->handleBeginSource(CI);
          return true;
        }
        void EndSourceFileAction() override {
