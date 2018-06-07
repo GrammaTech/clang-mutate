@@ -9,7 +9,7 @@ using namespace clang_mutate;
 using namespace clang;
 
 struct QualTypeComparator{
-    bool operator()(const QualType &lhs, const QualType &rhs) {
+    bool operator()(const QualType &lhs, const QualType &rhs) const {
         uintptr_t lx = (uintptr_t) lhs.getAsOpaquePtr();
         unsigned  ly = lhs.getLocalFastQualifiers();
         uintptr_t rx = (uintptr_t) rhs.getAsOpaquePtr();
