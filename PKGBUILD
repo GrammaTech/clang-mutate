@@ -2,10 +2,10 @@
 # Maintainer: Eric Schulte <schulte.eric@gmail.com>
 pkgname=clang-mutate-git
 _srcdir=clang-mutate_pkg
-pkgver=ase.2016.r137.g0a513f3
+pkgver=ase.2016.r219.gfc39d5b
 pkgrel=1
 pkgdesc="Manipulate C-family ASTs with Clang"
-url="https://github.com/eschulte/clang-mutate"
+url="https://github.com/grammatech/clang-mutate"
 arch=('i686' 'x86_64')
 license=('GPL3')
 depends=('clang>=4.0.0')

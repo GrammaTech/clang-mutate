@@ -89,8 +89,13 @@ install: clang-mutate man/clang-mutate.1.gz
 # repository by first rsync'ing it into the makepkg source directory
 # then running makepkg to build a package.
 local-makepkg:
-	-rsync --exclude .git --exclude src/clang-mutate_pkg -aruv ./ src/clang-mutate_pkg
-	make -C src/clang-mutate_pkg clean
+	rm -rf /tmp/clang-mutate_pkg
+	mkdir -p /tmp/clang-mutate_pkg
+	rsync --exclude .git --exclude src -aruv ./ /tmp/clang-mutate_pkg
+	rm -rf clang-mutate-git/src/
+	mkdir -p clang-mutate-git/src/
+	mv /tmp/clang-mutate_pkg clang-mutate-git/src/
+	make -C clang-mutate-git/src/clang-mutate_pkg clean
 	makepkg -ef
 
 
