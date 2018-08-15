@@ -27,10 +27,10 @@ RUN mkdir -p /gt/bear-git && \
     cd /gt/bear-git && \
     makepkg --asroot --noconfirm -si
 
-# Install specific version (6.0.0) of clang/llvm.
+# Install specific version (6.0.1) of clang/llvm.
 RUN mkdir -p /gt/pkgs && \
     cd /gt/pkgs && \
-    export PKGS="clang-6.0.0-1-x86_64.pkg.tar.xz llvm-6.0.0-4-x86_64.pkg.tar.xz llvm-libs-6.0.0-4-x86_64.pkg.tar.xz" && \
+    export PKGS="clang-6.0.1-2-x86_64.pkg.tar.xz llvm-6.0.1-4-x86_64.pkg.tar.xz llvm-libs-6.0.1-4-x86_64.pkg.tar.xz" && \
     echo $PKGS|tr ' ' '\n'|xargs -I{} wget http://ftp5.gwdg.de/pub/linux/archlinux/extra/os/x86_64/{} && \
     pacman --noconfirm -U $PKGS
 
