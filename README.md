@@ -9,7 +9,7 @@ and provides enables the inspection or alteration the source ASTs.
 ## Installation
 
 `clang-mutate` is dependent on
-[clang/llvm version 4.0.1](http://releases.llvm.org/download.html).
+[clang/llvm version 6.0.X](http://releases.llvm.org/download.html).
 Precompiled binaries may be downloaded for the platform of your choice;
 once downloaded, ensure `clang` is on your $PATH.
 
