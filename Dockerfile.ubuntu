@@ -1,4 +1,4 @@
-FROM docker.grammatech.com:14850/synthesis/clang as clang
+FROM docker.grammatech.com/synthesis/clang as clang
 FROM ubuntu:16.04
 RUN apt-get -y update && \
     apt-get -y install autogen autoconf build-essential wdiff libtinfo-dev libtool libz-dev libxcb1-dev pandoc
