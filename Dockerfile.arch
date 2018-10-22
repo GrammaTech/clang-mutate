@@ -30,9 +30,9 @@ RUN mkdir -p /gt/bear-git && \
 # Install specific version (6.0.1) of clang/llvm.
 RUN mkdir -p /gt/pkgs && \
     cd /gt/pkgs && \
-    export PKGS="clang-6.0.1-2-x86_64.pkg.tar.xz llvm-6.0.1-4-x86_64.pkg.tar.xz llvm-libs-6.0.1-4-x86_64.pkg.tar.xz" && \
-    echo $PKGS|tr ' ' '\n'|xargs -I{} wget http://ftp5.gwdg.de/pub/linux/archlinux/extra/os/x86_64/{} && \
-    pacman --noconfirm -U $PKGS
+    export PKGS="c/clang/clang-6.0.1-2-x86_64.pkg.tar.xz l/llvm/llvm-6.0.1-4-x86_64.pkg.tar.xz l/llvm-libs/llvm-libs-6.0.1-4-x86_64.pkg.tar.xz" && \
+    echo $PKGS|tr ' ' '\n'|xargs -I{} wget https://archive.archlinux.org/packages/{} && \
+    pacman --noconfirm -U $(echo $PKGS|sed 's| [^ ]*/| |g;s|^.*/||')
 
 # Don't upgrade clang/llvm packages.
 RUN sed -i '/^#IgnorePkg/ a IgnorePkg = llvm llvm-libs clang clang-tools-extra' /etc/pacman.conf
